@@ -4,22 +4,60 @@ from datetime import date, timedelta
 from kamus_istilah import KAMUS_SINGKATAN, CONTOH_VENDOR, CONTOH_CUSTOMER
 from kategori_keuangan import KATEGORI
 
-random.seed(42)  # biar hasilnya konsisten tiap dijalankan
+random.seed(42)
 
-# Template narasi per kategori (pakai singkatan biar mirip data bank asli)
 TEMPLATES = {
-    "6-1100": ["ADM RIB {bulan}", "BIAYA ADM {bulan}"],
-    "6-2200": ["PMBYRN LSTRK {vendor}", "BYR TAGIHAN LISTRIK {vendor}"],
-    "6-2300": ["PMBYRN TLP {vendor}", "BYR INTERNET {vendor}"],
-    "6-3100": ["BSNN OPR {vendor}", "BYR BSNN OPERASIONAL"],
-    "6-4000": ["TRF GJ KARYAWAN {bulan}", "PMBYRN GJ {bulan}"],
-    "6-5000": ["TRF VND {vendor}", "PO {vendor} REF{ref}"],
-    "4-1000": ["TRSFR INV {customer}", "TRF PMBYRN INV {customer}"],
-    "4-2000": ["TRF MASUK {customer}", "BI-FAST {customer}"],
-    "4-3000": ["PENDAPATAN LAIN {customer}"],
+    "6-1100": [
+        "ADM RIB {bulan}", "BIAYA ADM {bulan}", "POTONGAN ADM BANK {bulan}",
+        "CHARGE ADMIN {bulan}",
+    ],
+    "6-2200": [
+        "PMBYRN LSTRK {vendor}", "BYR TAGIHAN LISTRIK {vendor}",
+        "TRANSFER {vendor}", "PEMBAYARAN {vendor} PERIODE {bulan}",
+    ],
+    "6-2300": [
+        "PMBYRN TLP {vendor}", "BYR INTERNET {vendor}",
+        "TRANSFER {vendor}", "PEMBAYARAN {vendor} PERIODE {bulan}",
+    ],
+    "6-3100": [
+        "BSNN OPR {vendor}", "BYR BSNN OPERASIONAL",
+        "TRANSFER {vendor}", "BIAYA OPERASIONAL {bulan}",
+    ],
+    "6-4000": [
+        "TRF GJ KARYAWAN {bulan}", "PMBYRN GJ {bulan}",
+        "TRANSFER {bulan}", "PEMBAYARAN GAJI PERIODE {bulan}",
+    ],
+    "6-5000": [
+        "TRF VND {vendor}", "PO {vendor} REF{ref}",
+        "TRANSFER {vendor}", "PEMBAYARAN {vendor} REF{ref}",
+    ],
+    "4-1000": [
+        "TRSFR INV {customer}", "TRF PMBYRN INV {customer}",
+        "TRANSFER {customer}", "PEMBAYARAN DARI {customer}",
+    ],
+    "4-2000": [
+        "TRF MASUK {customer}", "BI-FAST {customer}",
+        "TRANSFER {customer}", "PEMBAYARAN DARI {customer} REF{ref}",
+    ],
+    "4-3000": [
+        "PENDAPATAN LAIN {customer}", "TRANSFER {customer}",
+        "PEMBAYARAN DARI {customer}",
+    ],
 }
 
 BULAN = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGT", "SEP", "OKT", "NOV", "DES"]
+
+def inject_typo(text, prob=0.1):
+    if random.random() > prob:
+        return text
+    chars = list(text)
+    idx = random.randint(0, len(chars) - 1)
+    if chars[idx].isalpha():
+        chars[idx] = chars[idx].lower() if chars[idx].isupper() else chars[idx]
+        # tukar posisi dengan huruf sebelah biar mirip typo asli
+        if idx > 0:
+            chars[idx], chars[idx-1] = chars[idx-1], chars[idx]
+    return "".join(chars)
 
 def generate_row(tanggal):
     kode_akun = random.choice(list(KATEGORI.keys()))
@@ -32,6 +70,7 @@ def generate_row(tanggal):
         bulan=random.choice(BULAN),
         ref=random.randint(10000, 99999),
     )
+    narasi = inject_typo(narasi)
 
     if info["jenis"] == "cash_out":
         nominal = random.randint(50_000, 15_000_000)
