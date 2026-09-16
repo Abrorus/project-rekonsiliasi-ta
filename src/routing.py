@@ -1,5 +1,5 @@
 import joblib
-from knowledge_base.knowledge_base import klasifikasi_kb
+from knowledge_base.decision_tree_kb import klasifikasi_kb
 
 def load_model():
     model = joblib.load('../models/model_final_svm_linear.pkl')
