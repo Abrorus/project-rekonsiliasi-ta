@@ -1,4 +1,5 @@
 import joblib
+from knowledge_base.knowledge_base import klasifikasi_kb
 
 def load_model():
     model = joblib.load('../models/model_final_svm_linear.pkl')
@@ -18,15 +19,19 @@ def klasifikasi_transaksi(teks, model, vectorizer, threshold=0.66):
 
     if confidence >= threshold:
         status = "OTOMATIS"
+        metode = "Model ML"
+        return {
+            "teks_input": teks,
+            "kategori_prediksi": kategori_prediksi,
+            "confidence": round(float(confidence), 4),
+            "status": status,
+            "metode": metode
+        }
     else:
-        status = "RUJUK_POOL3"
-
-    return {
-        "teks_input": teks,
-        "kategori_prediksi": kategori_prediksi,
-        "confidence": round(float(confidence), 4),
-        "status": status,
-    }
+        # Masuk ke Pool 3 (Knowledge Base)
+        kb_result = klasifikasi_kb(teks)
+        kb_result["confidence"] = round(float(confidence), 4) # Tetap retain confidence awal sebagai info
+        return kb_result
 
 def main():
     model, vectorizer = load_model()
@@ -45,7 +50,8 @@ def main():
         print(f"Input       : {hasil['teks_input']}")
         print(f"Kategori    : {hasil['kategori_prediksi']}")
         print(f"Confidence  : {hasil['confidence']}")
-        print(f"Status      : {hasil['status']}\n")
+        print(f"Status      : {hasil['status']}")
+        print(f"Metode      : {hasil.get('metode', 'Tidak diketahui')}\n")
 
 if __name__ == '__main__':
     main()
