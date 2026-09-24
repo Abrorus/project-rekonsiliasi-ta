@@ -67,7 +67,6 @@ def main():
     print(f"Otomatis terlabel: {n_auto} baris")
     print(f"Perlu keputusan manual: {n_manual} baris\n")
 
-    # Kelompokkan sisa yang belum terlabel berdasarkan nama pihak, urut dari yang paling sering muncul
     sisa = df[df['kode_akun_otomatis'].isna()]
     rekap_nama = sisa.groupby(['nama_pihak', 'jenis']).size().reset_index(name='jumlah_transaksi')
     rekap_nama = rekap_nama.sort_values('jumlah_transaksi', ascending=False)
@@ -81,20 +80,15 @@ def main():
     nama_anomali = nama_cr & nama_db
     print(f"\n=== Nama yang muncul di CR maupun DB (perlu dicek manual, {len(nama_anomali)} nama) ===")
     print(sorted(n for n in nama_anomali if n.strip()))
-    print(f"\n=== Detail 21 baris yang masih perlu keputusan manual ===")
-    manual = df[df['kode_akun_final'].isna()][['tanggal', 'keterangan', 'jenis', 'mutasi']]
-    print(manual.to_string(index=False))
-    manual.to_csv('../data/manual_review.csv', index=False)
 
     # Terapkan default: CR -> Pembayaran dari Customer, DB -> Pembayaran Vendor/Supplier
-    # KECUALI nama yang masuk daftar anomali di atas
     def default_label(row):
         if pd.notna(row['kode_akun_otomatis']):
             return row['kode_akun_otomatis']
         if 'DARBE JAYA ABADI' in row['nama_pihak'] or 'DARBE INTI NUSANTA' in row['nama_pihak']:
-            return '4-5000' if row['jenis'] == 'CR' else '6-9000'  # penyesuaian saldo, bukan transaksi bisnis
+            return '4-5000' if row['jenis'] == 'CR' else '6-9000'
         if row['nama_pihak'] in nama_anomali:
-            return None  # sengaja dibiarkan kosong, keputusan manual
+            return None
         return '4-2000' if row['jenis'] == 'CR' else '6-5000'
 
     df['kode_akun_final'] = df.apply(default_label, axis=1)
@@ -103,9 +97,14 @@ def main():
     n_final_manual = df['kode_akun_final'].isna().sum()
     print(f"\nSetelah default rule: {n_final_auto} baris terlabel, {n_final_manual} baris masih perlu manual")
 
+    print(f"\n=== Detail baris yang masih perlu keputusan manual ===")
+    manual = df[df['kode_akun_final'].isna()][['tanggal', 'keterangan', 'jenis', 'mutasi']]
+    print(manual.to_string(index=False))
+    manual.to_csv('../data/manual_review.csv', index=False)
+
     df.to_csv('../data/bca_riil_partial_label.csv', index=False)
     rekap_nama.to_csv('../data/rekap_nama_untuk_labeling.csv', index=False)
-    print("\nTersimpan: data/bca_riil_partial_label.csv dan data/rekap_nama_untuk_labeling.csv")
+    print("\nTersimpan: data/bca_riil_partial_label.csv, data/rekap_nama_untuk_labeling.csv, data/manual_review.csv")
 
 if __name__ == '__main__':
     main()
