@@ -83,14 +83,34 @@ def main():
 
     # Terapkan default: CR -> Pembayaran dari Customer, DB -> Pembayaran Vendor/Supplier
     def default_label(row):
+        override = apply_override(row)
+        if override:
+            return override
         if pd.notna(row['kode_akun_otomatis']):
             return row['kode_akun_otomatis']
         if 'DARBE JAYA ABADI' in row['nama_pihak'] or 'DARBE INTI NUSANTA' in row['nama_pihak']:
             return '4-5000' if row['jenis'] == 'CR' else '6-9000'
         if row['nama_pihak'] in nama_anomali:
-            return None
+            return '4-2000' if row['jenis'] == 'CR' else '6-5000'  # sisa LUH SUKRENI, M. FAUZI, MAJU MAPAN BAHAGIA -> pakai default CR/DB
         return '4-2000' if row['jenis'] == 'CR' else '6-5000'
+    
+    OVERRIDE_MANUAL = {
+        ('03/09', 'DB', '74,200,000.00'): '6-5000',
+        ('04/11', 'DB', '157,450.00'): '6-1100',
+        ('08/11', 'DB', '2,500.00'): '6-1100',
+        ('30/11', 'DB', '155,350.00'): '6-1100',
+        ('02/12', 'DB', '57,710,000.00'): '6-3100',
+        ('03/12', 'DB', '73,360,000.00'): '6-3100',
+        ('26/09', 'DB', '74,832,500.00'): '6-5000',
+        ('20/11', 'DB', '70,465,000.00'): '6-5000',
+        ('22/12', 'CR', '1,000,000.00'): '4-3000',
+        ('26/12', 'CR', '3,000,000.00'): '4-3000',
+    }
 
+    def apply_override(row):
+        key = (row['tanggal'], row['jenis'], row['mutasi'])
+        return OVERRIDE_MANUAL.get(key)
+    
     df['kode_akun_final'] = df.apply(default_label, axis=1)
 
     n_final_auto = df['kode_akun_final'].notna().sum()
