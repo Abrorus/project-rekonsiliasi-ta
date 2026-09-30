@@ -124,6 +124,8 @@ def main():
 
     df.to_csv('../data/bca_riil_partial_label.csv', index=False)
     rekap_nama.to_csv('../data/rekap_nama_untuk_labeling.csv', index=False)
+    print(f"\n=== Distribusi kategori final ===")
+    print(df['kode_akun_final'].value_counts().to_string())
     print("\nTersimpan: data/bca_riil_partial_label.csv, data/rekap_nama_untuk_labeling.csv, data/manual_review.csv")
 
 if __name__ == '__main__':
