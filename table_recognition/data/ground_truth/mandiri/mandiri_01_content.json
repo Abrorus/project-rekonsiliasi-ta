@@ -1,0 +1,28 @@
+{
+  "file": "mandiri_01.pdf",
+  "file_type": "pdf_scan",
+  "pages": [
+    {
+      "page_number": 1,
+      "dpi": 300,
+      "image_size": {
+        "width": 2480,
+        "height": 3508
+      },
+      "tables": [
+        {
+          "table_id": "t1",
+          "bbox": {
+            "x0": 120,
+            "y0": 380,
+            "x1": 2350,
+            "y1": 2900
+          },
+          "num_rows": 22,
+          "num_cols": 5,
+          "header": ["Tanggal", "Uraian", "Debet", "Kredit", "Saldo"]
+        }
+      ]
+    }
+  ]
+}
