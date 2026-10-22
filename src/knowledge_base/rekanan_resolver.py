@@ -1,0 +1,168 @@
+import re
+
+# ==============================================================================
+# KAMUS & LOGIKA RESOLUSI REKANAN (VENDOR & CUSTOMER RESOLVER)
+# Modul ini bertugas mengekstrak nama pihak lawan transaksi dari keterangan bank
+# dan memetakannya ke akun Customer (4-2000) atau Vendor (6-5000).
+# ==============================================================================
+
+# Kata-kata operasional/keterangan yang bukan nama rekanan
+KATA_NOISE = {
+    'AYAM', 'KARKAS', 'DAGING', 'AYM', 'BELI', 'BAYAR', 'BYR', 'AY',
+    'WHOLE', 'HIDUP', 'HDP', 'HD', 'DLL', 'MDM', 'MEATS', 'BLD', 'BLP',
+    'INV', 'INVOICE', 'PEMBAYARAN', 'PEMBY', 'PEMINDAHBUKUAN', 'PEMAN',
+    'DJA', 'ELIT', 'JASA', 'SEWA', 'CS', 'TEMPAT', 'KALI',
+    'PENGISIAN', 'PENGURUSAN', 'PENG', 'SALDO', 'MIN', 'MINIM',
+    'KBB', 'KE', 'VIA', 'RTGS', 'LLG', 'REF', 'NO', 'PPU',
+    'TANGGAL', 'TGL', 'PT', 'BANK', 'TXN', 'BIAYA', 'OICE',
+    'DR', 'DARI', 'KEPADA', 'TRANSFER', 'TRSF', 'E-BANKING'
+}
+
+# Prefix umum pada mutasi rekening bank BCA/Mandiri/dsb
+PREFIX_BANK = [
+    'TRSF E-BANKING CR', 'TRSF E-BANKING DB', 'TRSF E-BANKING',
+    'BYR VIA E-BANKING', 'SWITCHING TRANSFER DR', 'SWITCHING TRANSFER KE',
+    'SWITCHING TRANSFER', 'SWITCHING KE', 'SWITCHING DR', 'SWITCHING',
+    'BI-FAST TRANSFER', 'BI-FAST', 'BIF', 'SETORAN TUNAI', 'TRANSFER VIA LLG'
+]
+
+# Rekening internal / afiliasi grup perusahaan
+ENTITAS_INTERNAL = {
+    'DARBE JAYA ABADI', 'DARBE INTI NUSANTA', 'DARBE INTI NUSANTARA',
+    'DARBE AMERTHA JAYA', 'DARBE ALKAFIE JAYA ABADI'
+}
+
+# Master Partner yang sudah teridentifikasi (bisa terus diperluas)
+MASTER_CUSTOMERS = {
+    'AMERTHA JAYA', 'PANCA BERSAUDARA', 'SERA FOOD INDONESI', 'PRANAFOOD',
+    'HARMONIS SENTRA', 'KELANA MAKMUR', 'DANUREJO RAYA FOOD', 'RIFALDI',
+    'KETUT MAHAYANI', 'LUH WIRANTINI', 'PUTU SADNYANA', 'MAJU MAPAN BAHAGIA'
+}
+
+MASTER_VENDORS = {
+    'BAREKA LINTAS INDO', 'BAREKA LINTAS', 'SENTOT PRABOWO', 'CIOMAS ADISATWA',
+    'CIOMAS', 'BINA USAHA SANTOSA', 'BINA USAHA SANT', 'RAKHMAD WAHYU',
+    'GEDE ARYA WIRATMA', 'TIBAN', 'GUNTUR CENTRA', 'HARYANTO', 'DIDIK HARYANTO',
+    'MADE KARMAYASA', 'MADE RUMADIA', 'WAYAN SUWEDEN', 'I WAYAN SUWEDEN',
+    'HAMIDAH', 'DANANJAYA', 'ERWIN SOFIANI', 'GEDE RENTADA', 'GEDE JULIANA',
+    'BAGAS PUTRA', 'DUTA SELARAS ABADI', 'RUMIATI ALFIYAH'
+}
+
+def _is_kode_atau_angka(token):
+    """Mendeteksi apakah token adalah kode referensi acak atau murni angka."""
+    # Murni angka atau format desimal
+    if re.fullmatch(r'[\d.,/-]+', token):
+        return True
+    # Kode campuran alfanumerik (mis. 5XSK, NWWV, 0080017PT)
+    if re.fullmatch(r'[A-Z0-9]{4,12}', token) and re.search(r'\d', token) and re.search(r'[A-Z]', token):
+        return True
+    # Fragmen sangat pendek (<= 2 huruf) kecuali singkatan nama umum
+    if len(token) <= 2 and token not in {'PT', 'CV'}:
+        return True
+    return False
+
+def ekstrak_nama_rekanan(keterangan):
+    """
+    Membersihkan teks mutasi untuk mengambil nama vendor/customer.
+    Contoh: 'TRSF E-BANKING BAREKA LINTAS INDO' -> 'BAREKA LINTAS INDO'
+    """
+    if not keterangan or not isinstance(keterangan, str):
+        return ""
+
+    k = keterangan.upper()
+    for prefix in PREFIX_BANK:
+        k = k.replace(prefix, ' ')
+
+    # Buang karakter selain huruf, angka, titik, dan spasi
+    k = re.sub(r'[^\w\s.]', ' ', k)
+    tokens = k.split()
+
+    hasil = [t for t in tokens if t not in KATA_NOISE and not _is_kode_atau_angka(t)]
+    return ' '.join(hasil).strip()
+
+def resolve_rekanan(keterangan, jenis=None):
+    """
+    Mencocokkan nama rekanan dengan Master Data atau aturan bisnis transaksi.
+    
+    Return:
+    dict berisi { 'nama_pihak', 'kode_akun', 'nama_kategori', 'status', 'metode' }
+    atau None jika tidak dapat diidentifikasi sama sekali.
+    """
+    nama_pihak = ekstrak_nama_rekanan(keterangan)
+    j = str(jenis).strip().upper() if jenis else None
+
+    if not nama_pihak:
+        return None
+
+    # 1. Cek apakah ini entitas internal (Grup Perusahaan) -> Switching Antar Rekening
+    for entitas in ENTITAS_INTERNAL:
+        if entitas in nama_pihak:
+            kode = '4-5000' if j == 'CR' else '6-9000'
+            nama = 'Transfer Antar Bank (Switching) - Masuk' if j == 'CR' else 'Transfer Antar Bank (Switching) - Keluar'
+            return {
+                'nama_pihak': nama_pihak,
+                'kode_akun': kode,
+                'nama_kategori': nama,
+                'status': 'KB_TEREALISASI',
+                'metode': 'Master Entitas Internal'
+            }
+
+    # 2. Cek apakah cocok dengan Master Customers yang sudah terdaftar
+    for cust in MASTER_CUSTOMERS:
+        if cust in nama_pihak:
+            return {
+                'nama_pihak': nama_pihak,
+                'kode_akun': '4-2000',
+                'nama_kategori': 'Pembayaran dari Customer',
+                'status': 'KB_TEREALISASI',
+                'metode': f'Master Customer ({cust})'
+            }
+
+    # 3. Cek apakah cocok dengan Master Vendors yang sudah terdaftar
+    for vendor in MASTER_VENDORS:
+        if vendor in nama_pihak:
+            return {
+                'nama_pihak': nama_pihak,
+                'kode_akun': '6-5000',
+                'nama_kategori': 'Pembayaran Vendor/Supplier',
+                'status': 'KB_TEREALISASI',
+                'metode': f'Master Vendor ({vendor})'
+            }
+
+    # 4. Aturan Default Bisnis: Jika ada nama pihak yang jelas, tentukan berdasarkan jenis mutasi (CR/DB)
+    # Di perbankan, uang masuk (CR) dari pihak ketiga umumnya piutang customer, sedangkan uang keluar (DB) adalah vendor.
+    if j == 'CR':
+        return {
+            'nama_pihak': nama_pihak,
+            'kode_akun': '4-2000',
+            'nama_kategori': 'Pembayaran dari Customer',
+            'status': 'KB_TEREALISASI',
+            'metode': 'Aturan Rekanan Bisnis (CR -> Customer)'
+        }
+    elif j == 'DB':
+        return {
+            'nama_pihak': nama_pihak,
+            'kode_akun': '6-5000',
+            'nama_kategori': 'Pembayaran Vendor/Supplier',
+            'status': 'KB_TEREALISASI',
+            'metode': 'Aturan Rekanan Bisnis (DB -> Vendor)'
+        }
+
+    return None
+
+if __name__ == '__main__':
+    contoh = [
+        ("TRSF E-BANKING AMERTHA JAYA", "CR"),
+        ("TRSF E-BANKING CIOMAS ADISATWA", "DB"),
+        ("TRSF E-BANKING pengisian saldo min DARBE JAYA ABADI P", "DB"),
+        ("TRSF E-BANKING PUTU SADNYANA", "CR"),
+        ("TRSF E-BANKING BAREKA LINTAS INDO", "DB"),
+        ("TRSF E-BANKING TOKO BARU SEJAHTERA", "CR"),
+    ]
+    print("=== PENGUJIAN RESOLVER REKANAN ===")
+    for teks, jenis in contoh:
+        res = resolve_rekanan(teks, jenis)
+        print(f"Input    : {teks} [{jenis}]")
+        print(f"Ekstrak  : {res['nama_pihak']}")
+        print(f"Kategori : {res['kode_akun']} - {res['nama_kategori']}")
+        print(f"Metode   : {res['metode']}\n")

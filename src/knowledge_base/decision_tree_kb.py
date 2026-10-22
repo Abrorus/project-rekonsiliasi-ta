@@ -1,8 +1,14 @@
 import re
 try:
     from knowledge_base.kategori_keuangan import KATEGORI
+    from knowledge_base.rekanan_resolver import resolve_rekanan
 except ImportError:
-    from kategori_keuangan import KATEGORI
+    try:
+        from src.knowledge_base.kategori_keuangan import KATEGORI
+        from src.knowledge_base.rekanan_resolver import resolve_rekanan
+    except ImportError:
+        from kategori_keuangan import KATEGORI
+        from rekanan_resolver import resolve_rekanan
 
 # ==============================================================================
 # STRUKTUR DECISION TREE KNOWLEDGE BASE (HIERARKIS)
@@ -31,9 +37,9 @@ DECISION_TREE = {
         ]
     },
     "perbankan": {
-        "keywords": ["biaya adm", "adm bank", "biaya transfer", "ba jasa", "tolakan", "nd-biaya tolakan", "nd-lainnya", "bunga bank", "jasa giro"],
+        "keywords": ["biaya adm", "adm bank", "biaya transfer", "biaya txn", "ba jasa", "tolakan", "nd-biaya tolakan", "nd-lainnya", "bunga bank", "jasa giro"],
         "sub_rules": [
-            (["biaya adm", "adm bank", "biaya transfer", "ba jasa", "admin", "biaya bank"], "6-1100"),
+            (["biaya adm", "adm bank", "biaya transfer", "biaya txn", "ba jasa", "admin", "biaya bank"], "6-1100"),
             (["tolakan", "nd-biaya tolakan", "nd-lainnya"], "6-8000"),
             (["bunga bank", "jasa giro", "bunga simpanan"], "4-3000")
         ]
@@ -57,9 +63,9 @@ DECISION_TREE = {
     },
     "rekanan_komersial": {
         "keywords": ["po ", "vendor", "supplier", "pelanggan", "customer", "cust ", "invoice", "inv "],
-        "sub_rules": [
-            (["invoice", "inv ", "pelanggan", "customer", "cust "], "4-1000"),
-            (["po ", "vendor", "supplier"], "6-5000")
+        "context_rules": [
+            {"jenis": "DB", "kode": "6-5000"},
+            {"jenis": "CR", "kode": "4-1000"}
         ]
     }
 }
@@ -88,14 +94,26 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None):
     - mutasi: (opsional jika input_data string) nominal transaksi
     """
     # Ekstraksi parameter jika input_data berupa dict atau pandas Series
-    if isinstance(input_data, dict):
+    if isinstance(input_data, dict) or hasattr(input_data, 'get'):
         teks = str(input_data.get('keterangan', ''))
-        jenis = jenis or input_data.get('jenis')
-        mutasi = mutasi or input_data.get('mutasi')
-    elif hasattr(input_data, 'get'):  # pandas Series
-        teks = str(input_data.get('keterangan', ''))
-        jenis = jenis or input_data.get('jenis')
-        mutasi = mutasi or input_data.get('mutasi')
+        
+        # Deteksi jenis mutasi: bisa dari field 'jenis' (BCA) atau field 'debit'/'kredit' (skema Modul Tabel)
+        if not jenis:
+            if input_data.get('jenis'):
+                jenis = input_data.get('jenis')
+            else:
+                try:
+                    deb = float(str(input_data.get('debit', 0) or 0).replace(',', ''))
+                    kred = float(str(input_data.get('kredit', 0) or 0).replace(',', ''))
+                    if deb > 0:
+                        jenis = 'DB'
+                    elif kred > 0:
+                        jenis = 'CR'
+                except (ValueError, TypeError):
+                    pass
+                    
+        if not mutasi:
+            mutasi = input_data.get('mutasi') or input_data.get('debit') or input_data.get('kredit')
     else:
         teks = str(input_data)
 
@@ -111,6 +129,20 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None):
 
             # Kasus Khusus: Cabang yang memerlukan logika konteks jenis mutasi (CR/DB)
             if "context_rules" in data:
+                # Jika transfer keluar (DB), periksa apakah ada nama vendor terdaftar (mis. BI-FAST ke Vendor)
+                if jenis_norm == "DB":
+                    rek_res = resolve_rekanan(teks, jenis="DB")
+                    if rek_res and "Master Vendor" in rek_res.get("metode", ""):
+                        return {
+                            "teks_input": teks,
+                            "jenis": jenis_norm,
+                            "mutasi": mutasi,
+                            "kode_akun": "6-5000",
+                            "kategori_prediksi": "6-5000 - Pembayaran Vendor/Supplier",
+                            "status": "KB_TEREALISASI",
+                            "metode": f"KB Tree ({cabang} -> {rek_res['metode']})"
+                        }
+
                 for c_rule in data["context_rules"]:
                     if jenis_norm == c_rule["jenis"]:
                         kode_akun = c_rule["kode"]
@@ -155,6 +187,22 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None):
                             "status": "KB_TEREALISASI",
                             "metode": f"KB Tree ({cabang})"
                         }
+
+    # --------------------------------------------------------------------------
+    # LEVEL RESOLUSI REKANAN (VENDOR & CUSTOMER MATCHING)
+    # --------------------------------------------------------------------------
+    rekanan_res = resolve_rekanan(teks, jenis=jenis_norm)
+    if rekanan_res:
+        return {
+            "teks_input": teks,
+            "jenis": jenis_norm,
+            "mutasi": mutasi,
+            "kode_akun": rekanan_res["kode_akun"],
+            "kategori_prediksi": f"{rekanan_res['kode_akun']} - {rekanan_res['nama_kategori']}",
+            "nama_pihak": rekanan_res.get("nama_pihak", ""),
+            "status": rekanan_res["status"],
+            "metode": f"KB Tree (rekanan -> {rekanan_res['metode']})"
+        }
 
     # --------------------------------------------------------------------------
     # LEVEL DAUN AKHIR: Jika tidak ada aturan spesifik yang cocok di Tree
