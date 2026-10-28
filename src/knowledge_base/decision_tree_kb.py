@@ -95,23 +95,20 @@ def _normalisasi_jenis(jenis):
         return "DB"
     return None
 
-def klasifikasi_kb(input_data, jenis=None, mutasi=None):
+def klasifikasi_kb(input_data, jenis=None, mutasi=None, nlp_output=None):
     """
-    Fungsi Pool 3 (Knowledge Base):
-    Menggunakan Decision Tree Hierarkis multi-kolom untuk mengklasifikasikan transaksi
-    yang gagal / ambigu di model Machine Learning.
-    
+    Knowledge Base — menerima SEMUA transaksi (baik NLP confident maupun tidak).
+
     Parameter:
-    - input_data: Bisa berupa string teks keterangan ATAU dict / row pandas Series 
-      yang memuat 'keterangan', 'jenis', dan 'mutasi'.
-    - jenis: (opsional jika input_data string) 'CR' atau 'DB'
-    - mutasi: (opsional jika input_data string) nominal transaksi
+    - input_data: String teks keterangan ATAU dict/Series baris data.
+    - jenis: 'CR' atau 'DB'
+    - mutasi: nominal transaksi
+    - nlp_output: dict dari NLP berisi {teks_asli, teks_bersih, kategori_nlp,
+      confidence, confidence_tinggi}. Jika None, KB bekerja tanpa info NLP.
     """
-    # Ekstraksi parameter jika input_data berupa dict atau pandas Series
     if isinstance(input_data, dict) or hasattr(input_data, 'get'):
         teks = str(input_data.get('keterangan', ''))
-        
-        # Deteksi jenis mutasi: bisa dari field 'jenis' (BCA) atau field 'debit'/'kredit' (skema Modul Tabel)
+
         if not jenis:
             if input_data.get('jenis'):
                 jenis = input_data.get('jenis')
@@ -125,7 +122,7 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None):
                         jenis = 'CR'
                 except (ValueError, TypeError):
                     pass
-                    
+
         if not mutasi:
             mutasi = input_data.get('mutasi') or input_data.get('debit') or input_data.get('kredit')
     else:
@@ -134,16 +131,27 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None):
     teks_lower = teks.lower()
     jenis_norm = _normalisasi_jenis(jenis)
 
+    # Jika NLP confidence tinggi, gunakan juga teks bersih dari NLP untuk matching
+    teks_bersih_lower = None
+    if nlp_output and nlp_output.get("confidence_tinggi"):
+        teks_bersih_lower = nlp_output.get("teks_bersih", "").lower()
+
+    def _cek_keyword(keywords):
+        """Cek keyword di teks asli, dan juga di teks bersih NLP jika tersedia."""
+        if _cocok_keyword(keywords, teks_lower):
+            return True
+        if teks_bersih_lower and _cocok_keyword(keywords, teks_bersih_lower):
+            return True
+        return False
+
     # --------------------------------------------------------------------------
-    # EVALUASI DECISION TREE
+    # TAHAP 1: EVALUASI DECISION TREE (aturan pasti KB)
+    # Aturan pasti selalu dijalankan, baik NLP confident maupun tidak.
     # --------------------------------------------------------------------------
     for cabang, data in DECISION_TREE.items():
-        # Level 1: Cek apakah teks memicu kata kunci cabang utama
-        if _cocok_keyword(data["keywords"], teks_lower):
+        if _cek_keyword(data["keywords"]):
 
-            # Kasus Khusus: Cabang yang memerlukan logika konteks jenis mutasi (CR/DB)
             if "context_rules" in data:
-                # Jika transfer keluar (DB), periksa apakah ada nama vendor terdaftar (mis. BI-FAST ke Vendor)
                 if jenis_norm == "DB":
                     rek_res = resolve_rekanan(teks, jenis="DB")
                     if rek_res and "Master Vendor" in rek_res.get("metode", ""):
@@ -152,7 +160,7 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None):
                             "jenis": jenis_norm,
                             "mutasi": mutasi,
                             "kode_akun": "2.1.01.01",
-                            "kategori_prediksi": "2.1.01.01 - Trade Payable-Local",
+                            "kategori_prediksi": "2.1.01.01 - Trade Payable - 3rd Party",
                             "status": "KB_TEREALISASI",
                             "metode": f"KB Tree ({cabang} -> {rek_res['metode']})"
                         }
@@ -171,8 +179,7 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None):
                             "metode": f"KB Tree ({cabang}_{jenis_norm.lower()})"
                         }
 
-                # Fallback heuristik jika 'jenis' tidak diberikan: cek kata 'ke' vs 'dari'
-                kode_akun = "1.1.02.98"  # Cross Account Bank (arah tidak diketahui)
+                kode_akun = "1.1.02.98"
                 nama_akun = KATEGORI.get(kode_akun, {}).get("nama", "Unknown")
                 return {
                     "teks_input": teks,
@@ -184,10 +191,9 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None):
                     "metode": f"KB Tree ({cabang}_heuristik)"
                 }
 
-            # Level 2: Evaluasi sub-rules reguler
             if "sub_rules" in data:
                 for ciri_khas, kode_akun in data["sub_rules"]:
-                    if _cocok_keyword(ciri_khas, teks_lower):
+                    if _cek_keyword(ciri_khas):
                         nama_akun = KATEGORI.get(kode_akun, {}).get("nama", "Unknown")
                         return {
                             "teks_input": teks,
@@ -200,7 +206,7 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None):
                         }
 
     # --------------------------------------------------------------------------
-    # LEVEL RESOLUSI REKANAN (VENDOR & CUSTOMER MATCHING)
+    # TAHAP 2: RESOLUSI REKANAN (VENDOR & CUSTOMER MATCHING)
     # --------------------------------------------------------------------------
     rekanan_res = resolve_rekanan(teks, jenis=jenis_norm)
     if rekanan_res:
@@ -216,7 +222,31 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None):
         }
 
     # --------------------------------------------------------------------------
-    # LEVEL DAUN AKHIR: Jika tidak ada aturan spesifik yang cocok di Tree
+    # TAHAP 3: GUNAKAN HASIL NLP (jika confidence tinggi dan KB tidak punya aturan)
+    # NLP sudah yakin dan teks sudah bersih, KB terima hasilnya.
+    # NLP mengembalikan nama kategori lama (misal "Pembayaran Vendor/Supplier"),
+    # KB konversi ke kode CoA riil.
+    # --------------------------------------------------------------------------
+    if nlp_output and nlp_output.get("confidence_tinggi"):
+        kategori_nlp = nlp_output["kategori_nlp"]
+
+        # NLP return nama kategori → cari kode lama → konversi ke CoA riil
+        nama_ke_kode_lama = {v["nama"]: k for k, v in KATEGORI.items() if "-" in k}
+        kode_lama = nama_ke_kode_lama.get(kategori_nlp, kategori_nlp)
+        hasil_coa = konversi_kode(kode_lama)
+
+        return {
+            "teks_input": teks,
+            "jenis": jenis_norm,
+            "mutasi": mutasi,
+            "kode_akun": hasil_coa["kode_coa"],
+            "kategori_prediksi": f"{hasil_coa['kode_coa']} - {hasil_coa['nama_coa']}",
+            "status": "NLP_VALIDATED",
+            "metode": f"NLP Confident (conf={nlp_output['confidence']}) -> KB Validated"
+        }
+
+    # --------------------------------------------------------------------------
+    # TAHAP 4: KB tidak bisa menentukan & NLP juga tidak yakin -> Manual Review
     # --------------------------------------------------------------------------
     return {
         "teks_input": teks,

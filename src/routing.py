@@ -45,21 +45,17 @@ def load_model(use_gabungan=True):
 
 def klasifikasi_transaksi(input_data, model, vectorizer, threshold=0.66, jenis=None, mutasi=None):
     """
-    Alur Routing Utama (Pool 1 -> Pool 3):
-    1. Mencoba prediksi teks menggunakan model Machine Learning (NLP).
-    2. Jika confidence score >= threshold (default 0.66), langsung diproses OTOMATIS (Pool 1).
-    3. Jika confidence score < threshold (ambigu/ragu), dialihkan ke Knowledge Base (Pool 3).
-    
-    Parameter:
-    - input_data: String keterangan teks transaksi ATAU dictionary/Series baris data tabel.
-    - model: Objek model classifier scikit-learn.
-    - vectorizer: Objek TfidfVectorizer.
-    - threshold: Batas keyakinan model (default: 0.66).
+    Alur Routing Utama: NLP -> KB (selalu).
+
+    1. NLP memproses teks (normalisasi + klasifikasi + confidence).
+    2. Semua hasil NLP masuk ke KB, tanpa kecuali.
+    3. KB menerima info confidence dari NLP:
+       - Confidence >= threshold: teks sudah bersih, KB validasi & cocokkan ke data ERP.
+       - Confidence < threshold: teks masih berantakan, KB analisis ulang dari awal.
     """
     if isinstance(input_data, dict) or hasattr(input_data, 'get'):
         teks = str(input_data.get('keterangan', ''))
-        
-        # Deteksi jenis mutasi: bisa dari field 'jenis' (BCA) atau field 'debit'/'kredit' (skema Modul Tabel)
+
         if not jenis:
             if input_data.get('jenis'):
                 jenis = input_data.get('jenis')
@@ -79,7 +75,7 @@ def klasifikasi_transaksi(input_data, model, vectorizer, threshold=0.66, jenis=N
     else:
         teks = str(input_data)
 
-    # 1. Preprocessing teks untuk model ML
+    # 1. NLP: preprocessing + klasifikasi
     teks_clean = preprocess_pipeline(teks)
     X = vectorizer.transform([teks_clean])
     proba = model.predict_proba(X)[0]
@@ -87,65 +83,61 @@ def klasifikasi_transaksi(input_data, model, vectorizer, threshold=0.66, jenis=N
     kategori_ml = model.classes_[proba.argmax()]
     confidence = float(proba.max())
 
-    # 2. Evaluasi Threshold Routing
-    if confidence >= threshold:
-        # Masuk POOL 1: Otomatis diselesaikan oleh Machine Learning
-        return {
-            "teks_input": teks,
-            "jenis": jenis,
-            "mutasi": mutasi,
-            "pool": "Pool 1 (Otomatis ML)",
-            "kategori_prediksi": kategori_ml,
-            "confidence": round(confidence, 4),
-            "status": "OTOMATIS",
-            "metode": "Machine Learning (SVM Linear)"
-        }
+    nlp_output = {
+        "teks_asli": teks,
+        "teks_bersih": teks_clean,
+        "kategori_nlp": kategori_ml,
+        "confidence": round(confidence, 4),
+        "confidence_tinggi": confidence >= threshold,
+    }
+
+    # 2. KB: selalu menerima output NLP
+    kb_result = klasifikasi_kb(
+        input_data, jenis=jenis, mutasi=mutasi, nlp_output=nlp_output
+    )
+
+    kb_result["confidence_nlp"] = nlp_output["confidence"]
+    kb_result["kategori_nlp"] = nlp_output["kategori_nlp"]
+
+    if nlp_output["confidence_tinggi"] and kb_result["status"] != "MANUAL_REVIEW":
+        kb_result["pool"] = "Pool 1 (NLP Confident + KB Validated)"
     else:
-        # Masuk POOL 3: Confidence rendah, dialihkan ke Knowledge Base (Mario)
-        kb_result = klasifikasi_kb(input_data, jenis=jenis, mutasi=mutasi)
         kb_result["pool"] = "Pool 3 (Knowledge Base)"
-        kb_result["confidence_ml_awal"] = round(confidence, 4)
-        kb_result["prediksi_ml_awal"] = kategori_ml
-        return kb_result
+
+    return kb_result
 
 def main():
-    print("=== SIMULASI INTEGRASI END-TO-END (NLP + KNOWLEDGE BASE) ===\n")
+    print("=== SIMULASI INTEGRASI END-TO-END (NLP -> KB) ===\n")
     model, vectorizer = load_model()
 
-    # Contoh transaksi variatif dari data riil & sintesis
     contoh_transaksi = [
-        # Kasus 1: Teks baku jelas -> Diproses langsung oleh ML (Pool 1)
+        # NLP confident + KB punya aturan (KB menang)
         {"keterangan": "transfer gaji karyawan kantor pusat", "jenis": "DB", "mutasi": "25,000,000.00"},
         {"keterangan": "pembayaran bensin pertamina operasional sales", "jenis": "DB", "mutasi": "350,000.00"},
-        
-        # Kasus 2: Transaksi ambigu / institusi negara -> Dirujuk ke Modul KB (Pool 3)
+        # NLP ragu + KB punya aturan pasti
         {"keterangan": "TRSF E-BANKING 89000/BPJS TK", "jenis": "DB", "mutasi": "16,561,371.00"},
         {"keterangan": "BYR VIA E-BANKING PENERIMAAN NEGARA", "jenis": "DB", "mutasi": "14,978,282.00"},
         {"keterangan": "BYR VIA E-BANKING 0860 PLN JATIM DARBE JAYA ABADI P", "jenis": "DB", "mutasi": "1,694,321.00"},
-        
-        # Kasus 3: Switching Bank (Uang Masuk vs Uang Keluar) -> Diselesaikan oleh KB
+        # Switching & Rekanan
         {"keterangan": "SWITCHING TRANSFER DR 008 PANCA BERSAUDARA", "jenis": "CR", "mutasi": "50,000,000.00"},
         {"keterangan": "SWITCHING TRANSFER KE 009 SENTOT PRABOWO", "jenis": "DB", "mutasi": "15,000,000.00"},
-        
-        # Kasus 4: Nama Vendor & Customer Riil -> Diselesaikan oleh Resolver KB
         {"keterangan": "TRSF E-BANKING CIOMAS ADISATWA", "jenis": "DB", "mutasi": "580,075,045.00"},
         {"keterangan": "TRSF E-BANKING AMERTHA JAYA", "jenis": "CR", "mutasi": "595,075,045.00"},
-        
-        # Kasus 5: Transaksi anomali / data belum dikenal sama sekali -> Menuju Manual Review
-        {"keterangan": "REF TXN 99823 ANOMALI TANPA KETERANGAN", "jenis": "DB", "mutasi": "100,000.00"}
+        # NLP confident + KB tidak punya aturan -> NLP validated
+        {"keterangan": "pembayaran sewa gedung kantor", "jenis": "DB", "mutasi": "15,000,000.00"},
+        # Tidak ada yang bisa menentukan -> Manual Review
+        {"keterangan": "REF TXN 99823 ANOMALI TANPA KETERANGAN", "jenis": "DB", "mutasi": "100,000.00"},
     ]
 
     for item in contoh_transaksi:
         hasil = klasifikasi_transaksi(item, model, vectorizer, threshold=0.66)
-        print(f"Transaksi   : {hasil['teks_input']} [{hasil.get('jenis', '-')}]")
-        print(f"Jalur Pool  : {hasil['pool']}")
-        print(f"Kategori    : {hasil['kategori_prediksi']}")
-        print(f"Status      : {hasil['status']} (via {hasil['metode']})")
-        if 'confidence' in hasil:
-            print(f"Confidence  : {hasil['confidence']}")
-        elif 'confidence_ml_awal' in hasil:
-            print(f"ML Awal     : {hasil['prediksi_ml_awal']} (Conf: {hasil['confidence_ml_awal']}) -> Diselamatkan KB")
-        print("-" * 65)
+        print(f"Transaksi    : {hasil['teks_input']} [{hasil.get('jenis', '-')}]")
+        print(f"Pool         : {hasil['pool']}")
+        print(f"Kode Akun    : {hasil.get('kode_akun', '-')}")
+        print(f"Kategori     : {hasil['kategori_prediksi']}")
+        print(f"Status       : {hasil['status']} (via {hasil['metode']})")
+        print(f"NLP          : {hasil.get('kategori_nlp', '-')} (conf={hasil.get('confidence_nlp', '-')})")
+        print("-" * 70)
 
 if __name__ == '__main__':
     main()
