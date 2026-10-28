@@ -2,13 +2,16 @@ import re
 try:
     from knowledge_base.kategori_keuangan import KATEGORI
     from knowledge_base.rekanan_resolver import resolve_rekanan
+    from knowledge_base.coa import MAPPING_LAMA_KE_COA, konversi_kode, coa_nama
 except ImportError:
     try:
         from src.knowledge_base.kategori_keuangan import KATEGORI
         from src.knowledge_base.rekanan_resolver import resolve_rekanan
+        from src.knowledge_base.coa import MAPPING_LAMA_KE_COA, konversi_kode, coa_nama
     except ImportError:
         from kategori_keuangan import KATEGORI
         from rekanan_resolver import resolve_rekanan
+        from coa import MAPPING_LAMA_KE_COA, konversi_kode, coa_nama
 
 # ==============================================================================
 # STRUKTUR DECISION TREE KNOWLEDGE BASE (HIERARKIS)
@@ -21,52 +24,51 @@ DECISION_TREE = {
     "perpajakan_negara": {
         "keywords": ["penerimaan negara", "pajak", "setoran negara", "pph", "ppn", "mpn"],
         "sub_rules": [
-            (["penerimaan negara", "pajak", "setoran negara", "pph", "ppn", "mpn"], "6-7000")
+            (["penerimaan negara", "pajak", "setoran negara", "pph", "ppn", "mpn"], "PERLU_REVIEW")  # Pajak — akun posting belum pasti
         ]
     },
     "bpjs": {
         # 'bpjs kesehat' tetap dipertahankan karena keterangan BCA terpotong ("07004/BPJS KESEHAT")
         "keywords": ["bpjs", "bpjs tk", "bpjs kesehat", "bpjs kesehatan", "jamsostek"],
         "sub_rules": [
-            (["bpjs tk", "bpjs kesehat", "bpjs kesehatan", "bpjs", "jamsostek"], "6-6000")
+            (["bpjs tk", "bpjs kesehat", "bpjs kesehatan", "bpjs", "jamsostek"], "PERLU_REVIEW")  # BPJS — akun belum ada di CoA mitra
         ]
     },
     "setoran_tunai": {
         "keywords": ["setoran tunai", "setor tunai"],
         "sub_rules": [
-            (["setoran tunai", "setor tunai"], "4-4000")
+            (["setoran tunai", "setor tunai"], "1.1.1.01")  # Cash on Hand:IDR
         ]
     },
     "perbankan": {
         "keywords": ["biaya adm", "adm bank", "biaya transfer", "biaya txn", "ba jasa", "admin", "biaya bank", "tolakan", "nd-biaya tolakan", "nd-lainnya", "bunga bank", "jasa giro", "bunga simpanan"],
         "sub_rules": [
-            (["biaya adm", "adm bank", "biaya transfer", "biaya txn", "ba jasa", "admin", "biaya bank"], "6-1100"),
-            (["tolakan", "nd-biaya tolakan", "nd-lainnya"], "6-8000"),
-            (["bunga bank", "jasa giro", "bunga simpanan"], "4-3000")
+            (["biaya adm", "adm bank", "biaya transfer", "biaya txn", "ba jasa", "admin", "biaya bank"], "PERLU_REVIEW"),  # Biaya Admin Bank — akun belum ada di CoA mitra
+            (["tolakan", "nd-biaya tolakan", "nd-lainnya"], "PERLU_REVIEW"),  # Biaya Tolakan — akun belum ada di CoA mitra
+            (["bunga bank", "jasa giro", "bunga simpanan"], "PERLU_REVIEW")   # Bunga Bank — akun belum ada di CoA mitra
         ]
     },
     "operasional": {
         "keywords": ["listrik", "pln", "telepon", "telkom", "internet", "indihome", "wifi", "gaji", "payroll", "thr", "bbm", "bensin", "pertamina", "spbu", "tol"],
         "sub_rules": [
-            (["listrik", "pln"], "6-2200"),
-            (["telepon", "telkom", "internet", "indihome", "wifi"], "6-2300"),
-            (["gaji", "payroll", "thr"], "6-4000"),
-            (["bbm", "bensin", "pertamina", "spbu", "tol"], "6-3100")
+            (["listrik", "pln"], "6.2.05.01"),             # Utilities-Electricity
+            (["telepon", "telkom", "internet", "indihome", "wifi"], "6.2.05.02"),  # Utilities-Water/Telephone
+            (["gaji", "payroll", "thr"], "6.2.01.01"),     # Salary & Wages-Base Salary (produksi)
+            (["bbm", "bensin", "pertamina", "spbu", "tol"], "6.2.04.01")  # Transport-Transport.Out (produksi)
         ]
     },
     "switching_interbank": {
         "keywords": ["switching", "bi-fast", "bifast", "bif", "llg", "rtgs", "kliring"],
-        # Sub-rules dinamis yang bergantung pada konteks mutasi (CR = Masuk, DB = Keluar)
         "context_rules": [
-            {"jenis": "CR", "kode": "4-5000"},
-            {"jenis": "DB", "kode": "6-9000"}
+            {"jenis": "CR", "kode": "1.1.02.98"},  # Cross Account Bank (masuk)
+            {"jenis": "DB", "kode": "1.1.02.98"}   # Cross Account Bank (keluar)
         ]
     },
     "rekanan_komersial": {
         "keywords": ["po", "vendor", "supplier", "pelanggan", "customer", "cust", "invoice", "inv"],
         "context_rules": [
-            {"jenis": "DB", "kode": "6-5000"},
-            {"jenis": "CR", "kode": "4-1000"}
+            {"jenis": "DB", "kode": "2.1.01.01"},  # Trade Payable-Local (bayar vendor)
+            {"jenis": "CR", "kode": "1.1.04.01"}   # Trade Receivable-Local (terima customer)
         ]
     }
 }
@@ -149,8 +151,8 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None):
                             "teks_input": teks,
                             "jenis": jenis_norm,
                             "mutasi": mutasi,
-                            "kode_akun": "6-5000",
-                            "kategori_prediksi": "6-5000 - Pembayaran Vendor/Supplier",
+                            "kode_akun": "2.1.01.01",
+                            "kategori_prediksi": "2.1.01.01 - Trade Payable-Local",
                             "status": "KB_TEREALISASI",
                             "metode": f"KB Tree ({cabang} -> {rek_res['metode']})"
                         }
@@ -170,10 +172,7 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None):
                         }
 
                 # Fallback heuristik jika 'jenis' tidak diberikan: cek kata 'ke' vs 'dari'
-                if _cocok_keyword(["ke", "kbb"], teks_lower):
-                    kode_akun = "6-9000"
-                else:
-                    kode_akun = "4-5000"
+                kode_akun = "1.1.02.98"  # Cross Account Bank (arah tidak diketahui)
                 nama_akun = KATEGORI.get(kode_akun, {}).get("nama", "Unknown")
                 return {
                     "teks_input": teks,

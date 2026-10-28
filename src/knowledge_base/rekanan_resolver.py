@@ -110,12 +110,10 @@ def resolve_rekanan(keterangan, jenis=None):
     # 1. Cek apakah ini entitas internal (Grup Perusahaan) -> Switching Antar Rekening
     for entitas in ENTITAS_INTERNAL:
         if _mengandung(entitas, nama_pihak):
-            kode = '4-5000' if j == 'CR' else '6-9000'
-            nama = 'Transfer Antar Bank (Switching) - Masuk' if j == 'CR' else 'Transfer Antar Bank (Switching) - Keluar'
             return {
                 'nama_pihak': nama_pihak,
-                'kode_akun': kode,
-                'nama_kategori': nama,
+                'kode_akun': '1.1.02.98',
+                'nama_kategori': 'Cross Account Bank',
                 'status': 'KB_TEREALISASI',
                 'metode': 'Master Entitas Internal'
             }
@@ -125,8 +123,8 @@ def resolve_rekanan(keterangan, jenis=None):
         if _mengandung(cust, nama_pihak):
             return {
                 'nama_pihak': nama_pihak,
-                'kode_akun': '4-2000',
-                'nama_kategori': 'Pembayaran dari Customer',
+                'kode_akun': '1.1.04.01',
+                'nama_kategori': 'Trade Receivable-Local',
                 'status': 'KB_TEREALISASI',
                 'metode': f'Master Customer ({cust})'
             }
@@ -136,8 +134,8 @@ def resolve_rekanan(keterangan, jenis=None):
         if _mengandung(vendor, nama_pihak):
             return {
                 'nama_pihak': nama_pihak,
-                'kode_akun': '6-5000',
-                'nama_kategori': 'Pembayaran Vendor/Supplier',
+                'kode_akun': '2.1.01.01',
+                'nama_kategori': 'Trade Payable-Local',
                 'status': 'KB_TEREALISASI',
                 'metode': f'Master Vendor ({vendor})'
             }
@@ -151,16 +149,16 @@ def resolve_rekanan(keterangan, jenis=None):
     if j == 'CR':
         return {
             'nama_pihak': nama_pihak,
-            'kode_akun': '4-2000',
-            'nama_kategori': 'Pembayaran dari Customer',
+            'kode_akun': '1.1.04.01',
+            'nama_kategori': 'Trade Receivable-Local',
             'status': 'KB_TEREALISASI',
             'metode': 'Aturan Rekanan Bisnis (CR -> Customer)'
         }
     elif j == 'DB':
         return {
             'nama_pihak': nama_pihak,
-            'kode_akun': '6-5000',
-            'nama_kategori': 'Pembayaran Vendor/Supplier',
+            'kode_akun': '2.1.01.01',
+            'nama_kategori': 'Trade Payable-Local',
             'status': 'KB_TEREALISASI',
             'metode': 'Aturan Rekanan Bisnis (DB -> Vendor)'
         }
