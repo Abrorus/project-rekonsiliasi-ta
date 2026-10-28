@@ -48,6 +48,19 @@ MASTER_VENDORS = {
     'BAGAS PUTRA', 'DUTA SELARAS ABADI', 'RUMIATI ALFIYAH'
 }
 
+# Penanda jalur transfer antar pihak. Aturan default CR/DB hanya berlaku jika salah satu muncul,
+# supaya teks tanpa konteks transfer (mis. 'REF TXN ANOMALI') tidak dipaksa jadi Vendor/Customer.
+# 'TRANSFER' sengaja tidak dimasukkan karena juga muncul di biaya bank ("BIAYA TRANSFER SME").
+JALUR_TRANSFER = ['TRSF', 'SWITCHING', 'BI-FAST', 'BIFAST', 'BIF', 'LLG', 'RTGS', 'KBB', 'KLIRING']
+
+def _mengandung(frasa, teks):
+    """True jika frasa muncul sebagai kata/frasa utuh di teks (keduanya huruf besar)."""
+    return re.search(r'(?<![A-Z0-9])' + re.escape(frasa) + r'(?![A-Z0-9])', teks) is not None
+
+def _ada_jalur_transfer(keterangan):
+    k = str(keterangan).upper()
+    return any(_mengandung(jalur, k) for jalur in JALUR_TRANSFER)
+
 def _is_kode_atau_angka(token):
     """Mendeteksi apakah token adalah kode referensi acak atau murni angka."""
     # Murni angka atau format desimal
@@ -96,7 +109,7 @@ def resolve_rekanan(keterangan, jenis=None):
 
     # 1. Cek apakah ini entitas internal (Grup Perusahaan) -> Switching Antar Rekening
     for entitas in ENTITAS_INTERNAL:
-        if entitas in nama_pihak:
+        if _mengandung(entitas, nama_pihak):
             kode = '4-5000' if j == 'CR' else '6-9000'
             nama = 'Transfer Antar Bank (Switching) - Masuk' if j == 'CR' else 'Transfer Antar Bank (Switching) - Keluar'
             return {
@@ -109,7 +122,7 @@ def resolve_rekanan(keterangan, jenis=None):
 
     # 2. Cek apakah cocok dengan Master Customers yang sudah terdaftar
     for cust in MASTER_CUSTOMERS:
-        if cust in nama_pihak:
+        if _mengandung(cust, nama_pihak):
             return {
                 'nama_pihak': nama_pihak,
                 'kode_akun': '4-2000',
@@ -120,7 +133,7 @@ def resolve_rekanan(keterangan, jenis=None):
 
     # 3. Cek apakah cocok dengan Master Vendors yang sudah terdaftar
     for vendor in MASTER_VENDORS:
-        if vendor in nama_pihak:
+        if _mengandung(vendor, nama_pihak):
             return {
                 'nama_pihak': nama_pihak,
                 'kode_akun': '6-5000',
@@ -131,6 +144,10 @@ def resolve_rekanan(keterangan, jenis=None):
 
     # 4. Aturan Default Bisnis: Jika ada nama pihak yang jelas, tentukan berdasarkan jenis mutasi (CR/DB)
     # Di perbankan, uang masuk (CR) dari pihak ketiga umumnya piutang customer, sedangkan uang keluar (DB) adalah vendor.
+    # Hanya berlaku untuk transaksi transfer; selain itu dikembalikan None agar menuju Manual Review.
+    if not _ada_jalur_transfer(keterangan):
+        return None
+
     if j == 'CR':
         return {
             'nama_pihak': nama_pihak,

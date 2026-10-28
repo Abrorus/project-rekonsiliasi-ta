@@ -25,9 +25,10 @@ DECISION_TREE = {
         ]
     },
     "bpjs": {
-        "keywords": ["bpjs", "bpjs tk", "bpjs kesehat", "jamsostek"],
+        # 'bpjs kesehat' tetap dipertahankan karena keterangan BCA terpotong ("07004/BPJS KESEHAT")
+        "keywords": ["bpjs", "bpjs tk", "bpjs kesehat", "bpjs kesehatan", "jamsostek"],
         "sub_rules": [
-            (["bpjs tk", "bpjs kesehat", "bpjs", "jamsostek"], "6-6000")
+            (["bpjs tk", "bpjs kesehat", "bpjs kesehatan", "bpjs", "jamsostek"], "6-6000")
         ]
     },
     "setoran_tunai": {
@@ -37,7 +38,7 @@ DECISION_TREE = {
         ]
     },
     "perbankan": {
-        "keywords": ["biaya adm", "adm bank", "biaya transfer", "biaya txn", "ba jasa", "tolakan", "nd-biaya tolakan", "nd-lainnya", "bunga bank", "jasa giro"],
+        "keywords": ["biaya adm", "adm bank", "biaya transfer", "biaya txn", "ba jasa", "admin", "biaya bank", "tolakan", "nd-biaya tolakan", "nd-lainnya", "bunga bank", "jasa giro", "bunga simpanan"],
         "sub_rules": [
             (["biaya adm", "adm bank", "biaya transfer", "biaya txn", "ba jasa", "admin", "biaya bank"], "6-1100"),
             (["tolakan", "nd-biaya tolakan", "nd-lainnya"], "6-8000"),
@@ -54,7 +55,7 @@ DECISION_TREE = {
         ]
     },
     "switching_interbank": {
-        "keywords": ["switching", "bi-fast", "bifast", "bif ", "llg", "rtgs", "kliring"],
+        "keywords": ["switching", "bi-fast", "bifast", "bif", "llg", "rtgs", "kliring"],
         # Sub-rules dinamis yang bergantung pada konteks mutasi (CR = Masuk, DB = Keluar)
         "context_rules": [
             {"jenis": "CR", "kode": "4-5000"},
@@ -62,13 +63,24 @@ DECISION_TREE = {
         ]
     },
     "rekanan_komersial": {
-        "keywords": ["po ", "vendor", "supplier", "pelanggan", "customer", "cust ", "invoice", "inv "],
+        "keywords": ["po", "vendor", "supplier", "pelanggan", "customer", "cust", "invoice", "inv"],
         "context_rules": [
             {"jenis": "DB", "kode": "6-5000"},
             {"jenis": "CR", "kode": "4-1000"}
         ]
     }
 }
+
+def _cocok_keyword(keywords, teks_lower):
+    """
+    True jika salah satu keyword muncul sebagai kata/frasa utuh di teks.
+    Batas kata mencegah salah cocok substring, mis. 'tol' di 'tolakan' atau 'po' di 'depo'.
+    """
+    for kw in keywords:
+        pola = r'(?<![a-z0-9])' + re.escape(kw.strip()) + r'(?![a-z0-9])'
+        if re.search(pola, teks_lower):
+            return True
+    return False
 
 def _normalisasi_jenis(jenis):
     """Menyeragamkan representasi jenis mutasi ke 'CR' (Kredit/Masuk) atau 'DB' (Debit/Keluar)."""
@@ -125,7 +137,7 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None):
     # --------------------------------------------------------------------------
     for cabang, data in DECISION_TREE.items():
         # Level 1: Cek apakah teks memicu kata kunci cabang utama
-        if any(kw in teks_lower for kw in data["keywords"]):
+        if _cocok_keyword(data["keywords"], teks_lower):
 
             # Kasus Khusus: Cabang yang memerlukan logika konteks jenis mutasi (CR/DB)
             if "context_rules" in data:
@@ -158,7 +170,7 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None):
                         }
 
                 # Fallback heuristik jika 'jenis' tidak diberikan: cek kata 'ke' vs 'dari'
-                if "ke " in teks_lower or " /kbb" in teks_lower:
+                if _cocok_keyword(["ke", "kbb"], teks_lower):
                     kode_akun = "6-9000"
                 else:
                     kode_akun = "4-5000"
@@ -176,7 +188,7 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None):
             # Level 2: Evaluasi sub-rules reguler
             if "sub_rules" in data:
                 for ciri_khas, kode_akun in data["sub_rules"]:
-                    if any(kw in teks_lower for kw in ciri_khas):
+                    if _cocok_keyword(ciri_khas, teks_lower):
                         nama_akun = KATEGORI.get(kode_akun, {}).get("nama", "Unknown")
                         return {
                             "teks_input": teks,

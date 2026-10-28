@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 import pandas as pd
-from sklearn.metrics import classification_report, accuracy_score
+from sklearn.model_selection import train_test_split
 
 # Daftarkan direktori 'src' ke sys.path
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,6 +19,62 @@ except ImportError:
 # Mapping nama kategori ke kode akun untuk verifikasi ML
 NAMA_KE_KODE = {v['nama']: k for k, v in KATEGORI.items()}
 
+def tandai_data_latih(df):
+    """
+    Menandai baris data riil yang ikut dipakai melatih model gabungan.
+
+    Mereplikasi persis pembagian data di retrain_gabungan.py (filter kategori overlap sintesis,
+    kategori langka < 5 sampel masuk training, sisanya split 70/30 stratified, random_state=42).
+    Evaluasi pada baris yang dipakai latih akan menggelembungkan akurasi (data leakage),
+    sehingga metrik utama dihitung hanya pada baris yang belum pernah dilihat model.
+    """
+    kategori_sintesis = set(pd.read_csv(BASE_DIR / "data" / "dataset_preprocessed_v2.csv")['kategori'])
+    nama_kategori = df['kode_akun_final'].map(lambda k: KATEGORI[k]['nama'])
+    df_riil = df[nama_kategori.isin(kategori_sintesis)].assign(kategori=nama_kategori)
+
+    counts = df_riil['kategori'].value_counts()
+    kategori_cukup = counts[counts >= 5].index
+    df_riil_cukup = df_riil[df_riil['kategori'].isin(kategori_cukup)]
+    df_riil_langka = df_riil[~df_riil['kategori'].isin(kategori_cukup)]
+
+    riil_train, _ = train_test_split(
+        df_riil_cukup, test_size=0.3, random_state=42, stratify=df_riil_cukup['kategori']
+    )
+    indeks_latih = riil_train.index.union(df_riil_langka.index)
+    return df.index.isin(indeks_latih)
+
+def cetak_ringkasan(df_hasil, judul):
+    total = len(df_hasil)
+    pool1 = df_hasil[df_hasil['jalur_pool'] == 'Pool 1 (Otomatis ML)']
+    pool3 = df_hasil[df_hasil['jalur_pool'] != 'Pool 1 (Otomatis ML)']
+    pool3_kb = pool3[pool3['status_akhir'] == 'KB_TEREALISASI']
+    pool3_manual = pool3[pool3['status_akhir'] == 'MANUAL_REVIEW']
+
+    pool1_benar = (pool1['evaluasi'] == 'TEPAT').sum()
+    pool3_kb_benar = (pool3_kb['evaluasi'] == 'TEPAT').sum()
+    total_otomatis = len(pool1) + len(pool3_kb)
+    total_benar = pool1_benar + pool3_kb_benar
+
+    def persen(a, b):
+        return a / b * 100 if b > 0 else 0.0
+
+    print("=" * 75)
+    print(f"   {judul}")
+    print("=" * 75)
+    print(f"Total Dataset Transaksi                : {total} transaksi (100.0%)")
+    print("-" * 75)
+    print(f"1. POOL 1 - Otomatisasi ML (NLP)       : {len(pool1)} transaksi ({persen(len(pool1), total):.1f}%)")
+    print(f"   - Akurasi Model ML                  : {pool1_benar}/{len(pool1)} ({persen(pool1_benar, len(pool1)):.1f}%)")
+    print()
+    print(f"2. POOL 3 - Rujukan Ambigu ke KB       : {len(pool3)} transaksi ({persen(len(pool3), total):.1f}%)")
+    print(f"   - Berhasil Diselamatkan oleh KB     : {len(pool3_kb)} transaksi ({persen(len(pool3_kb), len(pool3)):.1f}%)")
+    print(f"   - Akurasi Penyelamatan Aturan KB    : {pool3_kb_benar}/{len(pool3_kb)} ({persen(pool3_kb_benar, len(pool3_kb)):.1f}%)")
+    print(f"   - Sisa Memerlukan Manual Review     : {len(pool3_manual)} transaksi ({persen(len(pool3_manual), total):.1f}%)")
+    print("-" * 75)
+    print(f"TINGKAT OTOMASI SISTEM (Coverage)      : {total_otomatis}/{total} ({persen(total_otomatis, total):.1f}%)")
+    print(f"AKURASI KESELURUHAN SISTEM TERVALIDASI : {total_benar}/{total_otomatis} ({persen(total_benar, total_otomatis):.1f}%)")
+    print("=" * 75)
+
 def evaluasi_end_to_end():
     print("=" * 75)
     print("   EVALUASI KINERJA INTEGRASI KNOWLEDGE BASE (POOL 3) & NLP (POOL 1)")
@@ -28,36 +84,26 @@ def evaluasi_end_to_end():
     # 1. Load Model & Dataset Riil BCA
     model, vectorizer = load_model()
     dataset_path = BASE_DIR / "data" / "bca_riil_partial_label.csv"
-    
+
     if not dataset_path.exists():
         print(f"Error: Dataset tidak ditemukan di {dataset_path}")
         return
 
     df = pd.read_csv(dataset_path)
-    total_transaksi = len(df)
-    print(f"Total Data Transaksi Riil BCA 2023 : {total_transaksi} baris\n")
+    df['dipakai_latih_ml'] = tandai_data_latih(df)
+    print(f"Total Data Transaksi Riil BCA 2023 : {len(df)} baris")
+    print(f"  - Pernah dipakai melatih model ML : {df['dipakai_latih_ml'].sum()} baris")
+    print(f"  - Data uji (belum pernah dilihat) : {(~df['dipakai_latih_ml']).sum()} baris\n")
 
     hasil_records = []
-    
-    # Counter Metrik
-    pool1_count = 0
-    pool1_benar = 0
-    
-    pool3_total = 0
-    pool3_kb_terekon = 0
-    pool3_kb_benar = 0
-    pool3_manual = 0
-
-    y_true_all = []
-    y_pred_all = []
 
     for _, row in df.iterrows():
         # Eksekusi pipeline integrasi
         res = klasifikasi_transaksi(row, model, vectorizer, threshold=0.66)
-        
+
         gt_kode = str(row['kode_akun_final']).strip()
         gt_nama = KATEGORI.get(gt_kode, {}).get('nama', 'Unknown')
-        
+
         # Ekstraksi kode akun dari hasil prediksi
         pred_kode = res.get('kode_akun', '')
         if not pred_kode:
@@ -65,35 +111,12 @@ def evaluasi_end_to_end():
             pred_nama = res.get('kategori_prediksi', '')
             pred_kode = NAMA_KE_KODE.get(pred_nama, 'UNKNOWN')
 
-        is_benar = (pred_kode == gt_kode)
-        
-        # Simpan untuk evaluasi per kategori
-        if pred_kode != 'UNKNOWN':
-            y_true_all.append(gt_kode)
-            y_pred_all.append(pred_kode)
-        else:
-            y_true_all.append(gt_kode)
-            y_pred_all.append('MANUAL_REVIEW')
-
-        # Klasifikasi Jalur
-        if res['pool'] == 'Pool 1 (Otomatis ML)':
-            pool1_count += 1
-            if is_benar:
-                pool1_benar += 1
-        else: # Pool 3
-            pool3_total += 1
-            if res['status'] == 'KB_TEREALISASI':
-                pool3_kb_terekon += 1
-                if is_benar:
-                    pool3_kb_benar += 1
-            else:
-                pool3_manual += 1
-
         hasil_records.append({
             'tanggal': row.get('tanggal', ''),
             'keterangan': row.get('keterangan', ''),
             'jenis': row.get('jenis', ''),
             'mutasi': row.get('mutasi', ''),
+            'dipakai_latih_ml': row['dipakai_latih_ml'],
             'kode_akun_groundtruth': gt_kode,
             'kategori_groundtruth': gt_nama,
             'jalur_pool': res['pool'],
@@ -102,7 +125,7 @@ def evaluasi_end_to_end():
             'kategori_prediksi': res['kategori_prediksi'],
             'metode_penyelesaian': res.get('metode', ''),
             'confidence_ml': res.get('confidence') or res.get('confidence_ml_awal', 0.0),
-            'evaluasi': 'TEPAT' if is_benar else 'SALAH'
+            'evaluasi': 'TEPAT' if pred_kode == gt_kode else 'SALAH'
         })
 
     df_hasil = pd.DataFrame(hasil_records)
@@ -112,44 +135,25 @@ def evaluasi_end_to_end():
 
     # --------------------------------------------------------------------------
     # REKAPITULASI METRIK UNTUK LAPORAN TUGAS AKHIR
+    # Metrik utama: data uji saja. Seluruh data hanya sebagai pembanding (terkena leakage).
     # --------------------------------------------------------------------------
-    total_otomatis = pool1_count + pool3_kb_terekon
-    total_benar = pool1_benar + pool3_kb_benar
-    
-    coverage_sistem = (total_otomatis / total_transaksi) * 100
-    akurasi_keseluruhan = (total_benar / total_otomatis) * 100 if total_otomatis > 0 else 0
-    akurasi_penyelamatan_kb = (pool3_kb_benar / pool3_kb_terekon) * 100 if pool3_kb_terekon > 0 else 0
-
-    print("=" * 75)
-    print("                RINGKASAN HASIL EVALUASI SISTEM")
-    print("=" * 75)
-    print(f"Total Dataset Transaksi Riil           : {total_transaksi} transaksi (100.0%)")
-    print("-" * 75)
-    print(f"1. POOL 1 - Otomatisasi ML (NLP)       : {pool1_count} transaksi ({pool1_count/total_transaksi*100:.1f}%)")
-    print(f"   - Akurasi Model ML                  : {pool1_benar}/{pool1_count} ({pool1_benar/pool1_count*100:.1f}%)")
+    df_uji = df_hasil[~df_hasil['dipakai_latih_ml']]
+    cetak_ringkasan(df_uji, "RINGKASAN HASIL EVALUASI - DATA UJI (METRIK UTAMA)")
     print()
-    print(f"2. POOL 3 - Rujukan Ambigu ke KB       : {pool3_total} transaksi ({pool3_total/total_transaksi*100:.1f}%)")
-    print(f"   - Berhasil Diselamatkan oleh KB     : {pool3_kb_terekon} transaksi ({pool3_kb_terekon/pool3_total*100:.1f}%)")
-    print(f"   - Akurasi Penyelamatan Aturan KB    : {pool3_kb_benar}/{pool3_kb_terekon} ({akurasi_penyelamatan_kb:.1f}%)")
-    print(f"   - Sisa Memerlukan Manual Review     : {pool3_manual} transaksi ({pool3_manual/total_transaksi*100:.1f}%)")
-    print("-" * 75)
-    print(f"TINGKAT OTOMASI SISTEM (Coverage)      : {total_otomatis}/{total_transaksi} ({coverage_sistem:.1f}%)")
-    print(f"AKURASI KESELURUHAN SISTEM TERVALIDASI : {total_benar}/{total_otomatis} ({akurasi_keseluruhan:.1f}%)")
-    print(f"REDUKSI BEBAN KERJA AKUNTAN MANUAL     : Memangkas {(total_otomatis/total_transaksi)*100:.1f}% pekerjaan!")
-    print("=" * 75)
+    cetak_ringkasan(df_hasil, "PEMBANDING - SELURUH DATA (termasuk data latih ML)")
 
     # --------------------------------------------------------------------------
-    # TABEL BREAKDOWN PER KATEGORI AKUN UTAMA
+    # TABEL BREAKDOWN PER KATEGORI AKUN UTAMA (DATA UJI)
     # --------------------------------------------------------------------------
-    print("\n=== BREAKDOWN PERFORMA PER KODE AKUN (COA) ===")
-    rekap_coa = df_hasil.groupby(['kode_akun_groundtruth', 'kategori_groundtruth']).agg(
+    print("\n=== BREAKDOWN PERFORMA PER KODE AKUN (COA) - DATA UJI ===")
+    rekap_coa = df_uji.groupby(['kode_akun_groundtruth', 'kategori_groundtruth']).agg(
         Total=('evaluasi', 'count'),
         Benar=('evaluasi', lambda x: (x == 'TEPAT').sum()),
         Otomatis_ML=('jalur_pool', lambda x: (x == 'Pool 1 (Otomatis ML)').sum()),
         Diselamatkan_KB=('status_akhir', lambda x: (x == 'KB_TEREALISASI').sum()),
         Manual_Review=('status_akhir', lambda x: (x == 'MANUAL_REVIEW').sum())
     ).reset_index()
-    
+
     rekap_coa['Akurasi_%'] = (rekap_coa['Benar'] / rekap_coa['Total'] * 100).round(1)
     rekap_coa = rekap_coa.sort_values(by='Total', ascending=False)
     print(rekap_coa.to_string(index=False))
