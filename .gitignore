@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+*.pyc
+.env
+
+# Data rahasia mitra (jangan di-push)
+data/CoA.xlsx
