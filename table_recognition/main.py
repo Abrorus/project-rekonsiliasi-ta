@@ -1,12 +1,29 @@
 import os
+import sys
+from pathlib import Path
 import argparse
 import json
 import logging
-from src.detector import detect_file_type
-from src.pipeline_digital import process_digital_pdf
-from src.pipeline_scan import process_scan_pdf
-from src.normalizer import normalize_data
-from src.deduplicator import deduplicate_records
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+TABLE_REC_DIR = Path(__file__).resolve().parent
+
+for p in (ROOT_DIR, TABLE_REC_DIR):
+    if str(p) not in sys.path:
+        sys.path.insert(0, str(p))
+
+try:
+    from table_recognition.src.detector import detect_file_type
+    from table_recognition.src.pipeline_digital import process_digital_pdf
+    from table_recognition.src.pipeline_scan import process_scan_pdf
+    from table_recognition.src.normalizer import normalize_data
+    from table_recognition.src.deduplicator import deduplicate_records
+except ImportError:
+    from src.detector import detect_file_type
+    from src.pipeline_digital import process_digital_pdf
+    from src.pipeline_scan import process_scan_pdf
+    from src.normalizer import normalize_data
+    from src.deduplicator import deduplicate_records
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)

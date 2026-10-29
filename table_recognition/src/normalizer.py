@@ -38,10 +38,10 @@ def parse_date(date_str: str, source_file: str) -> str:
     """Normalisasi tanggal. Menarik tahun dari file jika formatnya DD/MM."""
     if not date_str: return ""
     
-    parsed = dateparser.parse(date_str, languages=['id', 'en'])
+    parsed = dateparser.parse(date_str, languages=['id', 'en'], settings={'DATE_ORDER': 'DMY'})
     if not parsed:
         try:
-            parsed = pd.to_datetime(date_str)
+            parsed = pd.to_datetime(date_str, dayfirst=True)
         except:
             return date_str
             
@@ -65,43 +65,45 @@ def parse_amount(amount_str: str) -> float:
     except ValueError:
         return 0.0
 
-def normalize_data(raw_data: List[Dict], source_file: str) -> List[Dict]:
-    """Mengeksekusi normalisasi pada seluruh row transaksi."""
-    normalized_records = []
+def normalize_data(raw_records: List[Dict], source_file: str) -> List[Dict]:
+    """Penyelarasan seluruh field baris transaksi ke format Canonical SiRekon."""
+    normalized_list = []
+    filename = os.path.basename(source_file)
     
-    for row in raw_data:
-        std_row = standardize_headers(row)
+    for row in raw_records:
+        std = standardize_headers(row)
         
-        # Penanganan Kasus Khusus BCA: Kolom Mutasi (DB/CR)
-        if 'mutasi' in std_row and std_row['mutasi']:
-            mutasi_val = str(std_row['mutasi']).strip().upper()
-            amt = parse_amount(mutasi_val.replace('DB', '').replace('CR', ''))
-            if 'DB' in mutasi_val:
-                std_row['debit'], std_row['kredit'] = amt, 0.0
-            elif 'CR' in mutasi_val:
-                std_row['debit'], std_row['kredit'] = 0.0, amt
+        # Penanganan Kasus BNI: nominal tunggal + tipe C/D
+        debit = parse_amount(std.get('debit', '0'))
+        kredit = parse_amount(std.get('kredit', '0'))
+        
+        if 'nominal' in std and 'tipe' in std:
+            val = parse_amount(std['nominal'])
+            t = str(std['tipe']).upper()
+            if 'C' in t or 'CR' in t:
+                kredit = val
+            elif 'D' in t or 'DB' in t:
+                debit = val
                 
-        # Penanganan Kasus Khusus BNI: Nominal + Tipe
-        if 'nominal' in std_row and 'tipe' in std_row:
-            amt = parse_amount(std_row['nominal'])
-            tipe_val = str(std_row['tipe']).strip().upper()
-            if tipe_val == 'D':
-                std_row['debit'], std_row['kredit'] = amt, 0.0
-            elif tipe_val == 'C':
-                std_row['debit'], std_row['kredit'] = 0.0, amt
-
-        waktu = parse_date(std_row.get('waktu_transaksi', ''), source_file)
-        
-        record = {
-            'source_file': os.path.basename(source_file),
-            'waktu_transaksi': waktu,
-            'keterangan': std_row.get('keterangan', ''),
-            'debit': parse_amount(std_row.get('debit', 0.0)),
-            'kredit': parse_amount(std_row.get('kredit', 0.0)),
-            'saldo': parse_amount(std_row.get('saldo', 0.0))
+        # Kasus mutasi tunggal (BCA)
+        if 'mutasi' in std:
+            val = str(std['mutasi'])
+            if 'DB' in val.upper():
+                debit = parse_amount(val)
+            elif 'CR' in val.upper():
+                kredit = parse_amount(val)
+                
+        normalized_record = {
+            "source_file": filename,
+            "waktu_transaksi": parse_date(str(std.get('waktu_transaksi', '')), filename),
+            "keterangan": str(std.get('keterangan', '')).strip(),
+            "debit": debit,
+            "kredit": kredit,
+            "saldo": parse_amount(std.get('saldo', '0'))
         }
         
-        if record['waktu_transaksi'] or record['keterangan']:
-            normalized_records.append(record)
+        # Jangan masukkan baris kosong/header tersisa
+        if normalized_record['keterangan'] != '' or normalized_record['debit'] > 0 or normalized_record['kredit'] > 0:
+            normalized_list.append(normalized_record)
             
-    return normalized_records
+    return normalized_list

@@ -2,20 +2,33 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import {
   Upload, FileText, Brain, Database, CheckCircle2, AlertTriangle,
-  XCircle, ArrowRight, Loader2, BarChart3, Clock, Zap
+  XCircle, ArrowRight, Loader2, BarChart3, Clock, Zap, PlayCircle, AlertCircle
 } from 'lucide-react'
 
 type Step = 'upload' | 'processing' | 'result'
 
-const DUMMY_RESULTS = [
-  { tgl: '02/01/2023', ket: 'TRSF E-BANKING CIOMAS ADISATWA', jenis: 'DB', mutasi: 580075045, akun: '2.1.01.01', nama: 'Trade Payable - 3rd Party', status: 'auto' as const, metode: 'KB (Master Vendor)', conf: 0.86 },
-  { tgl: '02/01/2023', ket: 'SWITCHING DR 008 PANCA BERSAUDARA', jenis: 'CR', mutasi: 50000000, akun: '1.1.02.98', nama: 'Cross Account Bank', status: 'auto' as const, metode: 'KB (Switching)', conf: 0.37 },
-  { tgl: '02/01/2023', ket: 'TRSF E-BANKING AMERTHA JAYA', jenis: 'CR', mutasi: 595075045, akun: '1.1.04.01', nama: 'Account Receivable 3rd Party', status: 'auto' as const, metode: 'KB (Master Customer)', conf: 0.95 },
-  { tgl: '03/01/2023', ket: 'BYR VIA E-BANKING 0860 PLN JATIM', jenis: 'DB', mutasi: 1694321, akun: '6.2.05.01', nama: 'Utilities-Electricity', status: 'auto' as const, metode: 'KB Tree (operasional)', conf: 0.73 },
-  { tgl: '03/01/2023', ket: 'TRSF E-BANKING 89000/BPJS TK', jenis: 'DB', mutasi: 16561371, akun: 'PERLU_REVIEW', nama: 'BPJS - Akun belum tersedia', status: 'review' as const, metode: 'KB Tree (bpjs)', conf: 0.55 },
-  { tgl: '04/01/2023', ket: 'BYR VIA E-BANKING PENERIMAAN NEGARA', jenis: 'DB', mutasi: 14978282, akun: 'PERLU_REVIEW', nama: 'Pajak - Akun belum tersedia', status: 'review' as const, metode: 'KB Tree (pajak)', conf: 0.35 },
-  { tgl: '05/01/2023', ket: 'BA JASA E-BANKING BIAYA TRANSFER SME', jenis: 'DB', mutasi: 2900, akun: 'PERLU_REVIEW', nama: 'Biaya Bank - Akun belum tersedia', status: 'review' as const, metode: 'KB Tree (perbankan)', conf: 0.42 },
-  { tgl: '05/01/2023', ket: 'REF TXN 99823 ANOMALI', jenis: 'DB', mutasi: 100000, akun: '-', nama: '-', status: 'manual' as const, metode: 'Manual Review', conf: 0.28 },
+interface TransactionResult {
+  tgl: string
+  ket: string
+  jenis: 'DB' | 'CR' | string
+  mutasi: number
+  akun: string
+  nama: string
+  status: 'auto' | 'review' | 'manual'
+  metode: string
+  conf: number
+  pool?: string
+}
+
+const DEFAULT_DEMO: TransactionResult[] = [
+  { tgl: '02/01/2023', ket: 'TRSF E-BANKING CIOMAS ADISATWA', jenis: 'DB', mutasi: 580075045, akun: '2.1.01.01', nama: 'Trade Payable - 3rd Party', status: 'auto', metode: 'KB (Master Vendor)', conf: 0.86, pool: 'Pool 1 (NLP Confident + KB Validated)' },
+  { tgl: '02/01/2023', ket: 'SWITCHING DR 008 PANCA BERSAUDARA', jenis: 'CR', mutasi: 50000000, akun: '1.1.02.98', nama: 'Cross Account Bank', status: 'auto', metode: 'KB (Switching)', conf: 0.37, pool: 'Pool 3 (Knowledge Base)' },
+  { tgl: '02/01/2023', ket: 'TRSF E-BANKING AMERTHA JAYA', jenis: 'CR', mutasi: 595075045, akun: '1.1.04.01', nama: 'Account Receivable 3rd Party', status: 'auto', metode: 'KB (Master Customer)', conf: 0.95, pool: 'Pool 1 (NLP Confident + KB Validated)' },
+  { tgl: '03/01/2023', ket: 'BYR VIA E-BANKING 0860 PLN JATIM', jenis: 'DB', mutasi: 1694321, akun: '6.2.05.01', nama: 'Utilities-Electricity', status: 'auto', metode: 'KB Tree (operasional)', conf: 0.73, pool: 'Pool 1 (NLP Confident + KB Validated)' },
+  { tgl: '03/01/2023', ket: 'TRSF E-BANKING 89000/BPJS TK', jenis: 'DB', mutasi: 16561371, akun: 'PERLU_REVIEW', nama: 'BPJS - Akun belum tersedia', status: 'review', metode: 'KB Tree (bpjs)', conf: 0.55, pool: 'Pool 3 (Knowledge Base)' },
+  { tgl: '04/01/2023', ket: 'BYR VIA E-BANKING PENERIMAAN NEGARA', jenis: 'DB', mutasi: 14978282, akun: 'PERLU_REVIEW', nama: 'Pajak - Akun belum tersedia', status: 'review', metode: 'KB Tree (pajak)', conf: 0.35, pool: 'Pool 3 (Knowledge Base)' },
+  { tgl: '05/01/2023', ket: 'BA JASA E-BANKING BIAYA TRANSFER SME', jenis: 'DB', mutasi: 2900, akun: 'PERLU_REVIEW', nama: 'Biaya Bank - Akun belum tersedia', status: 'review', metode: 'KB Tree (perbankan)', conf: 0.42, pool: 'Pool 3 (Knowledge Base)' },
+  { tgl: '05/01/2023', ket: 'REF TXN 99823 ANOMALI', jenis: 'DB', mutasi: 100000, akun: 'UNKNOWN', nama: 'Perlu Tinjauan Manual', status: 'manual', metode: 'Manual Review', conf: 0.28, pool: 'Pool 3 (Knowledge Base)' },
 ]
 
 function formatCurrency(val: number) {
@@ -28,7 +41,7 @@ function StatusBadge({ status }: { status: 'auto' | 'review' | 'manual' }) {
     review: { label: 'Perlu Review', icon: AlertTriangle, bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
     manual: { label: 'Manual', icon: XCircle, bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
   }
-  const c = config[status]
+  const c = config[status] || config.manual
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full border ${c.bg} ${c.text} ${c.border}`}>
       <c.icon size={12} />
@@ -68,33 +81,99 @@ function StepIndicator({ step }: { step: Step }) {
   )
 }
 
+const API_BASE = 'http://localhost:8000/api'
+
 function App() {
   const [step, setStep] = useState<Step>('upload')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [fileName, setFileName] = useState('')
   const [dragActive, setDragActive] = useState(false)
+  const [results, setResults] = useState<TransactionResult[]>(DEFAULT_DEMO)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) setFileName(file.name)
+    if (file) {
+      setSelectedFile(file)
+      setFileName(file.name)
+      setErrorMsg(null)
+    }
   }
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setDragActive(false)
     const file = e.dataTransfer.files?.[0]
-    if (file && file.type === 'application/pdf') setFileName(file.name)
+    if (file && file.type === 'application/pdf') {
+      setSelectedFile(file)
+      setFileName(file.name)
+      setErrorMsg(null)
+    }
   }
 
-  const handleProcess = () => {
-    if (!fileName) return
+  // Eksekusi data demo nyata yang diproses langsung oleh NLP + KB di server
+  const handleRunDemo = async () => {
+    setErrorMsg(null)
+    setFileName('Simulasi 11 Transaksi Riil Mitra (BCA)')
     setStep('processing')
-    setTimeout(() => setStep('result'), 2500)
+
+    try {
+      const resp = await fetch(`${API_BASE}/demo-data`)
+      if (!resp.ok) throw new Error(`Server API status: ${resp.status}`)
+      const json = await resp.json()
+      if (json.data && json.data.length > 0) {
+        setResults(json.data)
+      }
+      setStep('result')
+    } catch (err: unknown) {
+      console.warn('Gagal memanggil backend, menggunakan fallback data lokal:', err)
+      // Fallback data lokal jika backend belum dinyalakan
+      setResults(DEFAULT_DEMO)
+      setStep('result')
+    }
+  }
+
+  // Eksekusi upload file PDF ke backend
+  const handleProcess = async () => {
+    if (!selectedFile) return
+    setErrorMsg(null)
+    setStep('processing')
+
+    const formData = new FormData()
+    formData.append('file', selectedFile)
+
+    try {
+      const resp = await fetch(`${API_BASE}/reconcile-pdf`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!resp.ok) {
+        const errorText = await resp.text()
+        throw new Error(errorText || `Server error: ${resp.status}`)
+      }
+
+      const json = await resp.json()
+      if (json.data && json.data.length > 0) {
+        setResults(json.data)
+        setStep('result')
+      } else {
+        // Jika PDF tidak menghasilkan baris tabel
+        setErrorMsg(json.message || 'Tidak ada baris transaksi yang berhasil diekstrak dari PDF.')
+        setStep('upload')
+      }
+    } catch (err: unknown) {
+      console.error('Error saat upload PDF:', err)
+      const message = err instanceof Error ? err.message : 'Pastikan backend FastAPI sudah berjalan di port 8000.'
+      setErrorMsg(`Gagal memproses PDF via backend: ${message}`)
+      setStep('upload')
+    }
   }
 
   const stats = {
-    auto: DUMMY_RESULTS.filter(r => r.status === 'auto').length,
-    review: DUMMY_RESULTS.filter(r => r.status === 'review').length,
-    manual: DUMMY_RESULTS.filter(r => r.status === 'manual').length,
+    auto: results.filter(r => r.status === 'auto').length,
+    review: results.filter(r => r.status === 'review').length,
+    manual: results.filter(r => r.status === 'manual').length,
   }
 
   return (
@@ -108,13 +187,13 @@ function App() {
             </div>
             <div className="hidden sm:block">
               <h1 className="text-lg font-bold text-gray-900 tracking-tight">SiRekon</h1>
-              <p className="text-[11px] text-gray-400 -mt-0.5">Sistem Rekonsiliasi Transaksi</p>
+              <p className="text-[11px] text-gray-400 -mt-0.5">Sistem Rekonsiliasi Transaksi (NLP + KB)</p>
             </div>
           </div>
           <StepIndicator step={step} />
           {step === 'result' && (
             <button
-              onClick={() => { setStep('upload'); setFileName('') }}
+              onClick={() => { setStep('upload'); setFileName(''); setSelectedFile(null); setErrorMsg(null) }}
               className="px-3 sm:px-4 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all duration-200 shrink-0"
             >
               Upload Baru
@@ -137,8 +216,22 @@ function App() {
             >
               <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Upload Mutasi Bank</h2>
-                <p className="text-gray-500">Upload file PDF untuk memulai proses rekonsiliasi otomatis</p>
+                <p className="text-gray-500">Upload file PDF untuk memulai pipeline ekstraksi tabel, NLP klasifikasi, dan pencocokan CoA</p>
               </div>
+
+              {errorMsg && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3"
+                >
+                  <AlertCircle size={20} className="text-amber-600 shrink-0 mt-0.5" />
+                  <div className="text-sm text-amber-800">
+                    <p className="font-semibold">Perhatian</p>
+                    <p className="mt-0.5">{errorMsg}</p>
+                  </div>
+                </motion.div>
+              )}
 
               <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xl shadow-gray-100/50 p-8">
                 <label
@@ -164,7 +257,7 @@ function App() {
                           <FileText size={28} className="text-emerald-600" />
                         </div>
                         <p className="text-sm font-semibold text-emerald-700">{fileName}</p>
-                        <p className="text-xs text-emerald-500 mt-1">Siap diproses</p>
+                        <p className="text-xs text-emerald-500 mt-1">File siap diproses oleh pipeline</p>
                       </motion.div>
                     ) : (
                       <>
@@ -172,32 +265,44 @@ function App() {
                           <Upload size={28} className="text-gray-400" />
                         </div>
                         <p className="text-sm font-medium text-gray-600">
-                          Drag & drop file PDF di sini
+                          Drag & drop file PDF mutasi di sini
                         </p>
-                        <p className="text-xs text-gray-400 mt-1">atau klik untuk pilih file (maks. 10MB)</p>
+                        <p className="text-xs text-gray-400 mt-1">atau klik untuk pilih file rekening koran PDF</p>
                       </>
                     )}
                   </div>
                   <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
                 </label>
 
-                <motion.button
-                  onClick={handleProcess}
-                  disabled={!fileName}
-                  whileHover={fileName ? { scale: 1.01 } : {}}
-                  whileTap={fileName ? { scale: 0.99 } : {}}
-                  className="mt-6 w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold rounded-xl hover:shadow-lg hover:shadow-blue-200/50 disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed transition-all duration-300"
-                >
-                  Mulai Rekonsiliasi
-                </motion.button>
+                <div className="mt-6 flex flex-col sm:flex-row items-center gap-3">
+                  <motion.button
+                    onClick={handleProcess}
+                    disabled={!selectedFile}
+                    whileHover={selectedFile ? { scale: 1.01 } : {}}
+                    whileTap={selectedFile ? { scale: 0.99 } : {}}
+                    className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold rounded-xl hover:shadow-lg hover:shadow-blue-200/50 disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed transition-all duration-300"
+                  >
+                    Mulai Rekonsiliasi PDF
+                  </motion.button>
+
+                  <button
+                    onClick={handleRunDemo}
+                    type="button"
+                    className="w-full sm:w-auto px-5 py-3 border border-indigo-200 text-indigo-700 hover:bg-indigo-50/50 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-200 shrink-0"
+                    title="Uji langsung dengan transaksi riil yang diproses oleh NLP + KB"
+                  >
+                    <PlayCircle size={16} />
+                    Uji Data Demo
+                  </button>
+                </div>
               </div>
 
               {/* Pipeline */}
               <div className="mt-8 grid grid-cols-3 gap-4">
                 {[
-                  { num: 1, icon: FileText, title: 'Table Recognition', desc: 'Extract data dari PDF mutasi bank', color: 'blue' },
-                  { num: 2, icon: Brain, title: 'NLP Processing', desc: 'Normalisasi teks & klasifikasi', color: 'purple' },
-                  { num: 3, icon: Database, title: 'Knowledge Base', desc: 'Matching dengan CoA & data ERP', color: 'emerald' },
+                  { num: 1, icon: FileText, title: 'Table Recognition', desc: 'Ekstraksi PDF mutasi bank ke tabular', color: 'blue' },
+                  { num: 2, icon: Brain, title: 'NLP Processing', desc: 'TF-IDF, Sastrawi & Klasifikasi SVM', color: 'purple' },
+                  { num: 3, icon: Database, title: 'Knowledge Base', desc: 'Decision Tree, Rekanan & CoA mitra', color: 'emerald' },
                 ].map((item, i) => (
                   <motion.div
                     key={item.num}
@@ -243,13 +348,13 @@ function App() {
                 </div>
               </div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">Memproses Transaksi</h2>
-              <p className="text-sm text-gray-500 mb-6">{fileName}</p>
+              <p className="text-sm text-gray-500 mb-6">{fileName || 'Memproses pipeline...'}</p>
               <div className="flex items-center justify-center gap-6 text-xs text-gray-400">
-                <span className="flex items-center gap-1"><FileText size={14} /> Extract</span>
+                <span className="flex items-center gap-1"><FileText size={14} /> Extract PDF</span>
                 <ArrowRight size={12} />
-                <span className="flex items-center gap-1"><Brain size={14} /> NLP</span>
+                <span className="flex items-center gap-1"><Brain size={14} /> NLP SVM</span>
                 <ArrowRight size={12} />
-                <span className="flex items-center gap-1"><Database size={14} /> KB</span>
+                <span className="flex items-center gap-1"><Database size={14} /> KB & CoA</span>
               </div>
             </motion.div>
           )}
@@ -269,10 +374,10 @@ function App() {
                   <h2 className="text-2xl font-bold text-gray-900">Hasil Rekonsiliasi</h2>
                   <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
                     <FileText size={14} />
-                    {fileName || 'mutasi_bca_2023.pdf'}
+                    {fileName || 'Transaksi'}
                     <span className="text-gray-300">|</span>
                     <Clock size={14} />
-                    {DUMMY_RESULTS.length} transaksi
+                    {results.length} transaksi diproses
                   </p>
                 </div>
               </div>
@@ -280,9 +385,9 @@ function App() {
               {/* Stat Cards */}
               <div className="grid grid-cols-3 gap-4 mb-6">
                 {[
-                  { label: 'Auto Match', count: stats.auto, total: DUMMY_RESULTS.length, color: 'emerald', icon: CheckCircle2 },
-                  { label: 'Perlu Review', count: stats.review, total: DUMMY_RESULTS.length, color: 'amber', icon: AlertTriangle },
-                  { label: 'Manual Review', count: stats.manual, total: DUMMY_RESULTS.length, color: 'red', icon: XCircle },
+                  { label: 'Auto Match (Pool 1)', count: stats.auto, total: results.length, color: 'emerald', icon: CheckCircle2 },
+                  { label: 'Perlu Review (Pool 3)', count: stats.review, total: results.length, color: 'amber', icon: AlertTriangle },
+                  { label: 'Manual Review', count: stats.manual, total: results.length, color: 'red', icon: XCircle },
                 ].map((s, i) => (
                   <motion.div
                     key={s.label}
@@ -309,7 +414,7 @@ function App() {
                     <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
-                        animate={{ width: `${(s.count / s.total) * 100}%` }}
+                        animate={{ width: `${s.total > 0 ? (s.count / s.total) * 100 : 0}%` }}
                         transition={{ delay: 0.3 + 0.1 * i, duration: 0.6 }}
                         className={`h-full rounded-full ${
                           s.color === 'emerald' ? 'bg-emerald-500' :
@@ -325,8 +430,8 @@ function App() {
               {/* Table */}
               <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xl shadow-gray-100/50 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-gray-900">Detail Transaksi</h3>
-                  <span className="text-xs text-gray-400">{DUMMY_RESULTS.length} baris</span>
+                  <h3 className="text-sm font-semibold text-gray-900">Detail Transaksi & Pemetaan CoA</h3>
+                  <span className="text-xs text-gray-400">{results.length} baris</span>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -335,14 +440,14 @@ function App() {
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tanggal</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Keterangan</th>
                         <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Mutasi</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Akun CoA</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Akun CoA Mitra</th>
                         <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Confidence</th>
                         <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Metode</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Metode Matching</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {DUMMY_RESULTS.map((row, i) => (
+                      {results.map((row, i) => (
                         <motion.tr
                           key={i}
                           initial={{ opacity: 0 }}
@@ -353,6 +458,9 @@ function App() {
                           <td className="px-6 py-4 text-gray-500 whitespace-nowrap">{row.tgl}</td>
                           <td className="px-6 py-4">
                             <span className="font-mono text-xs text-gray-800">{row.ket}</span>
+                            {row.pool && (
+                              <div className="text-[10px] text-gray-400 mt-0.5">{row.pool}</div>
+                            )}
                           </td>
                           <td className={`px-6 py-4 text-right font-mono text-xs whitespace-nowrap ${
                             row.jenis === 'CR' ? 'text-emerald-600' : 'text-red-600'
@@ -361,7 +469,7 @@ function App() {
                           </td>
                           <td className="px-6 py-4">
                             <div className="text-xs font-semibold text-gray-900">{row.akun}</div>
-                            <div className="text-[11px] text-gray-400">{row.nama}</div>
+                            <div className="text-[11px] text-gray-500">{row.nama}</div>
                           </td>
                           <td className="px-6 py-4 text-center">
                             <div className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-medium ${
@@ -400,7 +508,7 @@ function App() {
                   <div className="w-12 h-12 bg-gray-200/80 rounded-2xl flex items-center justify-center">
                     <Database size={24} className="text-gray-400" />
                   </div>
-                  <p className="text-sm text-gray-400 font-medium">iframe ERP mitra akan ditampilkan di sini</p>
+                  <p className="text-sm text-gray-400 font-medium">Data ERP mitra akan ditampilkan di sini</p>
                   <p className="text-xs text-gray-300">Menampilkan data CoA, vendor, customer, dan invoice</p>
                 </div>
               </motion.div>

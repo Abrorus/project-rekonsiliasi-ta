@@ -1,6 +1,17 @@
+import sys
+from pathlib import Path
 import unittest
-from src.normalizer import parse_amount, parse_date
-from src.evaluator import calculate_iou, levenshtein_distance
+
+TABLE_REC_DIR = Path(__file__).resolve().parent.parent
+if str(TABLE_REC_DIR) not in sys.path:
+    sys.path.insert(0, str(TABLE_REC_DIR))
+
+try:
+    from table_recognition.src.normalizer import parse_amount, parse_date
+    from table_recognition.src.evaluator import calculate_iou, levenshtein_distance
+except ImportError:
+    from src.normalizer import parse_amount, parse_date
+    from src.evaluator import calculate_iou, levenshtein_distance
 
 class TestPipelineCore(unittest.TestCase):
     
