@@ -12,9 +12,11 @@ if str(SRC_DIR) not in sys.path:
 try:
     from routing import load_model, klasifikasi_transaksi
     from knowledge_base.kategori_keuangan import KATEGORI
+    from knowledge_base.coa import MAPPING_LAMA_KE_COA
 except ImportError:
     from src.routing import load_model, klasifikasi_transaksi
     from src.knowledge_base.kategori_keuangan import KATEGORI
+    from src.knowledge_base.coa import MAPPING_LAMA_KE_COA
 
 # Mapping nama kategori ke kode akun untuk verifikasi ML
 NAMA_KE_KODE = {v['nama']: k for k, v in KATEGORI.items()}
@@ -45,8 +47,8 @@ def tandai_data_latih(df):
 
 def cetak_ringkasan(df_hasil, judul):
     total = len(df_hasil)
-    pool1 = df_hasil[df_hasil['jalur_pool'] == 'Pool 1 (Otomatis ML)']
-    pool3 = df_hasil[df_hasil['jalur_pool'] != 'Pool 1 (Otomatis ML)']
+    pool1 = df_hasil[df_hasil['jalur_pool'].str.contains('Pool 1', na=False)]
+    pool3 = df_hasil[~df_hasil['jalur_pool'].str.contains('Pool 1', na=False)]
     pool3_kb = pool3[pool3['status_akhir'] == 'KB_TEREALISASI']
     pool3_manual = pool3[pool3['status_akhir'] == 'MANUAL_REVIEW']
 
@@ -103,6 +105,7 @@ def evaluasi_end_to_end():
 
         gt_kode = str(row['kode_akun_final']).strip()
         gt_nama = KATEGORI.get(gt_kode, {}).get('nama', 'Unknown')
+        expected_coa = MAPPING_LAMA_KE_COA.get(gt_kode, gt_kode)
 
         # Ekstraksi kode akun dari hasil prediksi
         pred_kode = res.get('kode_akun', '')
@@ -119,13 +122,14 @@ def evaluasi_end_to_end():
             'dipakai_latih_ml': row['dipakai_latih_ml'],
             'kode_akun_groundtruth': gt_kode,
             'kategori_groundtruth': gt_nama,
+            'expected_coa': expected_coa,
             'jalur_pool': res['pool'],
             'status_akhir': res['status'],
             'kode_akun_prediksi': pred_kode,
             'kategori_prediksi': res['kategori_prediksi'],
             'metode_penyelesaian': res.get('metode', ''),
             'confidence_ml': res.get('confidence') or res.get('confidence_ml_awal', 0.0),
-            'evaluasi': 'TEPAT' if pred_kode == gt_kode else 'SALAH'
+            'evaluasi': 'TEPAT' if pred_kode == expected_coa else 'SALAH'
         })
 
     df_hasil = pd.DataFrame(hasil_records)
@@ -146,10 +150,10 @@ def evaluasi_end_to_end():
     # TABEL BREAKDOWN PER KATEGORI AKUN UTAMA (DATA UJI)
     # --------------------------------------------------------------------------
     print("\n=== BREAKDOWN PERFORMA PER KODE AKUN (COA) - DATA UJI ===")
-    rekap_coa = df_uji.groupby(['kode_akun_groundtruth', 'kategori_groundtruth']).agg(
+    rekap_coa = df_uji.groupby(['kode_akun_groundtruth', 'expected_coa', 'kategori_groundtruth']).agg(
         Total=('evaluasi', 'count'),
         Benar=('evaluasi', lambda x: (x == 'TEPAT').sum()),
-        Otomatis_ML=('jalur_pool', lambda x: (x == 'Pool 1 (Otomatis ML)').sum()),
+        Otomatis_ML=('jalur_pool', lambda x: x.str.contains('Pool 1').sum()),
         Diselamatkan_KB=('status_akhir', lambda x: (x == 'KB_TEREALISASI').sum()),
         Manual_Review=('status_akhir', lambda x: (x == 'MANUAL_REVIEW').sum())
     ).reset_index()

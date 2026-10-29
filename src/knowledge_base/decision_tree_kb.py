@@ -24,7 +24,7 @@ DECISION_TREE = {
     "perpajakan_negara": {
         "keywords": ["penerimaan negara", "pajak", "setoran negara", "pph", "ppn", "mpn"],
         "sub_rules": [
-            (["penerimaan negara", "pajak", "setoran negara", "pph", "ppn", "mpn"], "PERLU_REVIEW")  # Pajak — akun posting belum pasti
+            (["penerimaan negara", "pajak", "setoran negara", "pph", "ppn", "mpn"], "PERLU_REVIEW")  # Pajak — akun posting belum pasti di CoA mitra
         ]
     },
     "bpjs": {
@@ -41,11 +41,22 @@ DECISION_TREE = {
         ]
     },
     "perbankan": {
-        "keywords": ["biaya adm", "adm bank", "biaya transfer", "biaya txn", "ba jasa", "admin", "biaya bank", "tolakan", "nd-biaya tolakan", "nd-lainnya", "bunga bank", "jasa giro", "bunga simpanan"],
+        "keywords": [
+            "biaya adm", "adm bank", "biaya transfer", "biaya txn", "ba jasa", "admin",
+            "biaya bank", "tolakan", "nd-biaya tolakan", "nd-lainnya", "bunga bank",
+            "jasa giro", "bunga simpanan", "saldo min", "peng saldo min"
+        ],
         "sub_rules": [
-            (["biaya adm", "adm bank", "biaya transfer", "biaya txn", "ba jasa", "admin", "biaya bank"], "PERLU_REVIEW"),  # Biaya Admin Bank — akun belum ada di CoA mitra
-            (["tolakan", "nd-biaya tolakan", "nd-lainnya"], "PERLU_REVIEW"),  # Biaya Tolakan — akun belum ada di CoA mitra
-            (["bunga bank", "jasa giro", "bunga simpanan"], "PERLU_REVIEW")   # Bunga Bank — akun belum ada di CoA mitra
+            (["biaya adm", "adm bank", "biaya transfer", "biaya txn", "ba jasa", "admin", "biaya bank", "saldo min", "peng saldo min"], "PERLU_REVIEW"),  # Biaya Admin Bank
+            (["tolakan", "nd-biaya tolakan", "nd-lainnya"], "PERLU_REVIEW"),  # Biaya Tolakan
+            (["bunga bank", "jasa giro", "bunga simpanan"], "PERLU_REVIEW")   # Bunga Bank
+        ]
+    },
+    "pendapatan_sewa": {
+        "keywords": ["sewa cs", "cold storage", "jasa sewa", "sewa tempat"],
+        "context_rules": [
+            {"jenis": "CR", "kode": "PERLU_REVIEW"},  # Pendapatan Sewa Cold Storage / Tempat
+            {"jenis": "DB", "kode": "PERLU_REVIEW"}   # Biaya Sewa
         ]
     },
     "operasional": {
@@ -131,6 +142,12 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None, nlp_output=None):
     teks_lower = teks.lower()
     jenis_norm = _normalisasi_jenis(jenis)
 
+    # Parsing angka mutasi float untuk verifikasi nominal kecil
+    try:
+        mutasi_val = float(str(mutasi or 0).replace(',', ''))
+    except (ValueError, TypeError):
+        mutasi_val = 0.0
+
     # Jika NLP confidence tinggi, gunakan juga teks bersih dari NLP untuk matching
     teks_bersih_lower = None
     if nlp_output and nlp_output.get("confidence_tinggi"):
@@ -153,6 +170,18 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None, nlp_output=None):
 
             if "context_rules" in data:
                 if jenis_norm == "DB":
+                    # Khusus switching / bi-fast: periksa apakah ada biaya transaksi bank
+                    if _cek_keyword(["biaya txn", "biaya transfer"]) or (mutasi_val > 0 and mutasi_val <= 6500 and "biaya" in teks_lower):
+                        return {
+                            "teks_input": teks,
+                            "jenis": jenis_norm,
+                            "mutasi": mutasi,
+                            "kode_akun": "PERLU_REVIEW",
+                            "kategori_prediksi": "PERLU_REVIEW - Biaya Administrasi Perbankan",
+                            "status": "KB_TEREALISASI",
+                            "metode": f"KB Tree (perbankan -> Biaya Admin Transfer)"
+                        }
+
                     rek_res = resolve_rekanan(teks, jenis="DB")
                     if rek_res and "Master Vendor" in rek_res.get("metode", ""):
                         return {
@@ -168,7 +197,9 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None, nlp_output=None):
                 for c_rule in data["context_rules"]:
                     if jenis_norm == c_rule["jenis"]:
                         kode_akun = c_rule["kode"]
-                        nama_akun = KATEGORI.get(kode_akun, {}).get("nama", "Unknown")
+                        nama_akun = KATEGORI.get(kode_akun, {}).get("nama", "Akun Belum Terdaftar")
+                        if kode_akun == "PERLU_REVIEW":
+                            nama_akun = "Akun Belum Tersedia di CoA Mitra"
                         return {
                             "teks_input": teks,
                             "jenis": jenis_norm,
@@ -195,6 +226,8 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None, nlp_output=None):
                 for ciri_khas, kode_akun in data["sub_rules"]:
                     if _cek_keyword(ciri_khas):
                         nama_akun = KATEGORI.get(kode_akun, {}).get("nama", "Unknown")
+                        if kode_akun == "PERLU_REVIEW":
+                            nama_akun = "Akun Belum Tersedia di CoA Mitra"
                         return {
                             "teks_input": teks,
                             "jenis": jenis_norm,
@@ -271,6 +304,9 @@ if __name__ == "__main__":
         ("SETORAN TUNAI 0465 PANCA BERSAUDARA", "CR", "520,716,650.00"),
         ("SWITCHING TRANSFER DR 008 PANCA BERSAUDARA", "CR", "50,000,000.00"),
         ("SWITCHING TRANSFER KE 009 SENTOT PRABOWO", "DB", "15,000,000.00"),
+        ("BI-FAST BIF BIAYA TXN KE GUNTUR CENTRA A KBB", "DB", "2,500.00"),
+        ("TRSF E-BANKING BAYAR JASA SEWA CS", "CR", "1,000,000.00"),
+        ("TRSF E-BANKING MAJU MAPAN BAHAGIA", "DB", "70,465,000.00"),
         ("Pembayaran tagihan internet indihome", "DB", "450,000.00"),
         ("Transaksi aneh yang tidak ada di kamus", "DB", "100,000.00")
     ]

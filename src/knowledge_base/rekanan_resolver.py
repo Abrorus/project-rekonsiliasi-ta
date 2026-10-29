@@ -3,7 +3,7 @@ import re
 # ==============================================================================
 # KAMUS & LOGIKA RESOLUSI REKANAN (VENDOR & CUSTOMER RESOLVER)
 # Modul ini bertugas mengekstrak nama pihak lawan transaksi dari keterangan bank
-# dan memetakannya ke akun Customer (4-2000) atau Vendor (6-5000).
+# dan memetakannya ke akun Customer (4-2000 / 1.1.04.01) atau Vendor (6-5000 / 2.1.01.01).
 # ==============================================================================
 
 # Kata-kata operasional/keterangan yang bukan nama rekanan
@@ -121,6 +121,15 @@ def resolve_rekanan(keterangan, jenis=None):
     # 2. Cek apakah cocok dengan Master Customers yang sudah terdaftar
     for cust in MASTER_CUSTOMERS:
         if _mengandung(cust, nama_pihak):
+            # Jika jenis mutasi DB (uang keluar), perlakuan akuntansi adalah pembayaran vendor / kontraktor / rekanan
+            if j == "DB":
+                return {
+                    'nama_pihak': nama_pihak,
+                    'kode_akun': '2.1.01.01',
+                    'nama_kategori': 'Trade Payable-Local',
+                    'status': 'KB_TEREALISASI',
+                    'metode': f'Master Partner DB ({cust} -> Vendor)'
+                }
             return {
                 'nama_pihak': nama_pihak,
                 'kode_akun': '1.1.04.01',
@@ -143,41 +152,44 @@ def resolve_rekanan(keterangan, jenis=None):
     # 4. Aturan Default Bisnis: Jika ada nama pihak yang jelas, tentukan berdasarkan jenis mutasi (CR/DB)
     # Di perbankan, uang masuk (CR) dari pihak ketiga umumnya piutang customer, sedangkan uang keluar (DB) adalah vendor.
     # Hanya berlaku untuk transaksi transfer; selain itu dikembalikan None agar menuju Manual Review.
-    if not _ada_jalur_transfer(keterangan):
-        return None
-
-    if j == 'CR':
-        return {
-            'nama_pihak': nama_pihak,
-            'kode_akun': '1.1.04.01',
-            'nama_kategori': 'Trade Receivable-Local',
-            'status': 'KB_TEREALISASI',
-            'metode': 'Aturan Rekanan Bisnis (CR -> Customer)'
-        }
-    elif j == 'DB':
-        return {
-            'nama_pihak': nama_pihak,
-            'kode_akun': '2.1.01.01',
-            'nama_kategori': 'Trade Payable-Local',
-            'status': 'KB_TEREALISASI',
-            'metode': 'Aturan Rekanan Bisnis (DB -> Vendor)'
-        }
+    if _ada_jalur_transfer(keterangan):
+        if j == "CR":
+            return {
+                'nama_pihak': nama_pihak,
+                'kode_akun': '1.1.04.01',
+                'nama_kategori': 'Trade Receivable-Local',
+                'status': 'KB_TEREALISASI',
+                'metode': 'Aturan Rekanan Bisnis (CR -> Customer)'
+            }
+        elif j == "DB":
+            return {
+                'nama_pihak': nama_pihak,
+                'kode_akun': '2.1.01.01',
+                'nama_kategori': 'Trade Payable-Local',
+                'status': 'KB_TEREALISASI',
+                'metode': 'Aturan Rekanan Bisnis (DB -> Vendor)'
+            }
 
     return None
 
 if __name__ == '__main__':
-    contoh = [
-        ("TRSF E-BANKING AMERTHA JAYA", "CR"),
+    print("=== TEST REKANAN RESOLVER ===")
+    test_cases = [
+        ("TRSF E-BANKING CR 0707/FTSCY/WS95051 16561371.00 PUTU SADNYANA", "CR"),
+        ("TRSF E-BANKING DB 0707/FTFVA/WS95051 89000/BPJS TK", "DB"),
+        ("TRSF E-BANKING CR 1007/FTSCY/WS95051 15546634.00 PRANAFOOD", "CR"),
         ("TRSF E-BANKING CIOMAS ADISATWA", "DB"),
-        ("TRSF E-BANKING pengisian saldo min DARBE JAYA ABADI P", "DB"),
-        ("TRSF E-BANKING PUTU SADNYANA", "CR"),
-        ("TRSF E-BANKING BAREKA LINTAS INDO", "DB"),
-        ("TRSF E-BANKING TOKO BARU SEJAHTERA", "CR"),
+        ("SWITCHING TRANSFER KE 009 SENTOT PRABOWO", "DB"),
+        ("TRSF E-BANKING bayar ayam darbe 3.384 x 19.200 ALKAFIE JAYA ABADI", "DB"),
+        ("TRSF E-BANKING MAJU MAPAN BAHAGIA", "DB"),
+        ("TRSF E-BANKING MAJU MAPAN BAHAGIA", "CR"),
+        ("TRSF E-BANKING M. FAUZI", "DB"),
+        ("REF TXN 99823 ANOMALI", "DB")
     ]
-    print("=== PENGUJIAN RESOLVER REKANAN ===")
-    for teks, jenis in contoh:
-        res = resolve_rekanan(teks, jenis)
-        print(f"Input    : {teks} [{jenis}]")
-        print(f"Ekstrak  : {res['nama_pihak']}")
-        print(f"Kategori : {res['kode_akun']} - {res['nama_kategori']}")
-        print(f"Metode   : {res['metode']}\n")
+
+    for teks, jenis in test_cases:
+        res = resolve_rekanan(teks, jenis=jenis)
+        if res:
+            print(f"[{jenis}] {teks[:45]:<45} -> {res['kode_akun']} ({res['nama_pihak']}) via {res['metode']}")
+        else:
+            print(f"[{jenis}] {teks[:45]:<45} -> Tidak Teridentifikasi (Lanjut ke NLP / Manual Review)")
