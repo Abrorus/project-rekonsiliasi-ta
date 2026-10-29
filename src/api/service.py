@@ -4,8 +4,8 @@ Business logic layer — menghubungkan API dengan KB modules dan database.
 
 from api.db import get_supabase, CLIENT_ID
 
-# Import KB modules
-from knowledge_base.decision_tree_kb import klasifikasi_kb
+# Import KB Engine (baca dari Supabase, fallback ke hardcoded)
+from knowledge_base.kb_engine import klasifikasi_kb_db as klasifikasi_kb
 from knowledge_base.coa import konversi_kode, MAPPING_LAMA_KE_COA
 from knowledge_base.kategori_keuangan import KATEGORI
 
