@@ -1,2 +1,17 @@
 # project-rekonsiliasi-ta
-Adalah project TA dari abror, arya dan mario
+Project TA Abror, Arya, dan Mario — SIREKON. Bagian ini: **Pool 2 (modul NLP)**, klasifikasi keterangan transaksi ke sub-kategori CoA.
+
+## Urutan menjalankan (dari folder `src`, venv aktif)
+| Langkah | Perintah | Keluaran |
+|---|---|---|
+| 1. Siapkan & labeli data | `python siapkan_data_coa.py` | `data/data_riil_berlabel_coa.csv`, bahan validasi 20% |
+| 2. Metrik preprocessing | `python metrik_preprocessing.py` | `data/hasil_metrik_preprocessing.csv` |
+| 3. Latih & uji (CV, lintas-bank) | `python latih_model_coa.py` | `models/model_coa_final.pkl` |
+| 4. Bandingkan SVM/RF/SBERT/FinBERT | `python bandingkan_model_coa.py` | `data/hasil_banding_model_coa.csv` (SBERT/FinBERT: set `HF_HUB_OFFLINE=1` bila model sudah ter-cache) |
+| 5. Tentukan threshold | `python threshold_coa.py` | `models/threshold_coa.json` |
+| 6. Simulasi routing | `python routing.py` | — |
+| 7. Plugin web / REST API | `python plugin_server.py 8000` | UI di `http://127.0.0.1:8000`, `POST /classify`, `POST /classify/batch` |
+
+## Catatan
+- Label masih "label perak" (aturan otomatis); belum divalidasi staf keuangan (target Cohen's Kappa >= 0.61).
+- Skrip lama (`training_*.py`, `confidence_threshold.py`, `retrain_gabungan.py`, dst.) memakai kategori sintesis lama dan dipertahankan sebagai riwayat.

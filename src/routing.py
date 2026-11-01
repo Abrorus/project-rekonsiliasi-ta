@@ -1,51 +1,65 @@
+"""
+routing.py
+==========
+Inferensi Pool 2: klasifikasi sub-kategori CoA + confidence routing ke Pool 3.
+
+Memakai models/model_coa_final.pkl (hasil latih_model_coa.py) dan
+models/threshold_coa.json (hasil threshold_coa.py).
+
+Jalankan (dari folder src):  python routing.py
+"""
+import json
+from pathlib import Path
+
 import joblib
 
+from kamus_istilah import normalisasi_teks
+from kategori_keuangan import LABEL_COA
+
+MODELS = Path(__file__).resolve().parent.parent / "models"
+
+
 def load_model():
-    model = joblib.load('../models/model_final_svm_linear.pkl')
-    vectorizer = joblib.load('../models/vectorizer_final.pkl')
-    return model, vectorizer
+    paket = joblib.load(MODELS / "model_coa_final.pkl")
+    f = MODELS / "threshold_coa.json"
+    threshold = json.loads(f.read_text())["threshold"] if f.exists() else 0.66
+    return paket["model"], threshold
 
-def klasifikasi_transaksi(teks, model, vectorizer, threshold=0.66):
+
+def klasifikasi_transaksi(keterangan, jenis, model, threshold):
     """
-    Klasifikasi satu transaksi. Kalau confidence >= threshold,
-    diproses otomatis. Kalau di bawah, dirujuk ke Pool 3 (manual/KB).
+    keterangan: teks mutasi mentah; jenis: 'CR' (kredit/cash in) atau 'DB' (debit/cash out).
+    confidence >= threshold -> OTOMATIS; di bawahnya -> RUJUK_POOL3 (knowledge base).
     """
-    X = vectorizer.transform([teks])
-    proba = model.predict_proba(X)[0]
-
-    kategori_prediksi = model.classes_[proba.argmax()]
-    confidence = proba.max()
-
-    if confidence >= threshold:
-        status = "OTOMATIS"
-    else:
-        status = "RUJUK_POOL3"
-
+    teks = f"arah{jenis.lower()} " + normalisasi_teks(keterangan)
+    proba = model.predict_proba([teks])[0]
+    i = proba.argmax()
+    label = model.classes_[i]
     return {
-        "teks_input": teks,
-        "kategori_prediksi": kategori_prediksi,
-        "confidence": round(float(confidence), 4),
-        "status": status,
+        "keterangan": keterangan,
+        "jenis": jenis,
+        "label": label,
+        "nama_akun": LABEL_COA[label]["nama"],
+        "confidence": round(float(proba[i]), 4),
+        "status": "OTOMATIS" if proba[i] >= threshold else "RUJUK_POOL3",
     }
 
+
 def main():
-    model, vectorizer = load_model()
-
-    # Contoh simulasi beberapa transaksi (nanti diganti input asli/dari Pool 1)
-    contoh_transaksi = [
-        "transfer gaji karyawan",
-        "bayar tagihan listrik berkah",
-        "pembayaran global teknindo periode",
-        "po sejahtera ref",
+    model, threshold = load_model()
+    contoh = [
+        ("TRSF E-BANKING PANCA BERSAUDARA", "CR"),
+        ("BPJS KS Jakarta Feb25", "DB"),
+        ("BIAYA ADM", "DB"),
+        ("beli kopi untuk tamu", "DB"),
+        ("pulsa kantor jan", "DB"),
     ]
+    print(f"=== Simulasi Routing (threshold={threshold}) ===\n")
+    for teks, jenis in contoh:
+        h = klasifikasi_transaksi(teks, jenis, model, threshold)
+        print(f"[{h['jenis']}] {h['keterangan']:<34} -> {h['label']:<20} "
+              f"conf={h['confidence']:.2f}  {h['status']}")
 
-    print("=== Simulasi Routing Transaksi ===\n")
-    for teks in contoh_transaksi:
-        hasil = klasifikasi_transaksi(teks, model, vectorizer)
-        print(f"Input       : {hasil['teks_input']}")
-        print(f"Kategori    : {hasil['kategori_prediksi']}")
-        print(f"Confidence  : {hasil['confidence']}")
-        print(f"Status      : {hasil['status']}\n")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

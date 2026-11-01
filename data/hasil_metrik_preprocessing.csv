@@ -1,0 +1,12 @@
+,nilai
+jumlah_transaksi,566.0
+token_sebelum,2761.0
+token_sesudah,1821.0
+token_reduction_rate_%,34.05
+stopword_dibuang,947.0
+token_singkatan_terpetakan_kamus,122.0
+vocabulary_size,326.0
+average_token_length,3.22
+transaksi_teks_kosong_setelah_preprocessing,9.0
+jumlah_fitur_tfidf,754.0
+sparsity_tfidf_%,99.28
