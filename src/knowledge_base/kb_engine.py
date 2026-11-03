@@ -443,20 +443,31 @@ class KBEngine:
 
     def _resolve_nlp_kategori(self, kategori_nlp: str) -> str:
         """Konversi nama kategori NLP ke kode akun via DB."""
-        # Cari di kategori by nama
+        # 1. Cek langsung mapping label NLP ke CoA
+        try:
+            from knowledge_base.coa import MAPPING_LABEL_NLP_KE_COA
+        except ImportError:
+            from coa import MAPPING_LABEL_NLP_KE_COA
+        if kategori_nlp in MAPPING_LABEL_NLP_KE_COA:
+            return MAPPING_LABEL_NLP_KE_COA[kategori_nlp]
+
+        # 2. Cari di kategori by nama
         kat = self._cache.get("kategori_lookup", {})
         for nid, n in kat.items():
             if n["nama"] == kategori_nlp and n["kode_akun"]:
                 return n["kode_akun"]
 
-        # Cari di account_mapping
+        # 3. Cari di account_mapping
         acc = self._cache.get("account_mapping", {})
         for kode_bank, info in acc.items():
             if kode_bank.upper() in kategori_nlp.upper():
                 return info["kode_akun_erp"]
 
-        # Fallback: coba konversi via hardcoded
-        from knowledge_base.coa import konversi_kode, MAPPING_LAMA_KE_COA
+        # 4. Fallback: coba konversi via hardcoded
+        try:
+            from knowledge_base.coa import konversi_kode
+        except ImportError:
+            from coa import konversi_kode
         nama_ke_kode_lama = {v["nama"]: k for k, v in _KATEGORI_HARDCODED.items() if "-" in k}
         kode_lama = nama_ke_kode_lama.get(kategori_nlp, kategori_nlp)
         hasil = konversi_kode(kode_lama)

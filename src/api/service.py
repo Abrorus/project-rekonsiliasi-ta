@@ -15,19 +15,25 @@ from knowledge_base.kategori_keuangan import KATEGORI
 
 # Lazy loading model NLP
 _nlp_model = None
+_nlp_threshold = 0.72
 _nlp_vectorizer = None
 
 
 def get_nlp_model():
-    """Memuat model NLP & Vectorizer secara lazy (sekali saat pertama dibutuhkan)."""
-    global _nlp_model, _nlp_vectorizer
+    """Memuat model NLP, Threshold, & Vectorizer secara lazy."""
+    global _nlp_model, _nlp_threshold, _nlp_vectorizer
     if _nlp_model is None:
         try:
             from routing import load_model
-            _nlp_model, _nlp_vectorizer = load_model()
+            loaded = load_model()
+            if len(loaded) == 3:
+                _nlp_model, _nlp_threshold, _nlp_vectorizer = loaded
+            elif len(loaded) == 2:
+                _nlp_model, _nlp_vectorizer = loaded
+                _nlp_threshold = 0.72
         except Exception as e:
             print(f"Warning: Model NLP tidak dapat dimuat ({e}), fallback KB-only.")
-    return _nlp_model, _nlp_vectorizer
+    return _nlp_model, _nlp_threshold, _nlp_vectorizer
 
 
 def _clean_mutasi(val: Any) -> float:
@@ -77,7 +83,7 @@ def proses_transaksi_batch(transaksi_list: List[Dict[str, Any]]) -> List[Dict[st
     4. Return daftar hasil terstandarisasi untuk Frontend
     """
     sb = get_supabase()
-    model, vectorizer = get_nlp_model()
+    model, threshold, vectorizer = get_nlp_model()
     
     results = []
 
@@ -93,20 +99,30 @@ def proses_transaksi_batch(transaksi_list: List[Dict[str, Any]]) -> List[Dict[st
 
         # 1. Jalankan NLP jika nlp_output belum tersedia
         nlp_output = trx.get("nlp_output")
-        if not nlp_output and model and vectorizer and keterangan:
+        if not nlp_output and model and keterangan:
             try:
-                from routing import preprocess_pipeline
-                teks_clean = preprocess_pipeline(keterangan)
-                X = vectorizer.transform([teks_clean])
-                proba = model.predict_proba(X)[0]
-                kategori_ml = model.classes_[proba.argmax()]
-                confidence = float(proba.max())
+                from kamus_istilah import normalisasi_teks
+                teks_clean = normalisasi_teks(keterangan)
+                if vectorizer is None:
+                    # Model CoA baru (Pipeline)
+                    inp_teks = f"arah{jenis.lower()} " + teks_clean
+                    proba = model.predict_proba([inp_teks])[0]
+                else:
+                    # Model lama
+                    from routing import preprocess_pipeline
+                    teks_clean = preprocess_pipeline(keterangan)
+                    X = vectorizer.transform([teks_clean])
+                    proba = model.predict_proba(X)[0]
+
+                idx = proba.argmax()
+                kategori_ml = model.classes_[idx]
+                confidence = float(proba[idx])
                 nlp_output = {
                     "teks_asli": keterangan,
                     "teks_bersih": teks_clean,
                     "kategori_nlp": kategori_ml,
                     "confidence": round(confidence, 4),
-                    "confidence_tinggi": confidence >= 0.66,
+                    "confidence_tinggi": confidence >= threshold,
                 }
             except Exception as e:
                 nlp_output = None

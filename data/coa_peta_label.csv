@@ -1,0 +1,47 @@
+label,label_nama,arah,coa_key,coa_nama,coa_tipe,status
+PAYABLE_VENDOR,Pembayaran ke Supplier/Vendor,keluar,2.1.01,Trade Payable,Liability,OK
+SALARY,"Gaji, Lembur & THR",keluar,6.2.01,Salary & Wages,Expense,OK
+SALARY,"Gaji, Lembur & THR",keluar,7.1.01,Salary & Wages,Expense,OK
+EMP_BENEFIT,Tunjangan Karyawan & BPJS,keluar,6.2.02,Employee Benefit,Expense,OK
+EMP_BENEFIT,Tunjangan Karyawan & BPJS,keluar,7.1.02,Employee Benefit,Expense,OK
+TRAVEL,Perjalanan Dinas,keluar,6.2.03,Traveling Expenses,Expense,OK
+TRAVEL,Perjalanan Dinas,keluar,7.1.03,Traveling Expenses,Expense,OK
+TRANSPORT,Transport & BBM,keluar,6.2.04,Transport Expenses,Expense,OK
+TRANSPORT,Transport & BBM,keluar,7.1.04,Transport Expenses,Expense,OK
+UTILITIES,"Listrik, Air & Gas",keluar,6.2.05,Utilities,Expense,OK
+UTILITIES,"Listrik, Air & Gas",keluar,7.1.05,Utilities,Expense,OK
+COMMUNICATION,"Telepon, Internet & Pulsa",keluar,6.2.06,Comunication,Expense,OK
+COMMUNICATION,"Telepon, Internet & Pulsa",keluar,7.1.06,Comunication,Expense,OK
+OFFICE_GENERAL,"ATK, Konsumsi & Kebersihan Kantor",keluar,6.2.07,Printing & Stationery,Expense,OK
+OFFICE_GENERAL,"ATK, Konsumsi & Kebersihan Kantor",keluar,6.2.08,Office Kitchen,Expense,OK
+OFFICE_GENERAL,"ATK, Konsumsi & Kebersihan Kantor",keluar,7.1.07,Printing & Stationery,Expense,OK
+OFFICE_GENERAL,"ATK, Konsumsi & Kebersihan Kantor",keluar,7.1.08,Office Kitchen,Expense,OK
+INSURANCE,Asuransi (non-BPJS),keluar,6.2.09,Insurance,Expense,OK
+INSURANCE,Asuransi (non-BPJS),keluar,7.1.09,Insurance,Expense,OK
+RENT,Sewa,keluar,6.2.10,Rent Building,Expense,OK
+RENT,Sewa,keluar,6.2.11,Rent Machinery,Expense,OK
+RENT,Sewa,keluar,6.2.12,Rent Office Equipment,Expense,OK
+RENT,Sewa,keluar,6.2.13,Rent Vehicle,Expense,OK
+RENT,Sewa,keluar,6.2.14,Rent Warehouse,Expense,OK
+RENT,Sewa,keluar,7.1.10,Rent Building,Expense,OK
+RENT,Sewa,keluar,7.1.11,Rent Machinery,Expense,OK
+RENT,Sewa,keluar,7.1.12,Rent Office Equipment,Expense,OK
+RENT,Sewa,keluar,7.1.13,Rent Vehicle,Expense,OK
+RENT,Sewa,keluar,7.1.14,Rent Warehouse,Expense,OK
+REPAIR_MAINT,Perbaikan & Pemeliharaan,keluar,6.2.15,Repair & Maintenance,Expense,OK
+REPAIR_MAINT,Perbaikan & Pemeliharaan,keluar,7.1.15,Repair & Maintenance,Expense,OK
+OTHER_EXPENSE,"Biaya Lain-lain (donasi, hadiah, pelatihan, dll)",keluar,6.4.01,Others Expenses,Expense,OK
+OTHER_EXPENSE,"Biaya Lain-lain (donasi, hadiah, pelatihan, dll)",keluar,7.3.01,Others Expenses,Expense,OK
+TAX,Pajak & Setoran Negara,keluar,2.1.04,Withholding Tax,Liability,OK
+TAX,Pajak & Setoran Negara,keluar,2.1.05,Tax Payable,Liability,OK
+TAX,Pajak & Setoran Negara,keluar,1.1.08,Prepaid Tax,Asset,OK
+BANK_CHARGE,"Biaya Bank (admin, transfer, tolakan)",keluar,,,,BELUM ADA DI COA - tanyakan ke Pak Depta
+RECEIVABLE_CUSTOMER,Penerimaan dari Customer (Piutang),masuk,1.1.04,Account Receivable,Asset,OK
+REVENUE_OTHER,Pendapatan Jasa/Lain-lain,masuk,4.1.01,Revenue,Revenue,OK
+CASH_DEPOSIT,Setoran Tunai,masuk,1.1.1.01,Cash on Hand:IDR,Asset,OK
+LOAN,Pinjaman & Intercompany,dua_arah,2.2.01,Long Tem Loan,Liability,OK
+LOAN,Pinjaman & Intercompany,dua_arah,1.1.04.02,Account Receivable Related Party,Asset,OK
+PETTY_CASH,"Kas Kecil, Uang Muka & Reimburse",dua_arah,1.1.1.97,Petty Cash,Asset,OK
+PETTY_CASH,"Kas Kecil, Uang Muka & Reimburse",dua_arah,1.1.09.03,Advances - Operational,Asset,OK
+INTERNAL_TRANSFER,Transfer Antar Rekening Sendiri,dua_arah,1.1.02.98,Cross Account Bank**,Asset,OK
+BANK_INTEREST,Bunga & Pajak Bunga Bank,dua_arah,,,,BELUM ADA DI COA - tanyakan ke Pak Depta

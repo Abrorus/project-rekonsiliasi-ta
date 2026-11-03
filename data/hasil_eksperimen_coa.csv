@@ -1,0 +1,9 @@
+eksperimen,metode,akurasi,macro_f1
+A-CV,baseline arah,0.5627240143369175,0.10619642182095955
+A-CV,TF-IDF kata + SVM,0.9516129032258065,0.8933303211195199
+A-CV,TF-IDF kata+huruf + SVM,0.9551971326164874,0.8951090082082205
+A-CV,"mode terbaik, baris yakin saja",0.9744186046511628,0.9679772281982844
+B-lintas-bank,bca->mandiri (tanpa sintesis),0.5688073394495413,0.36963783403656825
+B-lintas-bank,mandiri->bca (tanpa sintesis),0.4695121951219512,0.36395251785217475
+B-lintas-bank,bca->mandiri (dengan sintesis),0.54,0.41169492300081734
+B-lintas-bank,mandiri->bca (dengan sintesis),0.4420731707317073,0.3182383652947618
