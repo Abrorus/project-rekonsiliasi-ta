@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import {
   Upload, FileText, Brain, Database, CheckCircle2, AlertTriangle,
   XCircle, ArrowRight, Loader2, BarChart3, Clock, Zap, AlertCircle,
-  Check, X, Pencil, ThumbsUp, ThumbsDown
+  Check, X, Pencil, ThumbsUp, ThumbsDown, Play
 } from 'lucide-react'
 
 type Step = 'upload' | 'processing' | 'result'
@@ -280,6 +280,43 @@ function App() {
     }
   }
 
+  const handleDemo = async () => {
+    setErrorMsg(null)
+    setStep('processing')
+    setFileName('demo-data.pdf (simulasi)')
+
+    try {
+      const resp = await fetch(`${API_BASE}/demo-data`)
+      if (!resp.ok) throw new Error(`Server error: ${resp.status}`)
+
+      const json = await resp.json()
+      const items = json.hasil || json.data || []
+      if (items.length > 0) {
+        const mapped: TransactionResult[] = items.map((r: Record<string, unknown>) => ({
+          id: r.id || crypto.randomUUID(),
+          tanggal: r.tanggal || r.tgl || '',
+          keterangan: r.keterangan || r.ket || '',
+          jenis: r.jenis || '',
+          mutasi: Number(r.mutasi) || 0,
+          kode_akun: r.kode_akun || r.akun || '',
+          nama_akun: r.nama_akun || r.nama || '',
+          status: mapStatus(String(r.status || '')),
+          metode: r.metode || '',
+          nama_pihak: r.nama_pihak as string | undefined,
+        }))
+        setResults(mapped)
+        setStep('result')
+      } else {
+        setErrorMsg('Tidak ada data demo dari server. Pastikan backend berjalan.')
+        setStep('upload')
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Pastikan backend FastAPI sudah berjalan di port 8000.'
+      setErrorMsg(`Gagal mengambil data demo: ${message}`)
+      setStep('upload')
+    }
+  }
+
   const handleProcess = async () => {
     if (!selectedFile) return
     setErrorMsg(null)
@@ -496,7 +533,7 @@ function App() {
                   <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
                 </label>
 
-                <div className="mt-6">
+                <div className="mt-6 space-y-3">
                   <motion.button
                     onClick={handleProcess}
                     disabled={!selectedFile}
@@ -506,6 +543,22 @@ function App() {
                   >
                     <FileText size={18} />
                     Mulai Rekonsiliasi
+                  </motion.button>
+
+                  <div className="relative flex items-center gap-3">
+                    <div className="flex-1 h-px bg-gray-200" />
+                    <span className="text-xs text-gray-400 font-medium">atau</span>
+                    <div className="flex-1 h-px bg-gray-200" />
+                  </div>
+
+                  <motion.button
+                    onClick={handleDemo}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    className="w-full py-3 bg-white border-2 border-dashed border-indigo-300 text-indigo-600 text-sm font-semibold rounded-xl hover:bg-indigo-50 hover:border-indigo-400 transition-all duration-300 flex items-center justify-center gap-2"
+                  >
+                    <Play size={16} />
+                    Coba Data Demo (tanpa upload PDF)
                   </motion.button>
                 </div>
               </div>

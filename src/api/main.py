@@ -78,7 +78,7 @@ app.add_middleware(
 def startup_event():
     """Inisialisasi & pre-warm modul NLP saat server mulai."""
     try:
-        model, vec = get_nlp_model()
+        model, _, vec = get_nlp_model()
         if model:
             logger.info("Model NLP SVM & Vectorizer berhasil dimuat.")
     except Exception as e:
@@ -126,7 +126,7 @@ def root():
 
 @app.get("/api/health")
 def health_check():
-    model, _ = get_nlp_model()
+    model, _, _ = get_nlp_model()
     return {
         "status": "healthy",
         "model_loaded": model is not None,
