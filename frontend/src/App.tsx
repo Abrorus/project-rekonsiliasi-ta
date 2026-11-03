@@ -1,34 +1,47 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import {
   Upload, FileText, Brain, Database, CheckCircle2, AlertTriangle,
-  XCircle, ArrowRight, Loader2, BarChart3, Clock, Zap, AlertCircle
+  XCircle, ArrowRight, Loader2, BarChart3, Clock, Zap, AlertCircle,
+  Check, X, Pencil, ThumbsUp, ThumbsDown
 } from 'lucide-react'
 
 type Step = 'upload' | 'processing' | 'result'
 
 interface TransactionResult {
-  tgl: string
-  ket: string
+  id: string
+  tanggal: string
+  keterangan: string
   jenis: 'DB' | 'CR' | string
   mutasi: number
-  akun: string
-  nama: string
-  status: 'auto' | 'review' | 'manual'
+  kode_akun: string
+  nama_akun: string
+  status: 'auto_match' | 'suggestion' | 'manual' | 'confirmed' | 'rejected'
   metode: string
-  conf: number
-  pool?: string
+  nama_pihak?: string
+}
+
+interface Stats {
+  total: number
+  auto_match: number
+  suggestion: number
+  manual: number
+  confirmed: number
+  rejected: number
+  coverage: number
 }
 
 function formatCurrency(val: number) {
   return new Intl.NumberFormat('id-ID').format(val)
 }
 
-function StatusBadge({ status }: { status: 'auto' | 'review' | 'manual' }) {
-  const config = {
-    auto: { label: 'Auto Match', icon: CheckCircle2, bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
-    review: { label: 'Perlu Review', icon: AlertTriangle, bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
+function StatusBadge({ status }: { status: string }) {
+  const config: Record<string, { label: string; icon: typeof CheckCircle2; bg: string; text: string; border: string }> = {
+    auto_match: { label: 'Auto Match', icon: CheckCircle2, bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+    suggestion: { label: 'Suggestion', icon: AlertTriangle, bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
     manual: { label: 'Manual', icon: XCircle, bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
+    confirmed: { label: 'Dikonfirmasi', icon: ThumbsUp, bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+    rejected: { label: 'Ditolak', icon: ThumbsDown, bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' },
   }
   const c = config[status] || config.manual
   return (
@@ -59,7 +72,7 @@ function StepIndicator({ step }: { step: Step }) {
                 : 'bg-gray-100 text-gray-400'
           }`}>
             <s.icon size={14} className={i === currentIdx && s.key === 'processing' ? 'animate-spin' : ''} />
-            {s.label}
+            <span className="hidden sm:inline">{s.label}</span>
           </div>
           {i < steps.length - 1 && (
             <ArrowRight size={14} className={i < currentIdx ? 'text-blue-400' : 'text-gray-300'} />
@@ -70,6 +83,148 @@ function StepIndicator({ step }: { step: Step }) {
   )
 }
 
+// ---- Modal Konfirmasi/Tolak ----
+function ActionModal({
+  isOpen,
+  mode,
+  transaction,
+  onClose,
+  onSubmit,
+}: {
+  isOpen: boolean
+  mode: 'konfirmasi' | 'tolak'
+  transaction: TransactionResult | null
+  onClose: () => void
+  onSubmit: (kodeAkunBaru?: string, catatan?: string) => void
+}) {
+  const [kodeAkunBaru, setKodeAkunBaru] = useState('')
+  const [catatan, setCatatan] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (isOpen) {
+      setKodeAkunBaru('')
+      setCatatan('')
+    }
+  }, [isOpen])
+
+  if (!isOpen || !transaction) return null
+
+  const handleSubmit = async () => {
+    setLoading(true)
+    await onSubmit(kodeAkunBaru || undefined, catatan || undefined)
+    setLoading(false)
+  }
+
+  const isKonfirmasi = mode === 'konfirmasi'
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className={`px-6 py-4 flex items-center gap-3 ${
+          isKonfirmasi ? 'bg-emerald-50 border-b border-emerald-100' : 'bg-red-50 border-b border-red-100'
+        }`}>
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+            isKonfirmasi ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
+          }`}>
+            {isKonfirmasi ? <Check size={20} /> : <X size={20} />}
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900">
+              {isKonfirmasi ? 'Konfirmasi Rekomendasi' : 'Tolak Rekomendasi'}
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {isKonfirmasi ? 'Setujui pemetaan akun ini' : 'Tolak dan masukkan akun yang benar'}
+            </p>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4">
+          {/* Info transaksi */}
+          <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+            <div className="flex justify-between text-xs">
+              <span className="text-gray-500">Keterangan</span>
+              <span className="font-mono text-gray-800 text-right max-w-[250px] truncate">{transaction.keterangan}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-gray-500">Rekomendasi KB</span>
+              <span className="font-semibold text-gray-900">{transaction.kode_akun}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-gray-500">Nama Akun</span>
+              <span className="text-gray-700">{transaction.nama_akun}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-gray-500">Metode</span>
+              <span className="text-gray-600">{transaction.metode}</span>
+            </div>
+          </div>
+
+          {/* Input kode akun baru (opsional untuk konfirmasi, wajib untuk tolak) */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1.5">
+              {isKonfirmasi ? 'Kode Akun Koreksi (opsional)' : 'Kode Akun yang Benar'}
+            </label>
+            <input
+              type="text"
+              value={kodeAkunBaru}
+              onChange={(e) => setKodeAkunBaru(e.target.value)}
+              placeholder="Contoh: 6.2.05.01"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+            />
+            {isKonfirmasi && (
+              <p className="text-[11px] text-gray-400 mt-1">Kosongkan jika rekomendasi sudah benar</p>
+            )}
+          </div>
+
+          {/* Catatan */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1.5">Catatan (opsional)</label>
+            <textarea
+              value={catatan}
+              onChange={(e) => setCatatan(e.target.value)}
+              placeholder="Alasan konfirmasi/tolak..."
+              rows={2}
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all resize-none"
+            />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-200/60 rounded-lg transition-all"
+          >
+            Batal
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading || (!isKonfirmasi && !kodeAkunBaru)}
+            className={`px-5 py-2 text-sm font-semibold text-white rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+              isKonfirmasi
+                ? 'bg-emerald-600 hover:bg-emerald-700'
+                : 'bg-red-600 hover:bg-red-700'
+            }`}
+          >
+            {loading && <Loader2 size={14} className="animate-spin" />}
+            {isKonfirmasi ? 'Konfirmasi' : 'Tolak & Simpan'}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+
 const API_BASE = 'http://localhost:8000/api'
 
 function App() {
@@ -79,6 +234,31 @@ function App() {
   const [dragActive, setDragActive] = useState(false)
   const [results, setResults] = useState<TransactionResult[]>([])
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [liveStats, setLiveStats] = useState<Stats | null>(null)
+
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalMode, setModalMode] = useState<'konfirmasi' | 'tolak'>('konfirmasi')
+  const [modalTransaction, setModalTransaction] = useState<TransactionResult | null>(null)
+
+  // Load stats on result page
+  useEffect(() => {
+    if (step === 'result') {
+      fetchStats()
+    }
+  }, [step])
+
+  const fetchStats = async () => {
+    try {
+      const resp = await fetch(`${API_BASE}/stats`)
+      if (resp.ok) {
+        const data = await resp.json()
+        setLiveStats(data)
+      }
+    } catch {
+      // Stats gagal load, pakai hitungan lokal
+    }
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -100,7 +280,6 @@ function App() {
     }
   }
 
-  // Eksekusi upload file PDF ke backend
   const handleProcess = async () => {
     if (!selectedFile) return
     setErrorMsg(null)
@@ -121,8 +300,23 @@ function App() {
       }
 
       const json = await resp.json()
-      if (json.data && json.data.length > 0) {
-        setResults(json.data)
+
+      // Support both response formats: {data: [...]} or {hasil: [...]}
+      const items = json.hasil || json.data || []
+      if (items.length > 0) {
+        const mapped: TransactionResult[] = items.map((r: Record<string, unknown>) => ({
+          id: r.id || crypto.randomUUID(),
+          tanggal: r.tanggal || r.tgl || '',
+          keterangan: r.keterangan || r.ket || '',
+          jenis: r.jenis || '',
+          mutasi: Number(r.mutasi) || 0,
+          kode_akun: r.kode_akun || r.akun || '',
+          nama_akun: r.nama_akun || r.nama || '',
+          status: mapStatus(String(r.status || '')),
+          metode: r.metode || '',
+          nama_pihak: r.nama_pihak as string | undefined,
+        }))
+        setResults(mapped)
         setStep('result')
       } else {
         setErrorMsg(json.message || 'Tidak ada baris transaksi yang berhasil diekstrak dari PDF ini.')
@@ -136,16 +330,78 @@ function App() {
     }
   }
 
-  const stats = {
-    auto: results.filter(r => r.status === 'auto').length,
-    review: results.filter(r => r.status === 'review').length,
-    manual: results.filter(r => r.status === 'manual').length,
+  const mapStatus = (s: string): TransactionResult['status'] => {
+    if (s === 'auto_match' || s === 'auto') return 'auto_match'
+    if (s === 'suggestion' || s === 'review') return 'suggestion'
+    if (s === 'confirmed') return 'confirmed'
+    if (s === 'rejected') return 'rejected'
+    return 'manual'
   }
+
+  // ---- Aksi konfirmasi/tolak ----
+  const openModal = (mode: 'konfirmasi' | 'tolak', trx: TransactionResult) => {
+    setModalMode(mode)
+    setModalTransaction(trx)
+    setModalOpen(true)
+  }
+
+  const handleAction = async (kodeAkunBaru?: string, catatan?: string) => {
+    if (!modalTransaction) return
+
+    const endpoint = modalMode === 'konfirmasi' ? 'konfirmasi' : 'tolak'
+    try {
+      const resp = await fetch(`${API_BASE}/transaksi/${modalTransaction.id}/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kode_akun_baru: kodeAkunBaru, catatan }),
+      })
+
+      if (resp.ok) {
+        const data = await resp.json()
+        // Update lokal
+        setResults(prev => prev.map(r => {
+          if (r.id === modalTransaction.id) {
+            return {
+              ...r,
+              status: data.status as TransactionResult['status'],
+              kode_akun: data.kode_akun || r.kode_akun,
+            }
+          }
+          return r
+        }))
+        // Refresh stats
+        fetchStats()
+      }
+    } catch (err) {
+      console.error('Gagal:', err)
+    }
+
+    setModalOpen(false)
+  }
+
+  // Stats (lokal fallback)
+  const localStats = {
+    auto_match: results.filter(r => r.status === 'auto_match').length,
+    suggestion: results.filter(r => r.status === 'suggestion').length,
+    manual: results.filter(r => r.status === 'manual').length,
+    confirmed: results.filter(r => r.status === 'confirmed').length,
+    rejected: results.filter(r => r.status === 'rejected').length,
+  }
+
+  const displayStats = liveStats || {
+    total: results.length,
+    ...localStats,
+    coverage: results.length > 0
+      ? (localStats.auto_match + localStats.confirmed) / results.length
+      : 0,
+  }
+
+  const canAct = (status: string) => !['confirmed', 'rejected'].includes(status)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/60">
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-200/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 shrink-0">
             <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200/50">
@@ -159,7 +415,7 @@ function App() {
           <StepIndicator step={step} />
           {step === 'result' && (
             <button
-              onClick={() => { setStep('upload'); setFileName(''); setSelectedFile(null); setErrorMsg(null); setResults([]) }}
+              onClick={() => { setStep('upload'); setFileName(''); setSelectedFile(null); setErrorMsg(null); setResults([]); setLiveStats(null) }}
               className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200 shrink-0"
             >
               Upload PDF Baru
@@ -168,7 +424,7 @@ function App() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <AnimatePresence mode="wait">
           {/* ===== UPLOAD ===== */}
           {step === 'upload' && (
@@ -255,7 +511,7 @@ function App() {
               </div>
 
               {/* Pipeline Info */}
-              <div className="mt-8 grid grid-cols-3 gap-4">
+              <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                   { num: 1, icon: FileText, title: 'Modul Tabel', desc: 'Ekstraksi PDF mutasi bank ke tabular', color: 'blue' },
                   { num: 2, icon: Brain, title: 'Modul NLP', desc: 'Normalisasi teks & klasifikasi ML SVM', color: 'purple' },
@@ -335,51 +591,51 @@ function App() {
                     <span className="text-gray-300">|</span>
                     <Clock size={14} />
                     {results.length} transaksi diproses
+                    {displayStats.coverage > 0 && (
+                      <>
+                        <span className="text-gray-300">|</span>
+                        <span className="font-semibold text-emerald-600">Coverage: {(displayStats.coverage * 100).toFixed(1)}%</span>
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
 
               {/* Stat Cards */}
-              <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
                 {[
-                  { label: 'Auto Match (Pool 1)', count: stats.auto, total: results.length, color: 'emerald', icon: CheckCircle2 },
-                  { label: 'Perlu Review (Pool 3)', count: stats.review, total: results.length, color: 'amber', icon: AlertTriangle },
-                  { label: 'Manual Review', count: stats.manual, total: results.length, color: 'red', icon: XCircle },
+                  { label: 'Auto Match', count: displayStats.auto_match, color: 'emerald', icon: CheckCircle2 },
+                  { label: 'Suggestion', count: displayStats.suggestion, color: 'amber', icon: AlertTriangle },
+                  { label: 'Manual', count: displayStats.manual, color: 'red', icon: XCircle },
+                  { label: 'Dikonfirmasi', count: displayStats.confirmed, color: 'blue', icon: ThumbsUp },
+                  { label: 'Ditolak', count: displayStats.rejected, color: 'gray', icon: ThumbsDown },
                 ].map((s, i) => (
                   <motion.div
                     key={s.label}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.05 * i }}
-                    className={`bg-white rounded-xl border p-5 ${
+                    className={`bg-white rounded-xl border p-4 ${
                       s.color === 'emerald' ? 'border-emerald-200/60' :
                       s.color === 'amber' ? 'border-amber-200/60' :
-                      'border-red-200/60'
+                      s.color === 'red' ? 'border-red-200/60' :
+                      s.color === 'blue' ? 'border-blue-200/60' :
+                      'border-gray-200/60'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    <div className="flex items-center justify-between mb-2">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                         s.color === 'emerald' ? 'bg-emerald-100 text-emerald-600' :
                         s.color === 'amber' ? 'bg-amber-100 text-amber-600' :
-                        'bg-red-100 text-red-600'
+                        s.color === 'red' ? 'bg-red-100 text-red-600' :
+                        s.color === 'blue' ? 'bg-blue-100 text-blue-600' :
+                        'bg-gray-100 text-gray-500'
                       }`}>
-                        <s.icon size={20} />
+                        <s.icon size={16} />
                       </div>
-                      <span className="text-2xl font-bold text-gray-900">{s.count}</span>
+                      <span className="text-xl font-bold text-gray-900">{s.count}</span>
                     </div>
-                    <p className="text-sm font-medium text-gray-600">{s.label}</p>
-                    <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${s.total > 0 ? (s.count / s.total) * 100 : 0}%` }}
-                        transition={{ delay: 0.3 + 0.1 * i, duration: 0.6 }}
-                        className={`h-full rounded-full ${
-                          s.color === 'emerald' ? 'bg-emerald-500' :
-                          s.color === 'amber' ? 'bg-amber-500' :
-                          'bg-red-500'
-                        }`}
-                      />
-                    </div>
+                    <p className="text-xs font-medium text-gray-500">{s.label}</p>
                   </motion.div>
                 ))}
               </div>
@@ -394,85 +650,95 @@ function App() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-gray-50/80">
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tanggal</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Keterangan</th>
-                        <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Mutasi</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Akun CoA Mitra</th>
-                        <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Confidence</th>
-                        <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Metode Matching</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tanggal</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Keterangan</th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Mutasi</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Akun CoA</th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Metode</th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {results.map((row, i) => (
                         <motion.tr
-                          key={i}
+                          key={row.id || i}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          transition={{ delay: 0.03 * i }}
-                          className="hover:bg-blue-50/30 transition-colors"
+                          transition={{ delay: 0.02 * Math.min(i, 20) }}
+                          className={`transition-colors ${
+                            row.status === 'confirmed' ? 'bg-emerald-50/30' :
+                            row.status === 'rejected' ? 'bg-gray-50/50' :
+                            'hover:bg-blue-50/30'
+                          }`}
                         >
-                          <td className="px-6 py-4 text-gray-500 whitespace-nowrap">{row.tgl}</td>
-                          <td className="px-6 py-4">
-                            <span className="font-mono text-xs text-gray-800">{row.ket}</span>
-                            {row.pool && (
-                              <div className="text-[10px] text-gray-400 mt-0.5">{row.pool}</div>
+                          <td className="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">{row.tanggal}</td>
+                          <td className="px-4 py-3 max-w-[280px]">
+                            <span className="font-mono text-xs text-gray-800 line-clamp-2">{row.keterangan}</span>
+                            {row.nama_pihak && (
+                              <div className="text-[10px] text-indigo-500 mt-0.5">{row.nama_pihak}</div>
                             )}
                           </td>
-                          <td className={`px-6 py-4 text-right font-mono text-xs whitespace-nowrap ${
+                          <td className={`px-4 py-3 text-right font-mono text-xs whitespace-nowrap ${
                             row.jenis === 'CR' ? 'text-emerald-600' : 'text-red-600'
                           }`}>
                             {row.jenis === 'CR' ? '+' : '-'}{formatCurrency(row.mutasi)}
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="text-xs font-semibold text-gray-900">{row.akun}</div>
-                            <div className="text-[11px] text-gray-500">{row.nama}</div>
+                          <td className="px-4 py-3">
+                            <div className="text-xs font-semibold text-gray-900">{row.kode_akun}</div>
+                            <div className="text-[11px] text-gray-500">{row.nama_akun}</div>
                           </td>
-                          <td className="px-6 py-4 text-center">
-                            <div className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-medium ${
-                              row.conf >= 0.66 ? 'bg-emerald-50 text-emerald-700' :
-                              row.conf >= 0.4 ? 'bg-amber-50 text-amber-700' :
-                              'bg-red-50 text-red-700'
-                            }`}>
-                              {(row.conf * 100).toFixed(0)}%
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-center">
+                          <td className="px-4 py-3 text-center">
                             <StatusBadge status={row.status} />
                           </td>
-                          <td className="px-6 py-4 text-xs text-gray-500">{row.metode}</td>
+                          <td className="px-4 py-3 text-xs text-gray-500 max-w-[200px] truncate">{row.metode}</td>
+                          <td className="px-4 py-3 text-center">
+                            {canAct(row.status) ? (
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  onClick={() => openModal('konfirmasi', row)}
+                                  title="Konfirmasi"
+                                  className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all"
+                                >
+                                  <Check size={16} />
+                                </button>
+                                <button
+                                  onClick={() => openModal('tolak', row)}
+                                  title="Tolak & Koreksi"
+                                  className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition-all"
+                                >
+                                  <Pencil size={16} />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-400">
+                                {row.status === 'confirmed' ? 'OK' : 'Ditolak'}
+                              </span>
+                            )}
+                          </td>
                         </motion.tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               </div>
-
-              {/* ERP Data info */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="mt-8 bg-white rounded-2xl border border-gray-200/80 shadow-xl shadow-gray-100/50 overflow-hidden"
-              >
-                <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-                  <div className="w-7 h-7 bg-indigo-100 rounded-lg flex items-center justify-center">
-                    <Database size={14} className="text-indigo-600" />
-                  </div>
-                  <h3 className="text-sm font-semibold text-gray-900">Integrasi ERP Mitra</h3>
-                </div>
-                <div className="w-full h-48 bg-gradient-to-br from-gray-50 to-gray-100/50 flex flex-col items-center justify-center gap-2">
-                  <div className="w-10 h-10 bg-gray-200/80 rounded-xl flex items-center justify-center">
-                    <Database size={20} className="text-gray-400" />
-                  </div>
-                  <p className="text-sm text-gray-500 font-medium">Data Master ERP Terhubung</p>
-                  <p className="text-xs text-gray-400">Sinkronisasi Master Vendor, Master Customer, dan Master Chart of Accounts (CoA)</p>
-                </div>
-              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
       </main>
+
+      {/* Modal */}
+      <AnimatePresence>
+        {modalOpen && (
+          <ActionModal
+            isOpen={modalOpen}
+            mode={modalMode}
+            transaction={modalTransaction}
+            onClose={() => setModalOpen(false)}
+            onSubmit={handleAction}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
