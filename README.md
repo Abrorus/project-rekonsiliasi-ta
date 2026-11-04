@@ -52,6 +52,22 @@ Dalam arsitektur SIREKON, seluruh transaksi hasil inferensi NLP (Pool 2) diterus
         [Update Frequency-Based Confidence di Database]
 ```
 
+### 🧠 Metode Inferensi: Forward Chaining (*Data-Driven Reasoning*)
+Mesin inferensi pada Knowledge Base menerapkan metode **Forward Chaining** (pelacakan maju), di mana proses penalaran bergerak dari **fakta-fakta masukan menuju kesimpulan akhir**:
+1. **Kumpulan Fakta Awal (*Working Memory*)**:
+   - Teks keterangan transaksi mutasi rekening koran.
+   - Arah arus dana: `CR` (Kredit / Uang Masuk) atau `DB` (Debit / Uang Keluar).
+   - Nilai nominal transaksi.
+   - Hasil prediksi label sub-kategori CoA dan skor keyakinan (*calibrated confidence score*) dari modul NLP Pool 2.
+2. **Evaluasi Aturan Produksi (*IF-THEN Rules Matching*)**:
+   - `IF` pola keterangan mengandung kata kunci pajak dan arah mutasi `DB` $\to$ `THEN` tetapkan akun perpajakan.
+   - `IF` nama entitas cocok dengan Master Customer dan arah mutasi `CR` $\to$ `THEN` tetapkan akun piutang usaha (`1.1.04.01`).
+   - `IF` nama entitas cocok dengan Master Vendor dan arah mutasi `DB` $\to$ `THEN` tetapkan akun utang usaha (`2.1.01.01`).
+   - `IF` tidak ada aturan spesifik KB, namun *confidence* NLP $\ge 0.72$ $\to$ `THEN` adopsi pemetaan CoA dari label NLP secara otomatis.
+   - `IF` seluruh kondisi di atas tidak terpenuhi $\to$ `THEN` alihkan ke antarmuka `MANUAL_REVIEW` bagi akuntan.
+3. **Kesimpulan Akhir (*Goal / Action*)**:
+   - Menghasilkan kode akun CoA riil mitra, nama akun pembukuan, status verifikasi (`KB_TEREALISASI` / `AUTO_MATCH` / `MANUAL_REVIEW`), dan jalur resolusi (*Pool 1* atau *Pool 3*).
+
 ---
 
 ## 💾 Skema Database Supabase & Feedback Loop
