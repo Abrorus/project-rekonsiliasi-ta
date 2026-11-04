@@ -111,7 +111,7 @@ class TransactionItem(BaseModel):
 class KonfirmasiInput(BaseModel):
     kode_akun_baru: Optional[str] = None
     catatan: Optional[str] = None
-    dikonfirmasi_oleh: Optional[str] = "akuntan"
+    dikonfirmasi_oleh: Optional[str] = "user"
 
 
 # ---- Endpoints ----
@@ -323,7 +323,7 @@ def konfirmasi_transaksi(transaksi_id: str, body: KonfirmasiInput):
         "status": "confirmed",
         "kode_akun_erp": kode_akun_final,
         "dikonfirmasi_pada": "now()",
-        "dikonfirmasi_oleh": body.dikonfirmasi_oleh or "akuntan",
+        "dikonfirmasi_oleh": body.dikonfirmasi_oleh or "user",
     }).eq("id", transaksi_id).execute()
 
     # 2. Simpan feedback log
@@ -373,7 +373,7 @@ def tolak_transaksi(transaksi_id: str, body: KonfirmasiInput):
     sb.table("transaksi").update({
         "status": "rejected",
         "dikonfirmasi_pada": "now()",
-        "dikonfirmasi_oleh": body.dikonfirmasi_oleh or "akuntan",
+        "dikonfirmasi_oleh": body.dikonfirmasi_oleh or "user",
     }).eq("id", transaksi_id).execute()
 
     # 2. Simpan feedback log
