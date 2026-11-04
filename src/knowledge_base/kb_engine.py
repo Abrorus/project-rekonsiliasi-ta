@@ -25,6 +25,17 @@ except ImportError:
         JALUR_TRANSFER, _mengandung, _ada_jalur_transfer,
     )
 
+try:
+    from knowledge_base.api_client import erp_client
+except ImportError:
+    try:
+        from src.knowledge_base.api_client import erp_client
+    except ImportError:
+        try:
+            from api_client import erp_client
+        except ImportError:
+            erp_client = None
+
 
 CACHE_TTL = 300  # 5 menit
 
@@ -310,10 +321,44 @@ class KBEngine:
                 "kategori_node_id": target_node_id,
             }
 
-        # ---- TAHAP 2: RESOLUSI REKANAN (dari DB) ----
+        # ---- TAHAP 2: RESOLUSI REKANAN & INVOICE ERP ----
         rekanan_result = self._resolve_rekanan_db(teks, jenis_norm)
+
+        # Cek pencocokan invoice ERP (Mock / Live Adapter)
+        inv_match = None
+        if erp_client:
+            nama_pihak = rekanan_result.get("nama_pihak") if rekanan_result else ekstrak_nama_rekanan(teks)
+            try:
+                inv_match = erp_client.match_invoice(teks, nominal=mutasi, nama_rekanan=nama_pihak)
+            except Exception:
+                inv_match = None
+
         if rekanan_result:
+            if inv_match:
+                rekanan_result["invoice_no"] = inv_match["invoice_no"]
+                rekanan_result["invoice_status"] = "MATCHED"
+                rekanan_result["invoice_amount"] = inv_match.get("amount")
+                rekanan_result["invoice_kriteria"] = inv_match["kriteria"]
+                rekanan_result["metode"] = f"{rekanan_result['metode']} + Faktur ERP ({inv_match['invoice_no']} Lunas)"
             return rekanan_result
+
+        # Jika rekanan tidak di DB, tapi ada nomor invoice eksplisit di keterangan mutasi
+        if inv_match:
+            kode_akun = inv_match.get("kode_akun") or ("1.1.04.01" if jenis_norm == "CR" else "2.1.01.01")
+            nama_akun = self._get_nama_akun(kode_akun)
+            return {
+                "teks_input": teks,
+                "jenis": jenis_norm,
+                "mutasi": mutasi,
+                "kode_akun": kode_akun,
+                "kategori_prediksi": f"{kode_akun} - {nama_akun}",
+                "nama_pihak": inv_match.get("partner_name"),
+                "invoice_no": inv_match["invoice_no"],
+                "invoice_status": "MATCHED",
+                "invoice_kriteria": inv_match["kriteria"],
+                "status": "KB_TEREALISASI",
+                "metode": f"KB Engine (Faktur ERP: {inv_match['invoice_no']} Match {inv_match['kriteria']})",
+            }
 
         # ---- TAHAP 3: NLP VALIDATED ----
         if nlp_output and nlp_output.get("confidence_tinggi"):
