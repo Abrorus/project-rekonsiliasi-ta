@@ -170,6 +170,8 @@ def proses_transaksi_batch(transaksi_list: List[Dict[str, Any]]) -> List[Dict[st
                 "metadata": {
                     "kb_status": kb_status,
                     "nama_pihak": kb_result.get("nama_pihak"),
+                    "invoice_no": kb_result.get("invoice_no"),
+                    "invoice_status": kb_result.get("invoice_status"),
                 },
             }
             res = sb.table("transaksi").insert(row).execute()
@@ -191,6 +193,8 @@ def proses_transaksi_batch(transaksi_list: List[Dict[str, Any]]) -> List[Dict[st
             "status": status,
             "metode": kb_result.get("metode") or "-",
             "nama_pihak": kb_result.get("nama_pihak"),
+            "invoice_no": kb_result.get("invoice_no"),
+            "invoice_status": kb_result.get("invoice_status"),
             "conf": float(nlp_output.get("confidence") or 0.0) if nlp_output else 0.0,
             "pool": kb_result.get("pool") or ("Pool 1" if status == "auto_match" else "Pool 3"),
             # Properti alias untuk kompatibilitas frontend

@@ -123,7 +123,7 @@ class PerusahaanAPIClient:
             except Exception as e:
                 logger.warning(f"Koneksi live API gagal ({e}), otomatis beralih ke Mock.")
 
-        # Fallback Mock: Sampel invoice realistis berdasarkan riwayat BCA 2023
+        # Fallback Mock: Sampel invoice realistis berdasarkan riwayat BCA 2023 & CoA mitra
         return [
             {
                 "invoice_no": "INV-2023-001",
@@ -132,7 +132,7 @@ class PerusahaanAPIClient:
                 "amount": 580075045.0,
                 "due_date": "2023-07-31",
                 "status": "UNPAID",
-                "kode_akun": "6-5000"
+                "kode_akun": "2.1.01.01"
             },
             {
                 "invoice_no": "INV-2023-002",
@@ -141,7 +141,7 @@ class PerusahaanAPIClient:
                 "amount": 595075045.0,
                 "due_date": "2023-07-30",
                 "status": "UNPAID",
-                "kode_akun": "4-2000"
+                "kode_akun": "1.1.04.01"
             },
             {
                 "invoice_no": "INV-2023-003",
@@ -150,7 +150,25 @@ class PerusahaanAPIClient:
                 "amount": 138500000.0,
                 "due_date": "2023-07-28",
                 "status": "UNPAID",
-                "kode_akun": "6-5000"
+                "kode_akun": "2.1.01.01"
+            },
+            {
+                "invoice_no": "INV-2023-004",
+                "partner_name": "PANCA BERSAUDARA",
+                "partner_type": "CUSTOMER",
+                "amount": 50000000.0,
+                "due_date": "2023-07-25",
+                "status": "UNPAID",
+                "kode_akun": "1.1.04.01"
+            },
+            {
+                "invoice_no": "INV-2023-005",
+                "partner_name": "SENTOT PRABOWO",
+                "partner_type": "VENDOR",
+                "amount": 15000000.0,
+                "due_date": "2023-07-20",
+                "status": "UNPAID",
+                "kode_akun": "2.1.01.01"
             }
         ]
 
@@ -170,6 +188,13 @@ class PerusahaanAPIClient:
         invoices = self.get_unpaid_invoices()
         k_upper = str(keterangan).upper()
 
+        nom_float = None
+        if nominal is not None:
+            try:
+                nom_float = float(str(nominal).replace(",", "").replace("Rp", "").strip())
+            except (ValueError, TypeError):
+                nom_float = None
+
         # Strategi 1: Exact Match Nomor Invoice di teks mutasi
         for inv in invoices:
             inv_no = inv["invoice_no"].upper()
@@ -181,14 +206,16 @@ class PerusahaanAPIClient:
                     "partner_name": inv["partner_name"],
                     "kode_akun": inv["kode_akun"],
                     "status_rekonsiliasi": "RECONCILED",
-                    "selisih_nominal": abs(float(nominal or 0) - float(inv["amount"])) if nominal else 0.0
+                    "selisih_nominal": abs(nom_float - float(inv["amount"])) if nom_float is not None else 0.0
                 }
 
         # Strategi 2: Match berdasarkan Nama Partner + Nominal Persis
-        if nominal and nama_rekanan:
+        if nom_float is not None and nama_rekanan:
+            rek_upper = str(nama_rekanan).upper()
             for inv in invoices:
-                if inv["partner_name"].upper() in nama_rekanan.upper():
-                    if abs(float(nominal) - float(inv["amount"])) < 1.0: # Selisih 0 rupiah
+                p_name = inv["partner_name"].upper()
+                if p_name in rek_upper or rek_upper in p_name:
+                    if abs(nom_float - float(inv["amount"])) < 1.0: # Selisih 0 rupiah
                         return {
                             "matched": True,
                             "kriteria": "Nama Rekanan & Nominal Tepat",
@@ -200,6 +227,10 @@ class PerusahaanAPIClient:
                         }
 
         return None
+
+
+# Instance global default untuk akses mudah dari KB Engine
+erp_client = PerusahaanAPIClient()
 
 if __name__ == "__main__":
     print("=== PENGUJIAN ADAPTER REST API PERUSAHAAN ===")

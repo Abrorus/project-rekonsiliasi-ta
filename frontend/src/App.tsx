@@ -18,6 +18,8 @@ interface TransactionResult {
   status: 'auto_match' | 'suggestion' | 'manual' | 'confirmed' | 'rejected'
   metode: string
   nama_pihak?: string
+  invoice_no?: string
+  invoice_status?: string
 }
 
 interface Stats {
@@ -176,6 +178,14 @@ function ActionModal({
               <span className="text-gray-500">Metode</span>
               <span className="text-gray-600">{transaction.metode}</span>
             </div>
+            {transaction.invoice_no && (
+              <div className="flex justify-between text-xs pt-1 border-t border-gray-200/60">
+                <span className="text-emerald-600 font-medium">Faktur ERP Terkait</span>
+                <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  🧾 {transaction.invoice_no} (Lunas)
+                </span>
+              </div>
+            )}
           </div>
 
           <div>
@@ -574,9 +584,16 @@ function ResultPage({
                   <td className="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">{row.tanggal}</td>
                   <td className="px-4 py-3 max-w-[280px]">
                     <span className="font-mono text-xs text-gray-800 line-clamp-2">{row.keterangan}</span>
-                    {row.nama_pihak && (
-                      <div className="text-[10px] text-indigo-500 mt-0.5">{row.nama_pihak}</div>
-                    )}
+                    <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                      {row.nama_pihak && (
+                        <span className="text-[10px] text-indigo-600 font-medium">{row.nama_pihak}</span>
+                      )}
+                      {row.invoice_no && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          🧾 {row.invoice_no} (Lunas)
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className={`px-4 py-3 text-right font-mono text-xs whitespace-nowrap ${
                     row.jenis === 'CR' ? 'text-emerald-600' : 'text-red-600'
@@ -691,6 +708,8 @@ function App() {
           status: mapStatus(String(r.status || '')),
           metode: r.metode || '',
           nama_pihak: r.nama_pihak as string | undefined,
+          invoice_no: r.invoice_no as string | undefined,
+          invoice_status: r.invoice_status as string | undefined,
         }))
         setResults(mapped)
         navigate('/hasil', { replace: true })
@@ -729,6 +748,8 @@ function App() {
           status: mapStatus(String(r.status || '')),
           metode: r.metode || '',
           nama_pihak: r.nama_pihak as string | undefined,
+          invoice_no: r.invoice_no as string | undefined,
+          invoice_status: r.invoice_status as string | undefined,
         }))
         setResults(mapped)
         navigate('/hasil', { replace: true })

@@ -3,15 +3,21 @@ try:
     from knowledge_base.kategori_keuangan import KATEGORI
     from knowledge_base.rekanan_resolver import resolve_rekanan
     from knowledge_base.coa import MAPPING_LAMA_KE_COA, konversi_kode, coa_nama
+    from knowledge_base.api_client import erp_client
 except ImportError:
     try:
         from src.knowledge_base.kategori_keuangan import KATEGORI
         from src.knowledge_base.rekanan_resolver import resolve_rekanan
         from src.knowledge_base.coa import MAPPING_LAMA_KE_COA, konversi_kode, coa_nama
+        from src.knowledge_base.api_client import erp_client
     except ImportError:
         from kategori_keuangan import KATEGORI
         from rekanan_resolver import resolve_rekanan
         from coa import MAPPING_LAMA_KE_COA, konversi_kode, coa_nama
+        try:
+            from api_client import erp_client
+        except ImportError:
+            erp_client = None
 
 # ==============================================================================
 # STRUKTUR DECISION TREE KNOWLEDGE BASE (HIERARKIS)
@@ -239,11 +245,21 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None, nlp_output=None):
                         }
 
     # --------------------------------------------------------------------------
-    # TAHAP 2: RESOLUSI REKANAN (VENDOR & CUSTOMER MATCHING)
+    # TAHAP 2: RESOLUSI REKANAN & INVOICE ERP (VENDOR, CUSTOMER & FAKTUR)
     # --------------------------------------------------------------------------
     rekanan_res = resolve_rekanan(teks, jenis=jenis_norm)
+
+    # Cek pencocokan invoice ERP
+    inv_match = None
+    if erp_client:
+        nama_pihak = rekanan_res.get("nama_pihak") if rekanan_res else None
+        try:
+            inv_match = erp_client.match_invoice(teks, nominal=mutasi, nama_rekanan=nama_pihak)
+        except Exception:
+            inv_match = None
+
     if rekanan_res:
-        return {
+        hasil = {
             "teks_input": teks,
             "jenis": jenis_norm,
             "mutasi": mutasi,
@@ -252,6 +268,30 @@ def klasifikasi_kb(input_data, jenis=None, mutasi=None, nlp_output=None):
             "nama_pihak": rekanan_res.get("nama_pihak", ""),
             "status": rekanan_res["status"],
             "metode": f"KB Tree (rekanan -> {rekanan_res['metode']})"
+        }
+        if inv_match:
+            hasil["invoice_no"] = inv_match["invoice_no"]
+            hasil["invoice_status"] = "MATCHED"
+            hasil["invoice_amount"] = inv_match.get("amount")
+            hasil["invoice_kriteria"] = inv_match["kriteria"]
+            hasil["metode"] = f"{hasil['metode']} + Faktur ERP ({inv_match['invoice_no']} Lunas)"
+        return hasil
+
+    # Jika rekanan tidak di master data, tapi ada nomor faktur eksplisit di teks
+    if inv_match:
+        kode_akun = inv_match.get("kode_akun") or ("1.1.04.01" if jenis_norm == "CR" else "2.1.01.01")
+        return {
+            "teks_input": teks,
+            "jenis": jenis_norm,
+            "mutasi": mutasi,
+            "kode_akun": kode_akun,
+            "kategori_prediksi": f"{kode_akun} - {coa_nama(kode_akun)}",
+            "nama_pihak": inv_match.get("partner_name", ""),
+            "invoice_no": inv_match["invoice_no"],
+            "invoice_status": "MATCHED",
+            "invoice_kriteria": inv_match["kriteria"],
+            "status": "KB_TEREALISASI",
+            "metode": f"KB Tree (Faktur ERP: {inv_match['invoice_no']} Match {inv_match['kriteria']})",
         }
 
     # --------------------------------------------------------------------------
