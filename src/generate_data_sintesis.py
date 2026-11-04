@@ -2,7 +2,10 @@ import random
 import csv
 from datetime import date, timedelta
 from kamus_istilah import KAMUS_SINGKATAN, CONTOH_VENDOR, CONTOH_CUSTOMER
-from knowledge_base.kategori_keuangan import KATEGORI
+try:
+    from kategori_keuangan import KATEGORI
+except ImportError:
+    from knowledge_base.kategori_keuangan import KATEGORI
 
 random.seed(42)
 
