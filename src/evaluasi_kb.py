@@ -84,7 +84,7 @@ def evaluasi_end_to_end():
     print("=" * 75)
 
     # 1. Load Model & Dataset Riil BCA
-    model, vectorizer = load_model()
+    model, threshold, vectorizer = load_model()
     dataset_path = BASE_DIR / "data" / "bca_riil_partial_label.csv"
 
     if not dataset_path.exists():
@@ -101,7 +101,7 @@ def evaluasi_end_to_end():
 
     for _, row in df.iterrows():
         # Eksekusi pipeline integrasi
-        res = klasifikasi_transaksi(row, model, vectorizer, threshold=0.66)
+        res = klasifikasi_transaksi(row, model, vectorizer=vectorizer, threshold=threshold)
 
         gt_kode = str(row['kode_akun_final']).strip()
         gt_nama = KATEGORI.get(gt_kode, {}).get('nama', 'Unknown')
