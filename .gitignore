@@ -19,6 +19,3 @@ dist/
 **/dist/
 .vite/
 **/output/
-
-# Data rahasia mitra (jangan di-push)
-data/CoA.xlsx

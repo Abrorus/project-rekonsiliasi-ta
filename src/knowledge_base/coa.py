@@ -49,6 +49,33 @@ MAPPING_LAMA_KE_COA = {
     "4-4000": "1.1.1.01",     # Cash on Hand:IDR
 }
 
+# ---------------------------------------------------------------------------
+# Mapping label baru Pool 2 (NLP berbasis CoA) -> Kode CoA riil spesifik
+# ---------------------------------------------------------------------------
+MAPPING_LABEL_NLP_KE_COA = {
+    "SALARY": "6.2.01.01",              # Salary & Wages-Base Salary (produksi)
+    "RECEIVABLE_CUSTOMER": "1.1.04.01",  # Account Receivable 3rd Party
+    "PAYABLE_VENDOR": "2.1.01.01",       # Trade Payable - 3rd Party
+    "UTILITIES": "6.2.05.01",           # Utilities-Electricity (PLN)
+    "COMMUNICATION": "6.2.05.02",       # Utilities-Water/Telephone
+    "TRANSPORT": "6.2.04.01",           # Transport-Transport Out (BBM)
+    "INTERNAL_TRANSFER": "1.1.02.98",   # Cross Account Bank
+    "CASH_DEPOSIT": "1.1.1.01",         # Cash on Hand IDR
+    "RENT": "6.2.10.01",                # Rent-Building
+    "LOAN": "2.2.01",                   # Long Term Loan
+    "PETTY_CASH": "1.1.1.97",           # Petty Cash
+    "REVENUE_OTHER": "4.1.01",          # Operating Revenue
+    "OFFICE_GENERAL": "6.2.07.01",      # Office Supplies
+    "REPAIR_MAINT": "6.2.15.01",        # Repair & Maintenance
+    "OTHER_EXPENSE": "6.4.01.01",       # Other Expenses
+    "TRAVEL": "6.2.03.01",              # Travel Expense
+    "INSURANCE": "6.2.09.01",           # Insurance Expense
+    "TAX": "PERLU_REVIEW",              # Pajak & Setoran Negara
+    "BANK_CHARGE": "PERLU_REVIEW",       # Biaya Bank (admin, transfer, tolakan)
+    "BANK_INTEREST": "PERLU_REVIEW",     # Bunga & Pajak Bunga Bank
+    "EMP_BENEFIT": "PERLU_REVIEW",       # Tunjangan Karyawan & BPJS
+}
+
 # Akun bank per institusi (sisi bank dari jurnal)
 AKUN_BANK = {
     "BCA":     "1.1.02.02",
@@ -134,10 +161,13 @@ def get_parent_kode(kode):
 
 def konversi_kode(kode_lama):
     """
-    Mengonversi kode placeholder lama ke kode CoA riil mitra.
+    Mengonversi kode placeholder lama atau label baru NLP ke kode CoA riil mitra.
     Return dict {kode_coa, nama_coa, status}.
     """
-    kode_baru = MAPPING_LAMA_KE_COA.get(kode_lama)
+    if kode_lama in MAPPING_LABEL_NLP_KE_COA:
+        kode_baru = MAPPING_LABEL_NLP_KE_COA[kode_lama]
+    else:
+        kode_baru = MAPPING_LAMA_KE_COA.get(kode_lama)
 
     if kode_baru is None:
         return {
