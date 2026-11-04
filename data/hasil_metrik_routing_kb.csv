@@ -1,0 +1,9 @@
+Metrik,Jumlah,Nilai (%)
+Auto-Classification Rate (Pool 2),462/558,82.8
+KB Referral Rate (Dirujuk ke Pool 3),96/558,17.2
+KB Resolution Rate (Diselesaikan Aturan Pool 3),66/96,68.75
+Overall System Coverage (Pool 2 + Pool 3),528/558,94.62
+Sisa Review Manual Staf Keuangan,30/558,5.38
+Akurasi Klasifikasi Otomatis Pool 2,462 baris,99.57
+Akurasi Sistem Hibrida (Pool 2 + Pool 3),528 baris,98.11
+Macro-F1 Sistem Hibrida (Pool 2 + Pool 3),528 baris,90.1
