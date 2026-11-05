@@ -1,0 +1,6 @@
+[
+  {"tanggal": "2025-02-03", "keterangan": "TRSF E-BANKING PANCA BERSAUDARA", "debit": 0, "kredit": 5000000, "saldo": 9000000},
+  {"tanggal": "2025-02-04", "keterangan": "BIAYA ADM", "debit": 6500, "kredit": 0, "saldo": 8993500},
+  {"tanggal": "2025-02-05", "keterangan": "pulsa kantor jan", "debit": 150000, "kredit": 0, "saldo": 8843500}
+]
+

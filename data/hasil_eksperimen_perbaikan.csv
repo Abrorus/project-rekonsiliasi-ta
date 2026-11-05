@@ -1,0 +1,9 @@
+fitur,validasi,kernel,akurasi,macro_f1
+dengan nama pihak,StratifiedKFold,linear,0.9552123552123553,0.87329588155695
+dengan nama pihak,StratifiedKFold,rbf,0.9193693693693694,0.7816341118033733
+dengan nama pihak,GroupKFold (teks belum pernah dilihat),linear,0.8431329746852011,0.737406100908069
+dengan nama pihak,GroupKFold (teks belum pernah dilihat),rbf,0.7484341972302939,0.5858641598652151
+tanpa nama pihak,StratifiedKFold,linear,0.8906692406692407,0.8045820160985111
+tanpa nama pihak,StratifiedKFold,rbf,0.8656048906048905,0.7216332340499094
+tanpa nama pihak,GroupKFold (teks belum pernah dilihat),linear,0.807793198774837,0.6842969011875851
+tanpa nama pihak,GroupKFold (teks belum pernah dilihat),rbf,0.6820648079792664,0.5205677232307526

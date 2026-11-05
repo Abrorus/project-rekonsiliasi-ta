@@ -25,4 +25,5 @@ dist/
 **/dist/
 .vite/
 
-
+# Temporary Office Files
+~$*
