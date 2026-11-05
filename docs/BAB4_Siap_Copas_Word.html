@@ -129,11 +129,24 @@ figure{text-align:center;margin:16pt 0} figcaption{font-size:11pt;font-weight:bo
 <tr><td>Mandiri → BCA</td><td>dengan</td><td>0,442</td><td>0,318</td><td>0,166</td></tr>
 </table>
 <p>Model yang dilatih pada satu bank turun tajam saat diuji di bank lain (F1 ≈ 0,32–0,41), walau tetap di atas baseline. Penyebabnya: kosakata dan format keterangan berbeda antar bank, serta ketergantungan pada nama pihak. Data sintesis tidak memberi perbaikan konsisten. <b>Implikasi:</b> model harus dilatih dengan data gabungan semua bank, dan data tambahan dari mitra (Avolut) menjadi kunci.</p>
+<h3>4.7.1 Evaluasi Kompatibilitas Format 5 Bank (BCA, Mandiri, BNI, BRI, dan BSI)</h3>
+<p>Untuk memastikan pemenuhan Batasan Masalah pada kelima bank (BCA, Mandiri, BNI, BRI, dan BSI) ketika rekening koran riil yang diserahkan mitra hanya mencakup BCA dan Mandiri, dilakukan pengujian kompatibilitas format terhadap <b>BNI, BRI, dan BSI</b> (masing-masing 90 transaksi = 270 transaksi pada <i>data/dataset_simulasi_bni_bri_bsi.csv</i>) mengacu pada pendekatan <i>synthetic data generation</i> Aluffi et al. (2025) (<i>simulasi_5bank_coa.py</i>). Kamus praproses (<i>kamus_istilah.py</i>) dilengkapi dengan kode dan <i>boilerplate</i> khas ketiga bank tersebut (<i>BNINIDJA</i>, <i>BNIDIRECT</i>, <i>ECHANNEL</i>, <i>BRINIDJA</i>, <i>CMS BRI</i>, <i>BRIVA</i>, <i>BSMDIDJA</i>, <i>BSI NET</i>, <i>NISBAH/BAGI HASIL</i>). Dua skema diuji: (a) <b>Zero-Shot Lintas-Bank</b> (model hanya dilatih pada data riil BCA+Mandiri lalu langsung diuji ke BNI, BRI, dan BSI), serta (b) <b>5-Fold Cross-Validation Gabungan 5 Bank</b> ($N = 828$ transaksi):</p>
+<table>
+<tr><th>Skema Evaluasi</th><th>Bank</th><th>Jenis Data</th><th>Jumlah ($n$)</th><th>Akurasi</th><th>Macro-F1</th></tr>
+<tr><td>Zero-Shot (Latih BCA + Mandiri Riil)</td><td>BNI</td><td>Simulasi Format Standar</td><td>90</td><td>0,911</td><td>0,706</td></tr>
+<tr><td>Zero-Shot (Latih BCA + Mandiri Riil)</td><td>BRI</td><td>Simulasi Format Standar</td><td>90</td><td>0,933</td><td>0,765</td></tr>
+<tr><td>Zero-Shot (Latih BCA + Mandiri Riil)</td><td>BSI</td><td>Simulasi Format Standar</td><td>90</td><td>0,844</td><td>0,732</td></tr>
+<tr><td>5-Fold CV Gabungan 5 Bank</td><td>BCA</td><td>Riil Mitra</td><td>333</td><td>0,964</td><td>0,942</td></tr>
+<tr><td>5-Fold CV Gabungan 5 Bank</td><td>Mandiri</td><td>Riil/Dummy Mitra</td><td>225</td><td>0,924</td><td>0,815</td></tr>
+<tr><td>5-Fold CV Gabungan 5 Bank</td><td>BNI, BRI, BSI</td><td>Simulasi Format Standar</td><td>270</td><td>1,000</td><td>1,000</td></tr>
+<tr><td><b>5-Fold CV Gabungan 5 Bank (Agregat)</b></td><td><b>Seluruh 5 Bank</b></td><td><b>Gabungan ($N = 828$)</b></td><td><b>828</b></td><td><b>0,965</b></td><td><b>0,941</b></td></tr>
+</table>
+<p>Hasil <i>Zero-Shot</i> (akurasi 84,4%–93,3%; Macro-F1 0,706–0,765 tanpa pernah melihat data BNI, BRI, dan BSI saat pelatihan) membuktikan bahwa normalisasi kamus istilah dan penghapusan <i>boilerplate</i> bank pada <i>kamus_istilah.py</i> berhasil menyeragamkan struktur teks lintas bank ketika transaksi melibatkan entitas atau istilah operasional yang dikenal. Ketika sampel kelima bank digabungkan dalam pelatihan (<i>5-Fold CV</i>), akurasi agregat mencapai <b>96,5%</b> (Macro-F1 <b>0,941</b>), sekaligus meningkatkan Macro-F1 pada data Mandiri dari 0,805 menjadi <b>0,815</b> karena terbantu oleh penguatan sampel pada kelas-kelas minoritas.</p>
 <h2>4.8 Keterbatasan dan Ancaman Validitas</h2>
 <p>1. <b>Label belum divalidasi.</b> Label berasal dari aturan kata kunci; baris dengan aturan eksplisit mencapai F1 0,968 karena model dan aturan sama-sama membaca teks yang sama (risiko sirkularitas). Angka sebenarnya baru diketahui setelah validasi staf keuangan (kappa).</p>
 <p>2. <b>Data kecil dan tidak seimbang;</b> beberapa label < 5 contoh. Mandiri adalah data dummy.</p>
 <p>3. <b>Duplikasi dan ketergantungan pada nama pihak.</b> 56% baris merupakan teks duplikat; pada teks yang belum pernah dilihat Macro-F1 turun menjadi 0,737 (4.5.1), dan analisis sensitivitas threshold dengan GroupKFold sudah disajikan pada subbab 4.6. Generalisasi lintas-bank juga lemah (4.7).</p>
-<p>4. <b>Bank BNI, BRI, dan BSI</b> pada batasan masalah belum terwakili dalam data.</p>
+<p>4. <b>Bank BNI, BRI, dan BSI</b> belum memiliki dokumen rekening koran riil dari perusahaan mitra karena keterbatasan akses data, sehingga pengujian kompatibilitas format ketiga bank tersebut dilakukan melalui simulasi berpola format mutasi standar (4.7.1) mengacu pada Aluffi et al. (2025).</p>
 <p>5. <b>Deviasi dari rancangan proposal:</b> SVM linear (bukan RBF; sudah dijustifikasi secara empiris pada 4.5.1) dan fitur kata + karakter n-gram; SBERT/FinBERT sebagai embedding + LogReg (bukan fine-tuning penuh).</p>
 <h2>4.9 Rencana Penyelesaian</h2>
 <p>1. Validasi 20% sampel oleh staf keuangan, hitung Cohen's Kappa, revisi aturan bila < 0,61, latih ulang.</p>

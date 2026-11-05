@@ -63,12 +63,16 @@ KAMUS_RIIL = {
     "inv": "invoice", "aym": "ayam",
     "lstrk": "listrik", "tlp": "telepon", "adm": "administrasi",
     "ope": "operasional", "opr": "operasional",
+    # istilah khas BNI, BRI, BSI
+    "nisbah": "bunga", "bagihasil": "bunga",
+    "briva": "pembayaran", "autodebet": "bayar",
 }
 
 # kata yang dibuang karena tidak menentukan kategori (boilerplate bank, bulan, kode lokasi)
 STOPWORDS_RIIL = set("""
 trsf trf transfer banking via mcm inhousetrf fee ke dari kbb switching bifast bi fast inc gl
-cenaidja bmriidja bninidja bbijidja rtgs llg ref no ppu tanggal tgl
+cenaidja bmriidja bninidja bbijidja brinidja bsmdidja rtgs llg ref no ppu tanggal tgl
+bni bnidirect echannel bri cms brinet bsi bsinet syariah ovb ibank
 pt cv ud toko bapak ibu px
 jan feb mar apr mei jun jul agu agt ags sep okt nov des
 januari februari maret juni juli agustus september oktober november desember

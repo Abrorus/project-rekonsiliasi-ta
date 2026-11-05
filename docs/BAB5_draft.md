@@ -1,6 +1,7 @@
 # BAB 5 KESIMPULAN DAN SARAN
 
 ## 5.1 Kesimpulan
+
 Berdasarkan hasil perancangan, implementasi, dan pengujian modul *Natural Language Processing* (NLP) pada sistem rekonsiliasi keuangan cerdas SIREKON (Pool 2), diperoleh kesimpulan yang menjawab rumusan masalah penelitian sebagai berikut:
 
 1. **Pemrosesan Teks Keterangan Transaksi Rekening Koran Heterogen (Rumusan Masalah 1):**
@@ -13,6 +14,7 @@ Berdasarkan hasil perancangan, implementasi, dan pengujian modul *Natural Langua
    Berdasarkan pengujian *5-fold Stratified Cross-Validation*, model **TF-IDF + SVM Linear** (Macro-F1 **0,873 ± 0,068**) memperoleh skor rata-rata tertinggi dibandingkan **SBERT + Logistic Regression** (0,780 ± 0,051), **Random Forest** (0,776 ± 0,037), dan **FinBERT + Logistic Regression** (0,771 ± 0,021). Uji statistik *paired t-test* ($\alpha = 0,05$) membuktikan bahwa SVM unggul secara signifikan terhadap FinBERT ($p = 0,0168$), serta kompetitif terhadap Random Forest ($p = 0,0778$) dan SBERT ($p = 0,1352$) dengan biaya komputasi yang jauh lebih ringan. Eksperimen tambahan juga membuktikan bahwa kernel Linear secara konsisten mengungguli kernel RBF pada seluruh skema validasi (selisih Macro-F1 0,09–0,15), sedangkan pada pengujian ketat terhadap teks transaksi yang belum pernah dilihat sama sekali (*StratifiedGroupKFold*), model mencapai Macro-F1 **0,737** dan akurasi **84,3%**.
 
 ## 5.2 Saran
+
 Berdasarkan keterbatasan yang ditemukan selama penelitian, diajukan beberapa saran untuk pengembangan sistem SIREKON dan penelitian selanjutnya:
 
 1. **Perluasan Korpus Multi-Bank dan Penyeimbangan Kelas Minoritas:**
