@@ -2,19 +2,20 @@
 SIREKON Backend API — FastAPI (Unified Backend)
 
 Pipeline Integrasi:
-  Upload PDF Mutasi -> Ekstraksi Tabel -> NLP Feature/Confidence -> KB Engine (Supabase) -> Feedback Loop
+  Upload PDF Mutasi -> Ekstraksi Tabel (Arya) -> NLP Feature/Confidence 0.72 (Abror) -> KB Engine Forward Chaining ke ERP (Mario) -> 3 Status UI (Auto Match, Suggestion, Not Found) -> Feedback Loop
 
 Endpoints:
   POST /api/reconcile-pdf              Upload PDF mutasi & rekonsiliasi end-to-end
   POST /api/reconcile-transactions     Proses JSON transaksi (kompatibilitas frontend)
-  POST /api/rekonsiliasi               Proses JSON batch transaksi
+  POST /api/rekonsiliasi               Proses JSON batch transaksi (Forward Chaining ulang setelah koreksi)
   GET  /api/demo-data                  Sampel data simulasi rekonsiliasi
+  GET  /api/coa                        Daftar akun Chart of Accounts (CoA) ERP untuk pencocokan manual
   GET  /api/health                     Status kesehatan sistem & kesiapan modul
   GET  /api/stats                      Statistik rekonsiliasi & coverage live
   GET  /api/transaksi                  Daftar transaksi tersimpan di database
   GET  /api/transaksi/{id}             Detail transaksi
-  POST /api/transaksi/{id}/konfirmasi  Konfirmasi rekomendasi (feedback loop)
-  POST /api/transaksi/{id}/tolak       Tolak rekomendasi (feedback loop)
+  POST /api/transaksi/{id}/konfirmasi  Konfirmasi rekomendasi / simpan pencocokan manual (feedback loop)
+  POST /api/transaksi/{id}/tolak       Tolak & koreksi rekomendasi (feedback loop)
   GET  /api/tree/{type}                Ambil hierarki tree nodes
 """
 
@@ -41,7 +42,9 @@ from api.service import (
     get_tree_nodes,
     get_statistik,
     get_nlp_model,
+    get_daftar_coa,
 )
+from knowledge_base.coa import coa_nama
 
 # Impor modul Table Recognition
 try:
@@ -60,7 +63,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="SiRekon - Sistem Rekonsiliasi Bank API",
-    description="Unified API: Ekstraksi Tabel -> NLP -> Knowledge Base -> CoA Matching & Feedback Loop",
+    description="Unified API: Ekstraksi Tabel -> NLP (Threshold 0.72) -> Knowledge Base (Forward Chaining ERP) -> 3 Status UI & Feedback Loop",
     version="1.0.0",
 )
 
@@ -91,6 +94,9 @@ class TransaksiInput(BaseModel):
     tanggal: Optional[str] = "-"
     keterangan: str
     jenis: Optional[str] = "DB"  # "DB" atau "CR"
+    debit: Optional[float] = 0.0
+    kredit: Optional[float] = 0.0
+    saldo: Optional[float] = 0.0
     mutasi: Optional[float] = 0.0
     sumber_file: Optional[str] = None
 
@@ -102,9 +108,13 @@ class BatchInput(BaseModel):
 class TransactionItem(BaseModel):
     """Format alternatif untuk kompatibilitas frontend."""
     tgl: Optional[str] = "-"
+    tanggal: Optional[str] = "-"
     ket: Optional[str] = ""
     keterangan: Optional[str] = ""
     jenis: Optional[str] = "DB"
+    debit: Optional[float] = 0.0
+    kredit: Optional[float] = 0.0
+    saldo: Optional[float] = 0.0
     mutasi: Optional[float] = 0.0
 
 
@@ -127,12 +137,23 @@ def root():
 
 @app.get("/api/health")
 def health_check():
-    model, _, _ = get_nlp_model()
+    model, threshold, _ = get_nlp_model()
     return {
         "status": "healthy",
         "model_loaded": model is not None,
+        "nlp_threshold": threshold,
         "table_module": process_pdf_table is not None,
         "supabase_connected": True,
+    }
+
+
+@app.get("/api/coa")
+def list_coa():
+    """Mengambil daftar lengkap akun CoA ERP mitra untuk pencocokan manual di UI."""
+    coa_list = get_daftar_coa()
+    return {
+        "total": len(coa_list),
+        "coa": coa_list,
     }
 
 
@@ -141,9 +162,9 @@ async def reconcile_pdf(file: UploadFile = File(...)):
     """
     Pipeline Rekonsiliasi End-to-End dari PDF:
     1. Simpan PDF mutasi sementara
-    2. Ekstraksi tabel transaksi (Modul Table Recognition)
+    2. Ekstraksi tabel transaksi (Modul Table Recognition: Tanggal, Keterangan, Debit, Kredit, Saldo)
     3. Normalisasi & deduplikasi baris
-    4. Klasifikasi cerdas (NLP Feature Extraction + KB Engine Supabase)
+    4. Klasifikasi cerdas (NLP Confidence 0.72 + KB Engine Forward Chaining ke ERP)
     5. Simpan transaksi ke database & sediakan UUID untuk Feedback Loop
     6. Return hasil komprehensif ke Frontend
     """
@@ -153,7 +174,6 @@ async def reconcile_pdf(file: UploadFile = File(...)):
     if not process_pdf_table:
         raise HTTPException(status_code=500, detail="Modul Table Recognition belum terpasang.")
 
-    # Simpan sementara file PDF
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
         shutil.copyfileobj(file.file, tmp)
         tmp_path = tmp.name
@@ -172,12 +192,11 @@ async def reconcile_pdf(file: UploadFile = File(...)):
                 "data": [],
             }
 
-        # Susun daftar transaksi untuk diproses batch
         transaksi_list = []
         for row in raw_records:
-            # Deteksi jenis transaksi (DB/CR)
             debit_val = float(str(row.get("debit", 0) or 0).replace(",", "").strip() or 0)
             kredit_val = float(str(row.get("kredit", 0) or 0).replace(",", "").strip() or 0)
+            saldo_val = float(str(row.get("saldo", 0) or 0).replace(",", "").strip() or 0)
 
             if debit_val > 0:
                 jenis = "DB"
@@ -188,6 +207,10 @@ async def reconcile_pdf(file: UploadFile = File(...)):
             else:
                 jenis = str(row.get("jenis") or "DB").upper()
                 mutasi = float(str(row.get("mutasi", 0) or 0).replace(",", "").strip() or 0)
+                if jenis == "DB":
+                    debit_val = mutasi
+                else:
+                    kredit_val = mutasi
 
             keterangan = str(row.get("keterangan") or row.get("deskripsi") or row.get("uraian") or "")
             tanggal = str(row.get("waktu_transaksi") or row.get("tanggal") or row.get("tgl") or "-")
@@ -196,11 +219,13 @@ async def reconcile_pdf(file: UploadFile = File(...)):
                 "tanggal": tanggal,
                 "keterangan": keterangan,
                 "jenis": jenis,
+                "debit": debit_val,
+                "kredit": kredit_val,
+                "saldo": saldo_val,
                 "mutasi": mutasi,
                 "sumber_file": file.filename,
             })
 
-        # Jalankan pipeline NLP + KB Engine + Simpan ke Supabase
         results = proses_transaksi_batch(transaksi_list)
 
         return {
@@ -224,10 +249,14 @@ def reconcile_transactions(transactions: List[TransactionItem]):
     tx_list = []
     for tx in transactions:
         ket = tx.keterangan or tx.ket or ""
+        tgl = tx.tanggal if tx.tanggal and tx.tanggal != "-" else (tx.tgl or "-")
         tx_list.append({
-            "tanggal": tx.tgl or "-",
+            "tanggal": tgl,
             "keterangan": ket,
             "jenis": tx.jenis or "DB",
+            "debit": tx.debit or 0.0,
+            "kredit": tx.kredit or 0.0,
+            "saldo": tx.saldo or 0.0,
             "mutasi": tx.mutasi or 0.0,
         })
     results = proses_transaksi_batch(tx_list)
@@ -240,7 +269,7 @@ def reconcile_transactions(transactions: List[TransactionItem]):
 
 @app.post("/api/rekonsiliasi")
 def rekonsiliasi(batch: BatchInput):
-    """Endpoint batch rekonsiliasi standar."""
+    """Endpoint batch rekonsiliasi standar (mendukung re-evaluasi Forward Chaining setelah koreksi keterangan)."""
     results = proses_transaksi_batch(
         [t.model_dump() for t in batch.transaksi]
     )
@@ -253,19 +282,107 @@ def rekonsiliasi(batch: BatchInput):
 
 @app.get("/api/demo-data")
 def get_demo_data():
-    """Mengembalikan data simulasi transaksi yang diproses via pipeline penuh."""
+    """Mengembalikan data simulasi transaksi dengan 5 kolom standar yang diproses via pipeline penuh."""
     contoh_transaksi = [
-        {"tanggal": "2023-01-02", "keterangan": "transfer gaji karyawan kantor pusat", "jenis": "DB", "mutasi": 25000000.0},
-        {"tanggal": "2023-01-02", "keterangan": "pembayaran bensin pertamina operasional sales", "jenis": "DB", "mutasi": 350000.0},
-        {"tanggal": "2023-01-03", "keterangan": "TRSF E-BANKING 89000/BPJS TK", "jenis": "DB", "mutasi": 16561371.0},
-        {"tanggal": "2023-01-04", "keterangan": "BYR VIA E-BANKING PENERIMAAN NEGARA", "jenis": "DB", "mutasi": 14978282.0},
-        {"tanggal": "2023-01-04", "keterangan": "BYR VIA E-BANKING 0860 PLN JATIM DARBE JAYA ABADI P", "jenis": "DB", "mutasi": 1694321.0},
-        {"tanggal": "2023-01-05", "keterangan": "SWITCHING TRANSFER DR 008 PANCA BERSAUDARA", "jenis": "CR", "mutasi": 50000000.0},
-        {"tanggal": "2023-01-05", "keterangan": "SWITCHING TRANSFER KE 009 SENTOT PRABOWO", "jenis": "DB", "mutasi": 15000000.0},
-        {"tanggal": "2023-01-06", "keterangan": "TRSF E-BANKING CIOMAS ADISATWA", "jenis": "DB", "mutasi": 580075045.0},
-        {"tanggal": "2023-01-06", "keterangan": "TRSF E-BANKING AMERTHA JAYA", "jenis": "CR", "mutasi": 595075045.0},
-        {"tanggal": "2023-01-07", "keterangan": "pembayaran sewa gedung kantor", "jenis": "DB", "mutasi": 15000000.0},
-        {"tanggal": "2023-01-08", "keterangan": "REF TXN 99823 ANOMALI TANPA KETERANGAN", "jenis": "DB", "mutasi": 100000.0},
+        {
+            "tanggal": "2023-01-02",
+            "keterangan": "transfer gaji karyawan kantor pusat",
+            "jenis": "DB",
+            "debit": 25000000.0,
+            "kredit": 0.0,
+            "saldo": 475000000.0,
+            "mutasi": 25000000.0,
+        },
+        {
+            "tanggal": "2023-01-02",
+            "keterangan": "pembayaran bensin pertamina operasional sales",
+            "jenis": "DB",
+            "debit": 350000.0,
+            "kredit": 0.0,
+            "saldo": 474650000.0,
+            "mutasi": 350000.0,
+        },
+        {
+            "tanggal": "2023-01-03",
+            "keterangan": "TRSF E-BANKING 89000/BPJS TK",
+            "jenis": "DB",
+            "debit": 16561371.0,
+            "kredit": 0.0,
+            "saldo": 458088629.0,
+            "mutasi": 16561371.0,
+        },
+        {
+            "tanggal": "2023-01-04",
+            "keterangan": "BYR VIA E-BANKING PENERIMAAN NEGARA",
+            "jenis": "DB",
+            "debit": 14978282.0,
+            "kredit": 0.0,
+            "saldo": 443110347.0,
+            "mutasi": 14978282.0,
+        },
+        {
+            "tanggal": "2023-01-04",
+            "keterangan": "BYR VIA E-BANKING 0860 PLN JATIM DARBE JAYA ABADI P",
+            "jenis": "DB",
+            "debit": 1694321.0,
+            "kredit": 0.0,
+            "saldo": 441416026.0,
+            "mutasi": 1694321.0,
+        },
+        {
+            "tanggal": "2023-01-05",
+            "keterangan": "SWITCHING TRANSFER DR 008 PANCA BERSAUDARA",
+            "jenis": "CR",
+            "debit": 0.0,
+            "kredit": 50000000.0,
+            "saldo": 491416026.0,
+            "mutasi": 50000000.0,
+        },
+        {
+            "tanggal": "2023-01-05",
+            "keterangan": "SWITCHING TRANSFER KE 009 SENTOT PRABOWO",
+            "jenis": "DB",
+            "debit": 15000000.0,
+            "kredit": 0.0,
+            "saldo": 476416026.0,
+            "mutasi": 15000000.0,
+        },
+        {
+            "tanggal": "2023-01-06",
+            "keterangan": "TRSF E-BANKING CIOMAS ADISATWA",
+            "jenis": "DB",
+            "debit": 580075045.0,
+            "kredit": 0.0,
+            "saldo": 196340981.0,
+            "mutasi": 580075045.0,
+        },
+        {
+            "tanggal": "2023-01-06",
+            "keterangan": "TRSF E-BANKING AMERTHA JAYA",
+            "jenis": "CR",
+            "debit": 0.0,
+            "kredit": 595075045.0,
+            "saldo": 791416026.0,
+            "mutasi": 595075045.0,
+        },
+        {
+            "tanggal": "2023-01-07",
+            "keterangan": "pembayaran sewa gedung kantor",
+            "jenis": "DB",
+            "debit": 15000000.0,
+            "kredit": 0.0,
+            "saldo": 776416026.0,
+            "mutasi": 15000000.0,
+        },
+        {
+            "tanggal": "2023-01-08",
+            "keterangan": "REF TXN 99823 ANOMALI TANPA KETERANGAN",
+            "jenis": "DB",
+            "debit": 100000.0,
+            "kredit": 0.0,
+            "saldo": 776316026.0,
+            "mutasi": 100000.0,
+        },
     ]
     results = proses_transaksi_batch(contoh_transaksi)
     return {
@@ -281,6 +398,8 @@ def list_transaksi(status: Optional[str] = None, limit: int = 100):
     sb = get_supabase()
     query = sb.table("transaksi").select("*").eq("client_id", CLIENT_ID).order("created_at", desc=True).limit(limit)
     if status:
+        if status == "not_found":
+            status = "manual"
         query = query.eq("status", status)
     res = query.execute()
     return {"total": len(res.data), "transaksi": res.data}
@@ -296,10 +415,23 @@ def get_transaksi(transaksi_id: str):
     return res.data[0]
 
 
+def _resolve_nama_akun_lengkap(kode_akun: str, default_nama: Optional[str] = None) -> str:
+    """Mengambil format 'KODE - Nama Akun' dari CoA ERP."""
+    if not kode_akun or kode_akun in ("CONFIRMED", "NOT_FOUND", "UNKNOWN", "-"):
+        return default_nama or kode_akun
+    try:
+        nama = coa_nama(kode_akun)
+        if nama:
+            return f"{kode_akun} - {nama}"
+    except Exception:
+        pass
+    return default_nama or kode_akun
+
+
 @app.post("/api/transaksi/{transaksi_id}/konfirmasi")
 def konfirmasi_transaksi(transaksi_id: str, body: KonfirmasiInput):
     """
-    Feedback Loop: User menyetujui rekomendasi KB.
+    Feedback Loop: User menyetujui rekomendasi KB atau menetapkan akun ERP manual (pada Not Found / Suggestion).
     1. Update status transaksi menjadi 'confirmed'
     2. Catat audit feedback ke feedback_log
     3. Perbarui frequency-based confidence di mapping_layer
@@ -308,30 +440,34 @@ def konfirmasi_transaksi(transaksi_id: str, body: KonfirmasiInput):
 
     res = sb.table("transaksi").select("*").eq("id", transaksi_id).execute()
     if not res.data:
-        # Jika transaksi hanya tersimpan lokal di sesi frontend
+        kode_final = body.kode_akun_baru or "CONFIRMED"
         return {
             "status": "confirmed",
             "transaksi_id": transaksi_id,
-            "kode_akun": body.kode_akun_baru or "CONFIRMED",
+            "kode_akun": kode_final,
+            "nama_akun": _resolve_nama_akun_lengkap(kode_final),
         }
         
     trx = res.data[0]
     kode_akun_final = body.kode_akun_baru or trx["kode_akun_erp"]
+    nama_akun_final = _resolve_nama_akun_lengkap(kode_akun_final, trx.get("nama_akun"))
 
     # 1. Update status transaksi
     sb.table("transaksi").update({
         "status": "confirmed",
         "kode_akun_erp": kode_akun_final,
+        "nama_akun": nama_akun_final,
         "dikonfirmasi_pada": "now()",
         "dikonfirmasi_oleh": body.dikonfirmasi_oleh or "user",
     }).eq("id", transaksi_id).execute()
 
     # 2. Simpan feedback log
     try:
+        aksi_type = "manual_input" if trx.get("status") == "manual" else "konfirmasi"
         sb.table("feedback_log").insert({
             "client_id": CLIENT_ID,
             "transaksi_id": transaksi_id,
-            "aksi": "konfirmasi",
+            "aksi": aksi_type,
             "kode_akun_lama": trx.get("kode_akun_erp"),
             "kode_akun_baru": kode_akun_final,
             "catatan": body.catatan,
@@ -347,14 +483,15 @@ def konfirmasi_transaksi(transaksi_id: str, body: KonfirmasiInput):
         "status": "confirmed",
         "transaksi_id": transaksi_id,
         "kode_akun": kode_akun_final,
+        "nama_akun": nama_akun_final,
     }
 
 
 @app.post("/api/transaksi/{transaksi_id}/tolak")
 def tolak_transaksi(transaksi_id: str, body: KonfirmasiInput):
     """
-    Feedback Loop: User menolak rekomendasi KB.
-    1. Update status transaksi menjadi 'rejected'
+    Feedback Loop: User menolak rekomendasi KB & memasukkan koreksi akun ERP yang benar.
+    1. Update status transaksi menjadi 'rejected' (atau ter-koreksi dengan kode akun baru)
     2. Catat audit feedback ke feedback_log
     3. Perbarui frequency-based confidence di mapping_layer (confidence turun)
     """
@@ -362,19 +499,29 @@ def tolak_transaksi(transaksi_id: str, body: KonfirmasiInput):
 
     res = sb.table("transaksi").select("*").eq("id", transaksi_id).execute()
     if not res.data:
+        kode_final = body.kode_akun_baru or "-"
         return {
             "status": "rejected",
             "transaksi_id": transaksi_id,
+            "kode_akun": kode_final,
+            "nama_akun": _resolve_nama_akun_lengkap(kode_final),
         }
 
     trx = res.data[0]
+    kode_akun_final = body.kode_akun_baru or trx.get("kode_akun_erp")
+    nama_akun_final = _resolve_nama_akun_lengkap(kode_akun_final, trx.get("nama_akun"))
 
     # 1. Update status transaksi
-    sb.table("transaksi").update({
+    update_payload = {
         "status": "rejected",
         "dikonfirmasi_pada": "now()",
         "dikonfirmasi_oleh": body.dikonfirmasi_oleh or "user",
-    }).eq("id", transaksi_id).execute()
+    }
+    if body.kode_akun_baru:
+        update_payload["kode_akun_erp"] = kode_akun_final
+        update_payload["nama_akun"] = nama_akun_final
+
+    sb.table("transaksi").update(update_payload).eq("id", transaksi_id).execute()
 
     # 2. Simpan feedback log
     try:
@@ -396,6 +543,8 @@ def tolak_transaksi(transaksi_id: str, body: KonfirmasiInput):
     return {
         "status": "rejected",
         "transaksi_id": transaksi_id,
+        "kode_akun": kode_akun_final,
+        "nama_akun": nama_akun_final,
     }
 
 

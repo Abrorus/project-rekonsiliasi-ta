@@ -153,6 +153,17 @@ def klasifikasi_transaksi(input_data, model, vectorizer=None, threshold=0.72, je
     kb_result["confidence_nlp"] = nlp_output["confidence"]
     kb_result["kategori_nlp"] = nlp_output["kategori_nlp"]
 
+    erp_found = (
+        kb_result.get("status") in ("KB_TEREALISASI", "NLP_VALIDATED")
+        and kb_result.get("kode_akun") not in ("MANUAL_REVIEW", "PERLU_REVIEW", "UNKNOWN", "-", "", None)
+    )
+    if nlp_output["confidence_tinggi"] and erp_found:
+        kb_result["status_ui"] = "AUTO_MATCH"
+    elif (not nlp_output["confidence_tinggi"]) and erp_found:
+        kb_result["status_ui"] = "SUGGESTION"
+    else:
+        kb_result["status_ui"] = "NOT_FOUND"
+
     if nlp_output["confidence_tinggi"] and kb_result.get("status") not in ("MANUAL_REVIEW", "PERLU_REVIEW"):
         kb_result["pool"] = "Pool 1 (NLP Confident + KB Validated)"
     else:

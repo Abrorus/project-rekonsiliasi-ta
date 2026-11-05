@@ -66,12 +66,13 @@ DECISION_TREE = {
         ]
     },
     "operasional": {
-        "keywords": ["listrik", "pln", "telepon", "telkom", "internet", "indihome", "wifi", "gaji", "payroll", "thr", "bbm", "bensin", "pertamina", "spbu", "tol"],
+        "keywords": ["listrik", "pln", "telepon", "telkom", "internet", "indihome", "wifi", "gaji", "payroll", "thr", "bbm", "bensin", "pertamina", "spbu", "tol", "sewa gedung", "sewa kantor", "sewa ruko"],
         "sub_rules": [
             (["listrik", "pln"], "6.2.05.01"),             # Utilities-Electricity
             (["telepon", "telkom", "internet", "indihome", "wifi"], "6.2.05.02"),  # Utilities-Water/Telephone
             (["gaji", "payroll", "thr"], "6.2.01.01"),     # Salary & Wages-Base Salary (produksi)
-            (["bbm", "bensin", "pertamina", "spbu", "tol"], "6.2.04.01")  # Transport-Transport.Out (produksi)
+            (["bbm", "bensin", "pertamina", "spbu", "tol"], "6.2.04.01"),  # Transport-Transport.Out (produksi)
+            (["sewa gedung", "sewa kantor", "sewa ruko"], "6.2.10.01")     # Rent-Building
         ]
     },
     "switching_interbank": {

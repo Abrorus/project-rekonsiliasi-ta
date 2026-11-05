@@ -3,29 +3,48 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import {
   Upload, FileText, Brain, Database, CheckCircle2, AlertTriangle,
-  XCircle, ArrowRight, Loader2, BarChart3, Clock, Zap, AlertCircle,
-  Check, X, Pencil, ThumbsUp, ThumbsDown, Play, User
+  XCircle, ArrowRight, Loader2, Clock, Zap, AlertCircle,
+  Check, X, Pencil, ThumbsUp, ThumbsDown, Play, User, Search
 } from 'lucide-react'
 
 interface TransactionResult {
   id: string
   tanggal: string
   keterangan: string
+  teks_bersih?: string
+  kategori_nlp?: string
   jenis: 'DB' | 'CR' | string
+  debit: number
+  kredit: number
+  saldo: number
   mutasi: number
   kode_akun: string
   nama_akun: string
-  status: 'auto_match' | 'suggestion' | 'manual' | 'confirmed' | 'rejected'
+  kandidat_kode_akun?: string
+  kandidat_nama_akun?: string
+  status: 'auto_match' | 'suggestion' | 'not_found' | 'confirmed' | 'rejected'
   metode: string
+  conf: number
+  confidence_tinggi: boolean
+  threshold: number
+  pool?: string
   nama_pihak?: string
   invoice_no?: string
   invoice_status?: string
+}
+
+interface CoaItem {
+  kode: string
+  nama: string
+  label: string
+  account_type?: string
 }
 
 interface Stats {
   total: number
   auto_match: number
   suggestion: number
+  not_found: number
   manual: number
   confirmed: number
   rejected: number
@@ -33,6 +52,7 @@ interface Stats {
 }
 
 const API_BASE = 'http://localhost:8000/api'
+const NLP_THRESHOLD = 0.72
 
 function formatCurrency(val: number) {
   return new Intl.NumberFormat('id-ID').format(val)
@@ -43,35 +63,92 @@ function mapStatus(s: string): TransactionResult['status'] {
   if (s === 'suggestion' || s === 'review') return 'suggestion'
   if (s === 'confirmed') return 'confirmed'
   if (s === 'rejected') return 'rejected'
-  return 'manual'
+  return 'not_found'
+}
+
+function mapRawToTransaction(r: Record<string, unknown>): TransactionResult {
+  const jenis = String(r.jenis || 'DB').toUpperCase()
+  const mutasi = Number(r.mutasi) || 0
+  const debit = Number(r.debit) || (jenis === 'DB' ? mutasi : 0)
+  const kredit = Number(r.kredit) || (jenis === 'CR' ? mutasi : 0)
+  const saldo = Number(r.saldo) || 0
+  const conf = Number(r.conf) || 0
+  const threshold = Number(r.threshold) || NLP_THRESHOLD
+  const confidence_tinggi =
+    typeof r.confidence_tinggi === 'boolean' ? r.confidence_tinggi : conf >= threshold
+
+  return {
+    id: String(r.id || crypto.randomUUID()),
+    tanggal: String(r.tanggal || r.tgl || '-'),
+    keterangan: String(r.keterangan || r.ket || ''),
+    teks_bersih: r.teks_bersih ? String(r.teks_bersih) : undefined,
+    kategori_nlp: r.kategori_nlp ? String(r.kategori_nlp) : undefined,
+    jenis,
+    debit,
+    kredit,
+    saldo,
+    mutasi: mutasi || debit || kredit,
+    kode_akun: String(r.kode_akun || r.akun || 'NOT_FOUND'),
+    nama_akun: String(r.nama_akun || r.nama || '-'),
+    kandidat_kode_akun: r.kandidat_kode_akun ? String(r.kandidat_kode_akun) : undefined,
+    kandidat_nama_akun: r.kandidat_nama_akun ? String(r.kandidat_nama_akun) : undefined,
+    status: mapStatus(String(r.status || '')),
+    metode: String(r.metode || '-'),
+    conf,
+    confidence_tinggi,
+    threshold,
+    pool: r.pool ? String(r.pool) : undefined,
+    nama_pihak: r.nama_pihak as string | undefined,
+    invoice_no: r.invoice_no as string | undefined,
+    invoice_status: r.invoice_status as string | undefined,
+  }
 }
 
 function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; icon: typeof CheckCircle2; bg: string; text: string; border: string }> = {
     auto_match: { label: 'Auto Match', icon: CheckCircle2, bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
     suggestion: { label: 'Suggestion', icon: AlertTriangle, bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
-    manual: { label: 'Manual', icon: XCircle, bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
+    not_found: { label: 'Not Found', icon: XCircle, bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
     confirmed: { label: 'Dikonfirmasi', icon: ThumbsUp, bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
-    rejected: { label: 'Ditolak', icon: ThumbsDown, bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' },
+    rejected: { label: 'Dikoreksi', icon: ThumbsDown, bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' },
   }
-  const c = config[status] || config.manual
+  const c = config[status] || config.not_found
   return (
-    <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full border ${c.bg} ${c.text} ${c.border}`}>
+    <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full border whitespace-nowrap ${c.bg} ${c.text} ${c.border}`}>
       <c.icon size={13} />
       {c.label}
     </span>
   )
 }
 
-type StepKey = 'upload' | 'processing' | 'result'
+function ConfidenceBadge({ conf, threshold = NLP_THRESHOLD }: { conf: number; threshold?: number }) {
+  const isHigh = conf >= threshold
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-mono font-semibold rounded-md border ${
+        isHigh
+          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+          : 'bg-amber-50 text-amber-700 border-amber-200'
+      }`}
+      title={isHigh ? `Confidence >= ${threshold} (Valid)` : `Confidence < ${threshold} (Ragu-ragu / Perlu Review)`}
+    >
+      {conf.toFixed(2)} {isHigh ? '≥ 0.72' : '< 0.72'}
+    </span>
+  )
+}
+
+type StepKey = 'upload' | 'processing' | 'preview_nlp' | 'result'
 
 function StepIndicator({ currentStep }: { currentStep: StepKey }) {
   const steps = [
-    { key: 'upload' as const, label: 'Upload PDF', icon: Upload },
-    { key: 'processing' as const, label: 'Proses Rekonsiliasi', icon: Loader2 },
-    { key: 'result' as const, label: 'Hasil Rekonsiliasi', icon: BarChart3 },
+    { key: 'upload' as const, label: '1. Upload PDF', icon: Upload },
+    { key: 'preview_nlp' as const, label: '2. Ekstraksi Tabel & Skor NLP', icon: Brain },
+    { key: 'result' as const, label: '3. Forward Chaining ERP (3 Status)', icon: Database },
   ]
-  const currentIdx = steps.findIndex(s => s.key === currentStep)
+  const currentIdx =
+    currentStep === 'upload' ? 0 :
+    currentStep === 'processing' || currentStep === 'preview_nlp' ? 1 :
+    2
 
   return (
     <div className="flex items-center justify-center gap-2 py-3">
@@ -84,8 +161,8 @@ function StepIndicator({ currentStep }: { currentStep: StepKey }) {
                 ? 'bg-blue-100 text-blue-700'
                 : 'bg-gray-100 text-gray-400'
           }`}>
-            <s.icon size={14} className={i === currentIdx && s.key === 'processing' ? 'animate-spin' : ''} />
-            <span className="hidden sm:inline">{s.label}</span>
+            <s.icon size={14} />
+            <span className="hidden md:inline">{s.label}</span>
           </div>
           {i < steps.length - 1 && (
             <ArrowRight size={14} className={i < currentIdx ? 'text-blue-400' : 'text-gray-300'} />
@@ -96,32 +173,49 @@ function StepIndicator({ currentStep }: { currentStep: StepKey }) {
   )
 }
 
-// ---- Modal Konfirmasi/Tolak ----
+// ---- Modal Validasi Suggestion & Pencocokan Manual ERP (Not Found) ----
 function ActionModal({
   isOpen,
   mode,
   transaction,
+  coaList,
   onClose,
   onSubmit,
 }: {
   isOpen: boolean
   mode: 'konfirmasi' | 'tolak'
   transaction: TransactionResult | null
+  coaList: CoaItem[]
   onClose: () => void
   onSubmit: (kodeAkunBaru?: string, catatan?: string) => void
 }) {
   const [kodeAkunBaru, setKodeAkunBaru] = useState('')
+  const [searchCoa, setSearchCoa] = useState('')
   const [catatan, setCatatan] = useState('')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (isOpen) {
-      setKodeAkunBaru('')
+    if (isOpen && transaction) {
+      const initialCode =
+        transaction.kode_akun && transaction.kode_akun !== 'NOT_FOUND' && transaction.kode_akun !== 'UNKNOWN' && transaction.kode_akun !== 'PERLU_REVIEW'
+          ? transaction.kode_akun
+          : ''
+      setKodeAkunBaru(mode === 'konfirmasi' ? initialCode : '')
+      setSearchCoa('')
       setCatatan('')
     }
-  }, [isOpen])
+  }, [isOpen, transaction, mode])
 
   if (!isOpen || !transaction) return null
+
+  const isNotFound = transaction.status === 'not_found'
+  const isKonfirmasi = mode === 'konfirmasi'
+
+  const filteredCoa = coaList.filter(item => {
+    if (!searchCoa.trim()) return true
+    const q = searchCoa.toLowerCase()
+    return item.kode.toLowerCase().includes(q) || item.nama.toLowerCase().includes(q)
+  })
 
   const handleSubmit = async () => {
     setLoading(true)
@@ -129,57 +223,94 @@ function ActionModal({
     setLoading(false)
   }
 
-  const isKonfirmasi = mode === 'konfirmasi'
+  // Untuk transaksi Not Found atau mode Tolak/Koreksi, user wajib memilih kode akun ERP
+  const requireAccountSelection = isNotFound || !isKonfirmasi
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className={`px-6 py-4 flex items-center gap-3 ${
-          isKonfirmasi ? 'bg-emerald-50 border-b border-emerald-100' : 'bg-red-50 border-b border-red-100'
+          isNotFound
+            ? 'bg-indigo-50 border-b border-indigo-100'
+            : isKonfirmasi
+              ? 'bg-emerald-50 border-b border-emerald-100'
+              : 'bg-amber-50 border-b border-amber-100'
         }`}>
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-            isKonfirmasi ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
+            isNotFound
+              ? 'bg-indigo-100 text-indigo-600'
+              : isKonfirmasi
+                ? 'bg-emerald-100 text-emerald-600'
+                : 'bg-amber-100 text-amber-600'
           }`}>
-            {isKonfirmasi ? <Check size={20} /> : <X size={20} />}
+            {isNotFound ? <Search size={20} /> : isKonfirmasi ? <Check size={20} /> : <Pencil size={20} />}
           </div>
           <div>
             <h3 className="font-semibold text-gray-900">
-              {isKonfirmasi ? 'Konfirmasi Rekomendasi' : 'Tolak Rekomendasi'}
+              {isNotFound
+                ? 'Pencocokan Manual ke Sistem ERP (Not Found)'
+                : isKonfirmasi
+                  ? 'Validasi & Konfirmasi Suggestion KB'
+                  : 'Koreksi Pemetaan Akun ERP'}
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              {isKonfirmasi ? 'Setujui pemetaan akun ini' : 'Tolak dan masukkan akun yang benar'}
+              {isNotFound
+                ? 'Cari dan pasangkan output transaksi ini dengan akun Chart of Accounts (CoA) ERP perusahaan'
+                : isKonfirmasi
+                  ? 'Setujui kandidat akun hasil Forward Chaining KB atau sesuaikan dengan akun ERP'
+                  : 'Pilih akun ERP yang tepat untuk memperbarui Knowledge Base (Feedback Loop)'}
             </p>
           </div>
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 space-y-4">
-          <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-500">Keterangan</span>
-              <span className="font-mono text-gray-800 text-right max-w-[250px] truncate">{transaction.keterangan}</span>
+        <div className="px-6 py-5 space-y-4 max-h-[75vh] overflow-y-auto">
+          {/* Ringkasan Fakta Transaksi & Output NLP */}
+          <div className="bg-slate-50 rounded-xl p-4 space-y-2 border border-slate-200/70">
+            <div className="flex justify-between text-xs gap-4">
+              <span className="text-gray-500 shrink-0">Keterangan Rekening Koran</span>
+              <span className="font-mono font-medium text-gray-900 text-right">{transaction.keterangan}</span>
+            </div>
+            {transaction.teks_bersih && (
+              <div className="flex justify-between text-xs gap-4">
+                <span className="text-gray-500 shrink-0">Teks Bersih Kamus NLP</span>
+                <span className="font-mono text-indigo-700 text-right">{transaction.teks_bersih}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-gray-500">Confidence Score NLP</span>
+              <div className="flex items-center gap-2">
+                {transaction.kategori_nlp && (
+                  <span className="text-[11px] px-2 py-0.5 bg-purple-50 text-purple-700 rounded border border-purple-200 font-medium">
+                    NLP: {transaction.kategori_nlp}
+                  </span>
+                )}
+                <ConfidenceBadge conf={transaction.conf} threshold={transaction.threshold} />
+              </div>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-gray-500">Rekomendasi KB</span>
-              <span className="font-semibold text-gray-900">{transaction.kode_akun}</span>
+              <span className="text-gray-500">Nominal ({transaction.jenis === 'CR' ? 'Kredit / Masuk' : 'Debit / Keluar'})</span>
+              <span className={`font-mono font-semibold ${transaction.jenis === 'CR' ? 'text-emerald-600' : 'text-red-600'}`}>
+                Rp {formatCurrency(transaction.mutasi)}
+              </span>
+            </div>
+            <div className="flex justify-between text-xs pt-1 border-t border-slate-200/70">
+              <span className="text-gray-500">Hasil Forward Chaining KB</span>
+              <span className="font-semibold text-gray-900 text-right">{transaction.nama_akun}</span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-gray-500">Nama Akun</span>
-              <span className="text-gray-700">{transaction.nama_akun}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-500">Metode</span>
-              <span className="text-gray-600">{transaction.metode}</span>
+              <span className="text-gray-500">Metode Pelacakan</span>
+              <span className="text-gray-600 text-right">{transaction.metode}</span>
             </div>
             {transaction.invoice_no && (
-              <div className="flex justify-between text-xs pt-1 border-t border-gray-200/60">
+              <div className="flex justify-between text-xs pt-1 border-t border-slate-200/70">
                 <span className="text-emerald-600 font-medium">Faktur ERP Terkait</span>
                 <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                   🧾 {transaction.invoice_no} (Lunas)
@@ -188,30 +319,78 @@ function ActionModal({
             )}
           </div>
 
+          {/* Pencarian & Pemilihan Akun CoA Sistem ERP */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1.5">
-              {isKonfirmasi ? 'Kode Akun Koreksi (opsional)' : 'Kode Akun yang Benar'}
+            <label className="block text-xs font-semibold text-gray-800 mb-1.5">
+              {requireAccountSelection
+                ? 'Pilih / Cari Akun dari Sistem ERP Perusahaan (Wajib)'
+                : 'Akun CoA ERP Terpilih (Dapat diubah jika perlu)'}
             </label>
-            <input
-              type="text"
-              value={kodeAkunBaru}
-              onChange={(e) => setKodeAkunBaru(e.target.value)}
-              placeholder="Contoh: 6.2.05.01"
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-            />
-            {isKonfirmasi && (
-              <p className="text-[11px] text-gray-400 mt-1">Kosongkan jika rekomendasi sudah benar</p>
-            )}
+
+            {/* Search box ERP */}
+            <div className="relative mb-2">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={searchCoa}
+                onChange={(e) => setSearchCoa(e.target.value)}
+                placeholder="Cari kode atau nama akun di ERP (misal: Listrik, Gaji, Sewa, Payable, 6.2...)"
+                className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+              />
+            </div>
+
+            {/* Daftar Akun ERP */}
+            <div className="border border-gray-200 rounded-xl max-h-40 overflow-y-auto divide-y divide-gray-100 bg-white">
+              {filteredCoa.length > 0 ? (
+                filteredCoa.map((item) => {
+                  const selected = kodeAkunBaru === item.kode
+                  return (
+                    <button
+                      key={item.kode}
+                      type="button"
+                      onClick={() => setKodeAkunBaru(item.kode)}
+                      className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between transition-colors ${
+                        selected
+                          ? 'bg-blue-50 text-blue-800 font-semibold'
+                          : 'hover:bg-gray-50 text-gray-700'
+                      }`}
+                    >
+                      <div>
+                        <span className="font-mono font-semibold text-blue-700 mr-2">{item.kode}</span>
+                        <span>{item.nama}</span>
+                      </div>
+                      {selected && <Check size={14} className="text-blue-600 shrink-0" />}
+                    </button>
+                  )
+                })
+              ) : (
+                <div className="p-3 text-center text-xs text-gray-400">
+                  Tidak ada akun ERP yang cocok dengan kata kunci "{searchCoa}"
+                </div>
+              )}
+            </div>
+
+            {/* Input manual / kode terpilih */}
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-xs text-gray-500 shrink-0">Kode Akun ERP:</span>
+              <input
+                type="text"
+                value={kodeAkunBaru}
+                onChange={(e) => setKodeAkunBaru(e.target.value)}
+                placeholder="Pilih dari daftar di atas atau ketik kode akun (cth: 6.2.05.01)"
+                className="flex-1 px-3 py-1.5 text-xs font-mono border border-gray-200 rounded-lg focus:outline-none focus:border-blue-400"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1.5">Catatan (opsional)</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1.5">Catatan Audit / Referensi Rekening Koran (opsional)</label>
             <textarea
               value={catatan}
               onChange={(e) => setCatatan(e.target.value)}
-              placeholder="Alasan konfirmasi/tolak..."
+              placeholder="Catatan verifikasi manual..."
               rows={2}
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all resize-none"
+              className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all resize-none"
             />
           </div>
         </div>
@@ -220,21 +399,27 @@ function ActionModal({
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-200/60 rounded-lg transition-all"
+            className="px-4 py-2 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-200/60 rounded-lg transition-all"
           >
             Batal
           </button>
           <button
             onClick={handleSubmit}
-            disabled={loading || (!isKonfirmasi && !kodeAkunBaru)}
-            className={`px-5 py-2 text-sm font-semibold text-white rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-              isKonfirmasi
-                ? 'bg-emerald-600 hover:bg-emerald-700'
-                : 'bg-red-600 hover:bg-red-700'
+            disabled={loading || (requireAccountSelection && !kodeAkunBaru.trim())}
+            className={`px-5 py-2 text-xs font-semibold text-white rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+              isNotFound
+                ? 'bg-indigo-600 hover:bg-indigo-700'
+                : isKonfirmasi
+                  ? 'bg-emerald-600 hover:bg-emerald-700'
+                  : 'bg-amber-600 hover:bg-amber-700'
             }`}
           >
             {loading && <Loader2 size={14} className="animate-spin" />}
-            {isKonfirmasi ? 'Konfirmasi' : 'Tolak & Simpan'}
+            {isNotFound
+              ? 'Simpan Pencocokan ke ERP'
+              : isKonfirmasi
+                ? 'Validasi & Konfirmasi'
+                : 'Simpan Koreksi'}
           </button>
         </div>
       </motion.div>
@@ -243,7 +428,7 @@ function ActionModal({
 }
 
 
-// ---- Page Components ----
+// ---- Page 1: Upload PDF ----
 
 function UploadPage({
   onProcess,
@@ -286,8 +471,10 @@ function UploadPage({
       className="max-w-2xl mx-auto"
     >
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Upload Mutasi Rekening Bank</h2>
-        <p className="text-gray-500">Masukkan file PDF mutasi rekening untuk diekstraksi dan direkonsiliasi otomatis</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Upload PDF Rekening Koran</h2>
+        <p className="text-gray-500 text-sm">
+          Ekstraksi tabel standar (Tanggal, Keterangan, Debit, Kredit, Saldo), kalkulasi Confidence Score NLP (0,72), dan pencocokan Forward Chaining ke ERP
+        </p>
       </div>
 
       {errorMsg && (
@@ -328,7 +515,7 @@ function UploadPage({
                   <FileText size={28} className="text-emerald-600" />
                 </div>
                 <p className="text-sm font-semibold text-emerald-700">{fileName}</p>
-                <p className="text-xs text-emerald-500 mt-1">File siap diproses oleh pipeline rekonsiliasi</p>
+                <p className="text-xs text-emerald-500 mt-1">File siap diekstraksi oleh Modul Tabel & NLP</p>
               </motion.div>
             ) : (
               <>
@@ -336,9 +523,9 @@ function UploadPage({
                   <Upload size={28} className="text-gray-400" />
                 </div>
                 <p className="text-sm font-medium text-gray-700">
-                  Drag & drop file PDF mutasi di sini
+                  Drag & drop file PDF rekening koran di sini
                 </p>
-                <p className="text-xs text-gray-400 mt-1">atau klik untuk memilih file rekening koran PDF</p>
+                <p className="text-xs text-gray-400 mt-1">atau klik untuk memilih file PDF</p>
               </>
             )}
           </div>
@@ -354,7 +541,7 @@ function UploadPage({
             className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold rounded-xl hover:shadow-lg hover:shadow-blue-200/50 disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
           >
             <FileText size={18} />
-            Mulai Rekonsiliasi
+            Ekstrak Tabel & Hitung Skor NLP
           </motion.button>
 
           <div className="relative flex items-center gap-3">
@@ -370,7 +557,7 @@ function UploadPage({
             className="w-full py-3 bg-white border-2 border-dashed border-indigo-300 text-indigo-600 text-sm font-semibold rounded-xl hover:bg-indigo-50 hover:border-indigo-400 transition-all duration-300 flex items-center justify-center gap-2"
           >
             <Play size={16} />
-            Coba Data Demo (tanpa upload PDF)
+            Coba Simulasi Data Rekening Koran (Demo Lengkap)
           </motion.button>
         </div>
       </div>
@@ -378,9 +565,9 @@ function UploadPage({
       {/* Pipeline Info */}
       <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { num: 1, icon: FileText, title: 'Modul Tabel', desc: 'Ekstraksi PDF mutasi bank ke tabular', color: 'blue' },
-          { num: 2, icon: Brain, title: 'Modul NLP', desc: 'Normalisasi teks & klasifikasi ML SVM', color: 'purple' },
-          { num: 3, icon: Database, title: 'Knowledge Base', desc: 'Decision Tree, Rekanan & mapping CoA', color: 'emerald' },
+          { num: 1, icon: FileText, title: '1. Table Recognition (Arya)', desc: 'Ekstraksi kolom standar: Tanggal, Keterangan, Debit, Kredit, Saldo', color: 'blue' },
+          { num: 2, icon: Brain, title: '2. Modul NLP (Abror)', desc: 'Normalisasi kamus CoA & evaluasi ambang Confidence Score 0,72', color: 'purple' },
+          { num: 3, icon: Database, title: '3. Forward Chaining KB (Mario)', desc: 'Pencocokan ke sistem ERP menghasilkan Auto Match, Suggestion, & Not Found', color: 'emerald' },
         ].map((item, i) => (
           <motion.div
             key={item.num}
@@ -405,7 +592,7 @@ function UploadPage({
   )
 }
 
-function ProcessingPage({ fileName }: { fileName: string }) {
+function ProcessingPage({ fileName, stageText }: { fileName: string; stageText?: string }) {
   return (
     <motion.div
       key="processing"
@@ -426,18 +613,245 @@ function ProcessingPage({ fileName }: { fileName: string }) {
           <Zap size={24} className="text-white" />
         </div>
       </div>
-      <h2 className="text-xl font-bold text-gray-900 mb-2">Memproses Rekonsiliasi</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-2">{stageText || 'Memproses Dokumen Rekening Koran'}</h2>
       <p className="text-sm text-gray-500 mb-6 font-medium">{fileName}</p>
       <div className="flex items-center justify-center gap-6 text-xs text-gray-400">
         <span className="flex items-center gap-1 font-medium"><FileText size={14} /> Ekstraksi Tabel</span>
         <ArrowRight size={12} />
-        <span className="flex items-center gap-1 font-medium"><Brain size={14} /> Model NLP</span>
+        <span className="flex items-center gap-1 font-medium"><Brain size={14} /> Skor NLP (0,72)</span>
         <ArrowRight size={12} />
-        <span className="flex items-center gap-1 font-medium"><Database size={14} /> Knowledge Base</span>
+        <span className="flex items-center gap-1 font-medium"><Database size={14} /> Forward Chaining KB</span>
       </div>
     </motion.div>
   )
 }
+
+// ---- Page 2: Preview Hasil Ekstraksi Tabel & Confidence Score NLP + Tombol "Lanjutkan" ----
+
+function NlpPreviewPage({
+  results,
+  fileName,
+  onUpdateKeterangan,
+  onContinueToErp,
+  isReprocessing,
+}: {
+  results: TransactionResult[]
+  fileName: string
+  onUpdateKeterangan: (id: string, newKet: string) => void
+  onContinueToErp: () => void
+  isReprocessing: boolean
+}) {
+  const navigate = useNavigate()
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState('')
+
+  useEffect(() => {
+    if (results.length === 0) {
+      navigate('/', { replace: true })
+    }
+  }, [results, navigate])
+
+  const highConfCount = results.filter(r => r.conf >= NLP_THRESHOLD).length
+  const lowConfCount = results.length - highConfCount
+
+  const startEdit = (row: TransactionResult) => {
+    setEditingId(row.id)
+    setEditValue(row.keterangan)
+  }
+
+  const saveEdit = (id: string) => {
+    if (editValue.trim()) {
+      onUpdateKeterangan(id, editValue.trim())
+    }
+    setEditingId(null)
+  }
+
+  return (
+    <motion.div
+      key="preview_nlp"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+    >
+      {/* Notification Banner + Tombol Lanjutkan */}
+      <div className="mb-6 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 text-white shadow-xl shadow-blue-200/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-semibold backdrop-blur-sm">
+            <Brain size={14} />
+            Tahap 1 & 2 Selesai: Ekstraksi Tabel (Arya) & Confidence Score NLP (Abror)
+          </div>
+          <h2 className="text-xl font-bold pt-1">
+            {results.length} Baris Transaksi Berhasil Diekstrak dari {fileName}
+          </h2>
+          <p className="text-xs text-blue-100 max-w-2xl">
+            Terdapat <strong>{highConfCount} transaksi</strong> dengan Confidence Score <strong>≥ 0,72</strong> (JSON bersih sesuai kamus) dan{' '}
+            <strong>{lowConfCount} transaksi</strong> dengan skor <strong>&lt; 0,72</strong>. Klik tombol <strong>Lanjutkan</strong> untuk menjalankan{' '}
+            <strong>Forward Chaining (Modul KB Mario)</strong> ke database ERP perusahaan.
+          </p>
+        </div>
+
+        <button
+          onClick={onContinueToErp}
+          disabled={isReprocessing}
+          className="shrink-0 px-6 py-3.5 bg-white text-blue-700 hover:bg-blue-50 font-bold text-sm rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
+        >
+          {isReprocessing ? (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              Menjalankan Forward Chaining...
+            </>
+          ) : (
+            <>
+              <span>Lanjutkan ke Pencocokan ERP</span>
+              <ArrowRight size={18} />
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Ringkasan Threshold NLP 0.72 */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200/80 p-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-gray-500 font-medium">Total Baris Tabel Standar</p>
+            <p className="text-2xl font-bold text-gray-900 mt-0.5">{results.length}</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">Tanggal, Keterangan, Debit, Kredit, Saldo</p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <FileText size={20} />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-emerald-200/80 p-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-emerald-700 font-semibold">Confidence NLP ≥ 0,72 (Valid)</p>
+            <p className="text-2xl font-bold text-emerald-700 mt-0.5">{highConfCount}</p>
+            <p className="text-[11px] text-gray-500 mt-0.5">Siap dicocokkan otomatis ke ERP (Auto Match / Not Found)</p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <CheckCircle2 size={20} />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-amber-200/80 p-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-amber-700 font-semibold">Confidence NLP &lt; 0,72 (Ragu-ragu)</p>
+            <p className="text-2xl font-bold text-amber-700 mt-0.5">{lowConfCount}</p>
+            <p className="text-[11px] text-gray-500 mt-0.5">Akan ditelusuri dengan Forward Chaining KB (Suggestion / Not Found)</p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+            <AlertTriangle size={20} />
+          </div>
+        </div>
+      </div>
+
+      {/* Tabel 5 Kolom Standar + Skor NLP */}
+      <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xl shadow-gray-100/50 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900">
+              Tabel Hasil Ekstraksi Rekening Koran & Analisis Confidence Score NLP
+            </h3>
+            <p className="text-xs text-gray-400">
+              Anda dapat meninjau atau memperbaiki teks deskripsi mengacu pada rekening koran asli sebelum melanjutkan ke Forward Chaining ERP
+            </p>
+          </div>
+          <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
+            Ambang Batas (Threshold): 0,72
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50/80">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tanggal</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Keterangan</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Debit</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Kredit</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Saldo</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Prediksi Kategori NLP</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Confidence NLP</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {results.map((row) => (
+                <tr key={row.id} className={row.conf < NLP_THRESHOLD ? 'bg-amber-50/20 hover:bg-amber-50/40' : 'hover:bg-blue-50/20'}>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap font-mono">{row.tanggal}</td>
+                  <td className="px-4 py-3 max-w-[340px]">
+                    {editingId === row.id ? (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className="w-full px-2.5 py-1 text-xs font-mono border border-blue-400 rounded-lg focus:outline-none"
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => saveEdit(row.id)}
+                          className="p-1 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
+                          title="Simpan"
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="p-1 bg-gray-200 text-gray-600 rounded-md hover:bg-gray-300"
+                          title="Batal"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="group flex items-start justify-between gap-2">
+                        <div>
+                          <div className="font-mono text-xs text-gray-900">{row.keterangan}</div>
+                          {row.teks_bersih && (
+                            <div className="text-[11px] text-gray-400 mt-0.5">
+                              Kamus: <span className="font-mono text-gray-600">{row.teks_bersih}</span>
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => startEdit(row)}
+                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-blue-600 rounded transition-opacity shrink-0"
+                          title="Koreksi teks keterangan mengacu Rekening Koran asli"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono text-xs whitespace-nowrap text-red-600">
+                    {row.debit > 0 ? formatCurrency(row.debit) : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono text-xs whitespace-nowrap text-emerald-600">
+                    {row.kredit > 0 ? formatCurrency(row.kredit) : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono text-xs whitespace-nowrap text-gray-700">
+                    {row.saldo > 0 ? formatCurrency(row.saldo) : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-xs">
+                    <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200/70 font-medium text-[11px]">
+                      {row.kategori_nlp || '-'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-center whitespace-nowrap">
+                    <ConfidenceBadge conf={row.conf} threshold={row.threshold} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+// ---- Page 3: Dashboard Hasil Pencocokan Forward Chaining ERP (3 Status: Auto Match, Suggestion, Not Found) ----
 
 function ResultPage({
   results,
@@ -446,6 +860,7 @@ function ResultPage({
   onConfirm,
   onReject,
   onRefreshStats,
+  onBackToPreview,
 }: {
   results: TransactionResult[]
   fileName: string
@@ -453,8 +868,10 @@ function ResultPage({
   onConfirm: (trx: TransactionResult) => void
   onReject: (trx: TransactionResult) => void
   onRefreshStats: () => void
+  onBackToPreview: () => void
 }) {
   const navigate = useNavigate()
+  const [filterStatus, setFilterStatus] = useState<'all' | 'auto_match' | 'suggestion' | 'not_found' | 'confirmed' | 'rejected'>('all')
 
   useEffect(() => {
     if (results.length === 0) {
@@ -467,18 +884,18 @@ function ResultPage({
   const localStats = {
     auto_match: results.filter(r => r.status === 'auto_match').length,
     suggestion: results.filter(r => r.status === 'suggestion').length,
-    manual: results.filter(r => r.status === 'manual').length,
+    not_found: results.filter(r => r.status === 'not_found').length,
     confirmed: results.filter(r => r.status === 'confirmed').length,
     rejected: results.filter(r => r.status === 'rejected').length,
   }
 
-  const displayStats = liveStats || {
-    total: results.length,
-    ...localStats,
-    coverage: results.length > 0
-      ? (localStats.auto_match + localStats.confirmed) / results.length
-      : 0,
-  }
+  const coverageRatio = results.length > 0
+    ? (localStats.auto_match + localStats.confirmed) / results.length
+    : (liveStats?.coverage || 0)
+
+  const filteredResults = filterStatus === 'all'
+    ? results
+    : results.filter(r => r.status === filterStatus)
 
   const canAct = (status: string) => !['confirmed', 'rejected'].includes(status)
 
@@ -491,85 +908,145 @@ function ResultPage({
       transition={{ duration: 0.3 }}
     >
       {/* Header + Stats */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Hasil Rekonsiliasi</h2>
-          <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-gray-900">Dashboard Rekonsiliasi ERP (Forward Chaining KB)</h2>
+          <p className="text-sm text-gray-500 mt-1 flex flex-wrap items-center gap-2">
             <FileText size={14} />
-            {fileName}
+            <span>{fileName}</span>
             <span className="text-gray-300">|</span>
             <Clock size={14} />
-            {results.length} transaksi diproses
-            {displayStats.coverage > 0 && (
-              <>
-                <span className="text-gray-300">|</span>
-                <span className="font-semibold text-emerald-600">Coverage: {(displayStats.coverage * 100).toFixed(1)}%</span>
-              </>
-            )}
+            <span>{results.length} transaksi</span>
+            <span className="text-gray-300">|</span>
+            <span className="font-semibold text-emerald-600">
+              Coverage Tervalidasi: {(coverageRatio * 100).toFixed(1)}%
+            </span>
           </p>
         </div>
+        <button
+          onClick={onBackToPreview}
+          className="self-start sm:self-auto px-3.5 py-2 text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
+        >
+          ← Lihat Tabel Ekstraksi & Skor NLP
+        </button>
       </div>
 
-      {/* Stat Cards */}
+      {/* 3 Main Status Cards + 2 Feedback Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
         {[
-          { label: 'Auto Match', count: displayStats.auto_match, color: 'emerald', icon: CheckCircle2 },
-          { label: 'Suggestion', count: displayStats.suggestion, color: 'amber', icon: AlertTriangle },
-          { label: 'Manual', count: displayStats.manual, color: 'red', icon: XCircle },
-          { label: 'Dikonfirmasi', count: displayStats.confirmed, color: 'blue', icon: ThumbsUp },
-          { label: 'Ditolak', count: displayStats.rejected, color: 'gray', icon: ThumbsDown },
-        ].map((s, i) => (
-          <motion.div
-            key={s.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 * i }}
-            className={`bg-white rounded-xl border p-4 ${
-              s.color === 'emerald' ? 'border-emerald-200/60' :
-              s.color === 'amber' ? 'border-amber-200/60' :
-              s.color === 'red' ? 'border-red-200/60' :
-              s.color === 'blue' ? 'border-blue-200/60' :
-              'border-gray-200/60'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                s.color === 'emerald' ? 'bg-emerald-100 text-emerald-600' :
-                s.color === 'amber' ? 'bg-amber-100 text-amber-600' :
-                s.color === 'red' ? 'bg-red-100 text-red-600' :
-                s.color === 'blue' ? 'bg-blue-100 text-blue-600' :
-                'bg-gray-100 text-gray-500'
-              }`}>
-                <s.icon size={16} />
+          {
+            key: 'auto_match' as const,
+            label: 'Auto Match',
+            sub: 'NLP ≥ 0,72 & Cocok di ERP',
+            count: localStats.auto_match,
+            color: 'emerald',
+            icon: CheckCircle2,
+          },
+          {
+            key: 'suggestion' as const,
+            label: 'Suggestion',
+            sub: 'NLP < 0,72 & Cocok via KB',
+            count: localStats.suggestion,
+            color: 'amber',
+            icon: AlertTriangle,
+          },
+          {
+            key: 'not_found' as const,
+            label: 'Not Found',
+            sub: 'Belum Ditemukan di ERP',
+            count: localStats.not_found,
+            color: 'red',
+            icon: XCircle,
+          },
+          {
+            key: 'confirmed' as const,
+            label: 'Dikonfirmasi',
+            sub: 'Validasi Manual Selesai',
+            count: localStats.confirmed,
+            color: 'blue',
+            icon: ThumbsUp,
+          },
+          {
+            key: 'rejected' as const,
+            label: 'Dikoreksi',
+            sub: 'Feedback Loop KB',
+            count: localStats.rejected,
+            color: 'gray',
+            icon: ThumbsDown,
+          },
+        ].map((s, i) => {
+          const active = filterStatus === s.key
+          return (
+            <motion.button
+              key={s.key}
+              type="button"
+              onClick={() => setFilterStatus(active ? 'all' : s.key)}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 * i }}
+              className={`text-left bg-white rounded-xl border p-4 transition-all cursor-pointer ${
+                active ? 'ring-2 ring-blue-500 shadow-md' : 'hover:shadow-sm'
+              } ${
+                s.color === 'emerald' ? 'border-emerald-200/80' :
+                s.color === 'amber' ? 'border-amber-200/80' :
+                s.color === 'red' ? 'border-red-200/80' :
+                s.color === 'blue' ? 'border-blue-200/80' :
+                'border-gray-200/80'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  s.color === 'emerald' ? 'bg-emerald-100 text-emerald-600' :
+                  s.color === 'amber' ? 'bg-amber-100 text-amber-600' :
+                  s.color === 'red' ? 'bg-red-100 text-red-600' :
+                  s.color === 'blue' ? 'bg-blue-100 text-blue-600' :
+                  'bg-gray-100 text-gray-500'
+                }`}>
+                  <s.icon size={16} />
+                </div>
+                <span className="text-xl font-bold text-gray-900">{s.count}</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">{s.count}</span>
-            </div>
-            <p className="text-xs font-medium text-gray-500">{s.label}</p>
-          </motion.div>
-        ))}
+              <p className="text-xs font-bold text-gray-800">{s.label}</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">{s.sub}</p>
+            </motion.button>
+          )
+        })}
       </div>
 
       {/* Table */}
       <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xl shadow-gray-100/50 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900">Detail Transaksi & Pemetaan CoA</h3>
-          <span className="text-xs text-gray-400">{results.length} baris transaksi</span>
+        <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-gray-900">Detail Transaksi & Pemetaan CoA ERP</h3>
+            {filterStatus !== 'all' && (
+              <button
+                onClick={() => setFilterStatus('all')}
+                className="text-xs px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium"
+              >
+                Reset Filter ({filteredResults.length}/{results.length}) ✕
+              </button>
+            )}
+          </div>
+          <span className="text-xs text-gray-400">Menampilkan {filteredResults.length} dari {results.length} baris transaksi</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50/80">
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tanggal</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Keterangan</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Mutasi</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Akun CoA</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Metode</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tanggal</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Keterangan</th>
+                <th className="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Debit</th>
+                <th className="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Kredit</th>
+                <th className="px-3 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Saldo</th>
+                <th className="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Skor NLP</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Akun CoA ERP</th>
+                <th className="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Metode Forward Chaining</th>
+                <th className="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
-              {results.map((row, i) => (
+            <tbody className="divide-y divide-gray-100">
+              {filteredResults.map((row, i) => (
                 <motion.tr
                   key={row.id || i}
                   initial={{ opacity: 0 }}
@@ -578,11 +1055,13 @@ function ResultPage({
                   className={`transition-colors ${
                     row.status === 'confirmed' ? 'bg-emerald-50/30' :
                     row.status === 'rejected' ? 'bg-gray-50/50' :
+                    row.status === 'not_found' ? 'bg-red-50/10 hover:bg-red-50/30' :
+                    row.status === 'suggestion' ? 'bg-amber-50/10 hover:bg-amber-50/30' :
                     'hover:bg-blue-50/30'
                   }`}
                 >
-                  <td className="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">{row.tanggal}</td>
-                  <td className="px-4 py-3 max-w-[280px]">
+                  <td className="px-3 py-3 text-gray-500 whitespace-nowrap text-xs font-mono">{row.tanggal}</td>
+                  <td className="px-3 py-3 max-w-[260px]">
                     <span className="font-mono text-xs text-gray-800 line-clamp-2">{row.keterangan}</span>
                     <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                       {row.nama_pihak && (
@@ -595,40 +1074,71 @@ function ResultPage({
                       )}
                     </div>
                   </td>
-                  <td className={`px-4 py-3 text-right font-mono text-xs whitespace-nowrap ${
-                    row.jenis === 'CR' ? 'text-emerald-600' : 'text-red-600'
-                  }`}>
-                    {row.jenis === 'CR' ? '+' : '-'}{formatCurrency(row.mutasi)}
+                  <td className="px-3 py-3 text-right font-mono text-xs whitespace-nowrap text-red-600">
+                    {row.debit > 0 ? formatCurrency(row.debit) : '-'}
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="text-xs font-semibold text-gray-900">{row.kode_akun}</div>
-                    <div className="text-[11px] text-gray-500">{row.nama_akun}</div>
+                  <td className="px-3 py-3 text-right font-mono text-xs whitespace-nowrap text-emerald-600">
+                    {row.kredit > 0 ? formatCurrency(row.kredit) : '-'}
                   </td>
-                  <td className="px-4 py-3 text-center">
-                    <StatusBadge status={row.status} />
+                  <td className="px-3 py-3 text-right font-mono text-xs whitespace-nowrap text-gray-600">
+                    {row.saldo > 0 ? formatCurrency(row.saldo) : '-'}
                   </td>
-                  <td className="px-4 py-3 text-xs text-gray-500 max-w-[200px] truncate">{row.metode}</td>
-                  <td className="px-4 py-3 text-center">
-                    {canAct(row.status) ? (
-                      <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => onConfirm(row)}
-                          title="Konfirmasi"
-                          className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all"
-                        >
-                          <Check size={16} />
-                        </button>
-                        <button
-                          onClick={() => onReject(row)}
-                          title="Tolak & Koreksi"
-                          className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition-all"
-                        >
-                          <Pencil size={16} />
-                        </button>
+                  <td className="px-3 py-3 text-center whitespace-nowrap">
+                    <ConfidenceBadge conf={row.conf} threshold={row.threshold} />
+                  </td>
+                  <td className="px-3 py-3">
+                    {row.status === 'not_found' ? (
+                      <div>
+                        <div className="text-xs font-semibold text-red-600">Belum Ada di ERP</div>
+                        <div className="text-[11px] text-gray-400">
+                          {row.kategori_nlp ? `Prediksi NLP: ${row.kategori_nlp}` : 'Perlu pencocokan manual'}
+                        </div>
                       </div>
                     ) : (
-                      <span className="text-xs text-gray-400">
-                        {row.status === 'confirmed' ? 'OK' : 'Ditolak'}
+                      <div>
+                        <div className="text-xs font-semibold text-gray-900 font-mono">{row.kode_akun}</div>
+                        <div className="text-[11px] text-gray-500">{row.nama_akun}</div>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <StatusBadge status={row.status} />
+                  </td>
+                  <td className="px-3 py-3 text-xs text-gray-500 max-w-[190px] truncate" title={row.metode}>
+                    {row.metode}
+                  </td>
+                  <td className="px-3 py-3 text-center whitespace-nowrap">
+                    {canAct(row.status) ? (
+                      row.status === 'not_found' ? (
+                        <button
+                          onClick={() => onConfirm(row)}
+                          title="Cari & Cocokkan Manual dengan Sistem ERP"
+                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-all inline-flex items-center gap-1"
+                        >
+                          <Search size={13} />
+                          <span>Cocokkan ERP</span>
+                        </button>
+                      ) : (
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => onConfirm(row)}
+                            title="Validasi / Konfirmasi"
+                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all"
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button
+                            onClick={() => onReject(row)}
+                            title="Koreksi Akun ERP"
+                            className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 hover:text-amber-700 transition-all"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                        </div>
+                      )
+                    ) : (
+                      <span className="text-xs font-medium text-gray-400">
+                        {row.status === 'confirmed' ? 'Tervalidasi' : 'Dikoreksi'}
                       </span>
                     )}
                   </td>
@@ -650,6 +1160,9 @@ function App() {
   const location = useLocation()
   const [fileName, setFileName] = useState('')
   const [results, setResults] = useState<TransactionResult[]>([])
+  const [coaList, setCoaList] = useState<CoaItem[]>([])
+  const [hasEditedKeterangan, setHasEditedKeterangan] = useState(false)
+  const [isReprocessing, setIsReprocessing] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [liveStats, setLiveStats] = useState<Stats | null>(null)
 
@@ -660,8 +1173,21 @@ function App() {
 
   const currentStep: StepKey =
     location.pathname === '/proses' ? 'processing' :
+    location.pathname === '/preview-nlp' ? 'preview_nlp' :
     location.pathname === '/hasil' ? 'result' :
     'upload'
+
+  useEffect(() => {
+    // Muat daftar CoA ERP saat aplikasi dibuka agar siap dipakai untuk pencocokan manual
+    fetch(`${API_BASE}/coa`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data && Array.isArray(data.coa)) {
+          setCoaList(data.coa)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const fetchStats = async () => {
     try {
@@ -671,13 +1197,14 @@ function App() {
         setLiveStats(data)
       }
     } catch {
-      // Stats gagal load, pakai hitungan lokal
+      // Gunakan hitungan lokal jika gagal
     }
   }
 
   const handleProcess = async (file: File) => {
     setErrorMsg(null)
     setFileName(file.name)
+    setHasEditedKeterangan(false)
     navigate('/proses')
 
     const formData = new FormData()
@@ -697,22 +1224,9 @@ function App() {
       const json = await resp.json()
       const items = json.hasil || json.data || []
       if (items.length > 0) {
-        const mapped: TransactionResult[] = items.map((r: Record<string, unknown>) => ({
-          id: r.id || crypto.randomUUID(),
-          tanggal: r.tanggal || r.tgl || '',
-          keterangan: r.keterangan || r.ket || '',
-          jenis: r.jenis || '',
-          mutasi: Number(r.mutasi) || 0,
-          kode_akun: r.kode_akun || r.akun || '',
-          nama_akun: r.nama_akun || r.nama || '',
-          status: mapStatus(String(r.status || '')),
-          metode: r.metode || '',
-          nama_pihak: r.nama_pihak as string | undefined,
-          invoice_no: r.invoice_no as string | undefined,
-          invoice_status: r.invoice_status as string | undefined,
-        }))
+        const mapped: TransactionResult[] = items.map((r: Record<string, unknown>) => mapRawToTransaction(r))
         setResults(mapped)
-        navigate('/hasil', { replace: true })
+        navigate('/preview-nlp', { replace: true })
       } else {
         setErrorMsg(json.message || 'Tidak ada baris transaksi yang berhasil diekstrak dari PDF ini.')
         navigate('/', { replace: true })
@@ -727,7 +1241,8 @@ function App() {
 
   const handleDemo = async () => {
     setErrorMsg(null)
-    setFileName('demo-data.pdf (simulasi)')
+    setFileName('Rekening_Koran_BCA_2023.pdf (Simulasi)')
+    setHasEditedKeterangan(false)
     navigate('/proses')
 
     try {
@@ -737,22 +1252,9 @@ function App() {
       const json = await resp.json()
       const items = json.hasil || json.data || []
       if (items.length > 0) {
-        const mapped: TransactionResult[] = items.map((r: Record<string, unknown>) => ({
-          id: r.id || crypto.randomUUID(),
-          tanggal: r.tanggal || r.tgl || '',
-          keterangan: r.keterangan || r.ket || '',
-          jenis: r.jenis || '',
-          mutasi: Number(r.mutasi) || 0,
-          kode_akun: r.kode_akun || r.akun || '',
-          nama_akun: r.nama_akun || r.nama || '',
-          status: mapStatus(String(r.status || '')),
-          metode: r.metode || '',
-          nama_pihak: r.nama_pihak as string | undefined,
-          invoice_no: r.invoice_no as string | undefined,
-          invoice_status: r.invoice_status as string | undefined,
-        }))
+        const mapped: TransactionResult[] = items.map((r: Record<string, unknown>) => mapRawToTransaction(r))
         setResults(mapped)
-        navigate('/hasil', { replace: true })
+        navigate('/preview-nlp', { replace: true })
       } else {
         setErrorMsg('Tidak ada data demo dari server. Pastikan backend berjalan.')
         navigate('/', { replace: true })
@@ -764,7 +1266,52 @@ function App() {
     }
   }
 
-  // ---- Aksi konfirmasi/tolak ----
+  const handleUpdateKeterangan = (id: string, newKet: string) => {
+    setHasEditedKeterangan(true)
+    setResults(prev =>
+      prev.map(r => (r.id === id ? { ...r, keterangan: newKet } : r))
+    )
+  }
+
+  const handleContinueToErp = async () => {
+    if (hasEditedKeterangan) {
+      setIsReprocessing(true)
+      try {
+        const payload = {
+          transaksi: results.map(r => ({
+            tanggal: r.tanggal,
+            keterangan: r.keterangan,
+            jenis: r.jenis,
+            debit: r.debit,
+            kredit: r.kredit,
+            saldo: r.saldo,
+            mutasi: r.mutasi,
+            sumber_file: fileName,
+          })),
+        }
+        const resp = await fetch(`${API_BASE}/rekonsiliasi`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        if (resp.ok) {
+          const json = await resp.json()
+          const items = json.hasil || json.data || []
+          if (items.length > 0) {
+            setResults(items.map((r: Record<string, unknown>) => mapRawToTransaction(r)))
+          }
+        }
+      } catch (e) {
+        console.error('Gagal memproses ulang:', e)
+      } finally {
+        setIsReprocessing(false)
+        setHasEditedKeterangan(false)
+      }
+    }
+    navigate('/hasil')
+  }
+
+  // ---- Aksi konfirmasi / pencocokan manual / koreksi ----
   const openModal = (mode: 'konfirmasi' | 'tolak', trx: TransactionResult) => {
     setModalMode(mode)
     setModalTransaction(trx)
@@ -793,7 +1340,8 @@ function App() {
             return {
               ...r,
               status: data.status as TransactionResult['status'],
-              kode_akun: data.kode_akun || r.kode_akun,
+              kode_akun: data.kode_akun || kodeAkunBaru || r.kode_akun,
+              nama_akun: data.nama_akun || r.nama_akun,
             }
           }
           return r
@@ -812,6 +1360,7 @@ function App() {
     setResults([])
     setErrorMsg(null)
     setLiveStats(null)
+    setHasEditedKeterangan(false)
     navigate('/')
   }
 
@@ -820,13 +1369,13 @@ function App() {
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-200/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-3 shrink-0 cursor-pointer" onClick={handleReset}>
             <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200/50">
               <Database size={18} className="text-white" />
             </div>
             <div className="hidden sm:block">
               <h1 className="text-lg font-bold text-gray-900 tracking-tight">SiRekon</h1>
-              <p className="text-[11px] text-gray-400 -mt-0.5">Sistem Rekonsiliasi Transaksi Bank (NLP + Knowledge Base)</p>
+              <p className="text-[11px] text-gray-400 -mt-0.5">Rekonsiliasi Bank (Table Recognition + NLP + Forward Chaining KB)</p>
             </div>
           </div>
           <StepIndicator currentStep={currentStep} />
@@ -834,12 +1383,12 @@ function App() {
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-200/80 rounded-full text-xs font-medium text-slate-700">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
               <User size={13} className="text-slate-500" />
-              <span>User</span>
+              <span>Staf Keuangan</span>
             </div>
-            {currentStep === 'result' && (
+            {(currentStep === 'result' || currentStep === 'preview_nlp') && (
               <button
                 onClick={handleReset}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
+                className="px-4 py-2 rounded-lg text-xs font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
               >
                 Upload PDF Baru
               </button>
@@ -861,6 +1410,15 @@ function App() {
             <Route path="/proses" element={
               <ProcessingPage fileName={fileName} />
             } />
+            <Route path="/preview-nlp" element={
+              <NlpPreviewPage
+                results={results}
+                fileName={fileName}
+                onUpdateKeterangan={handleUpdateKeterangan}
+                onContinueToErp={handleContinueToErp}
+                isReprocessing={isReprocessing}
+              />
+            } />
             <Route path="/hasil" element={
               <ResultPage
                 results={results}
@@ -869,6 +1427,7 @@ function App() {
                 onConfirm={(trx) => openModal('konfirmasi', trx)}
                 onReject={(trx) => openModal('tolak', trx)}
                 onRefreshStats={fetchStats}
+                onBackToPreview={() => navigate('/preview-nlp')}
               />
             } />
           </Routes>
@@ -882,6 +1441,7 @@ function App() {
             isOpen={modalOpen}
             mode={modalMode}
             transaction={modalTransaction}
+            coaList={coaList}
             onClose={() => setModalOpen(false)}
             onSubmit={handleAction}
           />

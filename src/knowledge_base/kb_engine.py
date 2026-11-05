@@ -321,6 +321,20 @@ class KBEngine:
                 "kategori_node_id": target_node_id,
             }
 
+        # Aturan sewa gedung / kantor operasional (CoA 6.2.10.01 Rent-Building)
+        if jenis_norm == "DB" and _cek_kw(["sewa gedung", "sewa kantor", "sewa ruko"]):
+            kode_akun = "6.2.10.01"
+            nama_akun = self._get_nama_akun(kode_akun)
+            return {
+                "teks_input": teks,
+                "jenis": jenis_norm,
+                "mutasi": mutasi,
+                "kode_akun": kode_akun,
+                "kategori_prediksi": f"{kode_akun} - {nama_akun}",
+                "status": "KB_TEREALISASI",
+                "metode": "KB Engine (Pola Sewa Gedung/Kantor)",
+            }
+
         # ---- TAHAP 2: RESOLUSI REKANAN & INVOICE ERP ----
         rekanan_result = self._resolve_rekanan_db(teks, jenis_norm)
 
