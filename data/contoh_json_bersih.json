@@ -1,0 +1,52 @@
+{
+  "threshold": 0.72,
+  "ringkasan": {
+    "total": 3,
+    "otomatis": 3,
+    "perlu_review": 0
+  },
+  "transaksi": [
+    {
+      "tanggal": "2025-02-03",
+      "keterangan": "TRSF E-BANKING PANCA BERSAUDARA",
+      "debit": 0,
+      "kredit": 5000000,
+      "saldo": 9000000,
+      "index": 0,
+      "jenis": "CR",
+      "label": "RECEIVABLE_CUSTOMER",
+      "nama_akun": "Penerimaan dari Customer (Piutang)",
+      "confidence": 0.8887,
+      "sumber_label": "model",
+      "status": "OTOMATIS"
+    },
+    {
+      "tanggal": "2025-02-04",
+      "keterangan": "BIAYA ADM",
+      "debit": 6500,
+      "kredit": 0,
+      "saldo": 8993500,
+      "index": 1,
+      "jenis": "DB",
+      "label": "BANK_CHARGE",
+      "nama_akun": "Biaya Bank (admin, transfer, tolakan)",
+      "confidence": 0.8681,
+      "sumber_label": "model",
+      "status": "OTOMATIS"
+    },
+    {
+      "tanggal": "2025-02-05",
+      "keterangan": "pulsa kantor jan",
+      "debit": 150000,
+      "kredit": 0,
+      "saldo": 8843500,
+      "index": 2,
+      "jenis": "DB",
+      "label": "COMMUNICATION",
+      "nama_akun": "Telepon, Internet & Pulsa",
+      "confidence": 0.4494,
+      "sumber_label": "manual",
+      "status": "OTOMATIS"
+    }
+  ]
+}

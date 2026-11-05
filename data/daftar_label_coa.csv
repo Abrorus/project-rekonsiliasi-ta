@@ -1,0 +1,22 @@
+label,nama,arah,kelompok_akun_CoA
+PAYABLE_VENDOR,Pembayaran ke Supplier/Vendor,keluar,2.1.01
+SALARY,"Gaji, Lembur & THR",keluar,"6.2.01, 7.1.01"
+EMP_BENEFIT,Tunjangan Karyawan & BPJS,keluar,"6.2.02, 7.1.02"
+TRAVEL,Perjalanan Dinas,keluar,"6.2.03, 7.1.03"
+TRANSPORT,Transport & BBM,keluar,"6.2.04, 7.1.04"
+UTILITIES,"Listrik, Air & Gas",keluar,"6.2.05, 7.1.05"
+COMMUNICATION,"Telepon, Internet & Pulsa",keluar,"6.2.06, 7.1.06"
+OFFICE_GENERAL,"ATK, Konsumsi & Kebersihan Kantor",keluar,"6.2.07, 6.2.08, 7.1.07, 7.1.08"
+INSURANCE,Asuransi (non-BPJS),keluar,"6.2.09, 7.1.09"
+RENT,Sewa,keluar,"6.2.10, 6.2.11, 6.2.12, 6.2.13, 6.2.14, 7.1.10, 7.1.11, 7.1.12, 7.1.13, 7.1.14"
+REPAIR_MAINT,Perbaikan & Pemeliharaan,keluar,"6.2.15, 7.1.15"
+OTHER_EXPENSE,"Biaya Lain-lain (donasi, hadiah, pelatihan, dll)",keluar,"6.4.01, 7.3.01"
+TAX,Pajak & Setoran Negara,keluar,"2.1.04, 2.1.05, 1.1.08"
+BANK_CHARGE,"Biaya Bank (admin, transfer, tolakan)",keluar,(belum ada di CoA)
+RECEIVABLE_CUSTOMER,Penerimaan dari Customer (Piutang),masuk,1.1.04
+REVENUE_OTHER,Pendapatan Jasa/Lain-lain,masuk,4.1.01
+CASH_DEPOSIT,Setoran Tunai,masuk,1.1.1.01
+LOAN,Pinjaman & Intercompany,dua_arah,"2.2.01, 1.1.04.02"
+PETTY_CASH,"Kas Kecil, Uang Muka & Reimburse",dua_arah,"1.1.1.97, 1.1.09.03"
+INTERNAL_TRANSFER,Transfer Antar Rekening Sendiri,dua_arah,1.1.02.98
+BANK_INTEREST,Bunga & Pajak Bunga Bank,dua_arah,(belum ada di CoA)
