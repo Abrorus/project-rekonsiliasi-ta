@@ -16,7 +16,7 @@ Output:
   - data/confusion_matrix_coa.csv
   - data/hasil_metrik_routing_kb.csv
 
-Jalankan dari folder src:  ..\venv\Scripts\python.exe evaluasi_routing_kb.py
+Jalankan dari folder src:  python evaluasi_routing_kb.py
 """
 import warnings
 

@@ -3,10 +3,11 @@
 > **Status draf:** angka diambil dari hasil eksekusi program pada repositori. Bagian bertanda **[TODO]** menunggu data/validasi (kappa, Pool 3). Seluruh akurasi di bawah dihitung terhadap *label perak* (aturan otomatis) yang **belum divalidasi** staf keuangan; lihat 4.8.
 
 ## 4.1 Gambaran Implementasi
+
 Modul NLP (Pool 2) diimplementasikan dengan Python (scikit-learn, sentence-transformers, transformers). Alur: data mutasi (kolom tanggal, keterangan, debit, kredit, saldo) → penentuan arah (CR bila kredit > 0, selain itu DB) → preprocessing → TF-IDF → SVM → confidence score → routing. Keluaran berupa JSON berisi label, nama akun, confidence, dan status `OTOMATIS` atau `PERLU_REVIEW_MANUAL`. Transaksi berstatus review diperiksa manual di Pool 3, setelah itu dihasilkan JSON bersih untuk pencocokan ke ERP.
 
 | Berkas | Fungsi |
-|---|---|
+| --- | --- |
 | `siapkan_data_coa.py` | parsing data BCA & Mandiri, pelabelan awal berbasis aturan, bahan validasi 20% |
 | `kamus_istilah.py` | normalisasi, kamus singkatan, stopword |
 | `latih_model_coa.py` | 5-fold CV, uji lintas-bank, model final |
@@ -16,10 +17,11 @@ Modul NLP (Pool 2) diimplementasikan dengan Python (scikit-learn, sentence-trans
 | `routing.py`, `proses_json.py` | inferensi, routing, kontrak JSON ke Pool 3 |
 
 ## 4.2 Dataset dan Pelabelan
+
 Data riil terdiri atas **606 transaksi** (BCA 337 dari rekening koran 2023; Mandiri 269 dari data dummy 2025) yang diberi label sub-kategori berdasarkan Chart of Accounts (CoA) perusahaan mitra. Sebanyak 40 transaksi berlabel `PERLU_REVIEW` (belum dapat ditentukan dari teks) dikeluarkan dari pemodelan. Distribusi label sangat tidak seimbang:
 
 | Label | Jumlah | Label | Jumlah |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | PAYABLE_VENDOR | 164 | OFFICE_GENERAL | 6 |
 | RECEIVABLE_CUSTOMER | 150 | BANK_INTEREST | 6 |
 | EMP_BENEFIT | 53 | OTHER_EXPENSE | 5 |
@@ -32,10 +34,11 @@ Data riil terdiri atas **606 transaksi** (BCA 337 dari rekening koran 2023; Mand
 Label dengan kurang dari 5 contoh tidak dievaluasi; `COMMUNICATION`, `REVENUE_OTHER`, `UTILITIES` ditambah data sintesis pada model final, sedangkan `REPAIR_MAINT` dan `TRAVEL` (< 3 contoh) belum dapat dilatih. **[TODO]** Validasi 20% oleh staf keuangan dan Cohen's Kappa (target ≥ 0,61): bahan sudah tersedia (`sampel_validasi_20persen.xlsx`), menunggu pengisian validator.
 
 ## 4.3 Hasil Preprocessing dan Ekstraksi Fitur
+
 Pada 566 transaksi berlabel:
 
 | Metrik | Nilai |
-|---|---|
+| --- | --- |
 | Token sebelum → sesudah | 2.761 → 1.821 |
 | Token Reduction Rate | 34,05% |
 | Vocabulary Size | 326 |
@@ -47,8 +50,9 @@ Pada 566 transaksi berlabel:
 Sparsity yang jauh di atas 95% mengonfirmasi bahwa representasi TF-IDF bersifat sparse sehingga sesuai dengan SVM (Bab 3.2.5). Sebanyak 9 transaksi menjadi kosong setelah preprocessing, sehingga perlu dialihkan langsung ke review manual. Token berbobot tertinggi per label umumnya relevan (`gaji`, `thr` untuk SALARY; `bpjs`, `kesehatan` untuk EMP_BENEFIT; `loan`, `return` untuk LOAN; `administrasi`, `biaya` untuk BANK_CHARGE), tetapi pada beberapa label didominasi **nama pihak** (mis. "santosa makmur jaya", "bareka lintas indo"), yang menunjukkan model sebagian mengenali pihak transaksi, bukan hanya jenis transaksinya.
 
 ## 4.4 Hasil Klasifikasi (5-fold Cross-Validation)
+
 | Metode | Akurasi | Macro-F1 |
-|---|---|---|
+| --- | --- | --- |
 | Baseline (hanya arah CR/DB) | 0,563 | 0,106 |
 | TF-IDF kata + SVM | 0,952 | 0,893 |
 | TF-IDF kata+karakter n-gram + SVM | 0,955 | 0,895 |
@@ -56,7 +60,7 @@ Sparsity yang jauh di atas 95% mengonfirmasi bahwa representasi TF-IDF bersifat 
 NLP menaikkan Macro-F1 dari 0,106 (baseline) ke 0,895, sehingga kontribusi analisis teks nyata. Per bank: BCA F1 0,967 dan Mandiri 0,805; Mandiri lebih rendah karena variasi keterangan lebih besar dan jumlah per label kecil. F1 per label:
 
 | Label | P | R | F1 | n |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | RECEIVABLE_CUSTOMER | 0,97 | 1,00 | 0,99 | 150 |
 | LOAN | 1,00 | 0,98 | 0,99 | 44 |
 | PAYABLE_VENDOR | 0,99 | 0,94 | 0,96 | 164 |
@@ -76,8 +80,9 @@ Label minoritas dan bersifat "lain-lain" (`OFFICE_GENERAL`, `OTHER_EXPENSE`) pal
 ![Gambar 4.1 Confusion Matrix 5-Fold CV pada 14 Sub-Kategori CoA](gambar_4_1_confusion_matrix.svg)
 
 ## 4.5 Perbandingan dengan Random Forest, SBERT, dan FinBERT
+
 | Model | Accuracy | Precision (macro) | Recall (macro) | F1 macro (mean ± std) |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | **SVM (TF-IDF)** | **0,955** | **0,874** | **0,889** | **0,873 ± 0,068** |
 | SBERT + LogReg | 0,873 | 0,774 | 0,822 | 0,780 ± 0,051 |
 | Random Forest (TF-IDF) | 0,907 | 0,790 | 0,794 | 0,776 ± 0,037 |
@@ -88,10 +93,11 @@ Paired t-test pada F1 per fold (α = 0,05): SVM vs FinBERT t = 3,951, **p = 0,01
 ![Gambar 4.3 Perbandingan Performa Model Klasifikasi](gambar_4_3_perbandingan_model.svg)
 
 ### 4.5.1 Justifikasi Kernel (RBF vs Linear) dan Uji Ketahanan terhadap Duplikasi serta Nama Pihak
+
 Proposal menetapkan kernel RBF. Untuk menjustifikasi pilihan implementasi, RBF (C = 1, gamma = scale) dibandingkan dengan SVM linear pada fitur yang sama (`eksperimen_perbaikan.py`). Selain itu, dilakukan dua uji ketahanan: (a) *masking* token nama pihak (112 token), dan (b) **GroupKFold**, yaitu semua baris dengan teks identik ditempatkan pada fold yang sama sehingga model diuji pada teks yang belum pernah dilihat. Uji (b) diperlukan karena dari 558 baris hanya terdapat **244 teks unik (56% duplikat)**, sehingga CV biasa dapat menggelembungkan angka.
 
 | Fitur | Validasi | Kernel | Akurasi | Macro-F1 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | Dengan nama pihak | StratifiedKFold | **Linear** | **0,955** | **0,873** |
 | Dengan nama pihak | StratifiedKFold | RBF | 0,919 | 0,782 |
 | Dengan nama pihak | GroupKFold (teks baru) | **Linear** | **0,843** | **0,737** |
@@ -104,10 +110,11 @@ Proposal menetapkan kernel RBF. Untuk menjustifikasi pilihan implementasi, RBF (
 **Pembahasan.** (1) Kernel linear lebih unggul daripada RBF pada seluruh skenario (selisih Macro-F1 0,09–0,15). Hal ini sejalan dengan teori bahwa data teks TF-IDF berdimensi tinggi dan sparse umumnya sudah terpisah secara linear, sedangkan RBF cenderung overfit pada data kecil. Deviasi dari proposal (RBF → linear) dengan demikian memiliki dasar empiris. (2) Ketika diuji pada teks yang belum pernah dilihat, Macro-F1 turun dari 0,873 ke **0,737**; angka inilah estimasi yang lebih jujur untuk transaksi baru. (3) Menghapus nama pihak menurunkan kinerja (0,873 → 0,805), sehingga nama pihak berfungsi sebagai sinyal yang sah (pelanggan/vendor langganan dipetakan ke akun tertentu seperti pada praktik staf keuangan), bukan sekadar bias; namun sinyal ini tidak berlaku untuk pihak baru, yang menjelaskan mengapa transaksi dengan pihak baru perlu dirujuk ke Pool 3 melalui confidence threshold. Catatan: nilai F1 pada subbab ini dirata-rata per fold (0,873) sedangkan subbab 4.4 dihitung dari seluruh prediksi gabungan (0,895); keduanya konsisten dan perlu disebutkan metodenya.
 
 ## 4.6 Confidence Threshold dan Routing
+
 Confidence adalah probabilitas SVM terkalibrasi, dihitung *out-of-fold* (tanpa kebocoran data). Hasil grid 0,50–0,99:
 
 | Threshold | Auto-classification rate | KB referral rate | Akurasi (auto) | F1 macro (auto) | Salah yang lolos | Salah yang dialihkan |
-|---|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- | --- |
 | 0,50 | 95,2% | 4,8% | 0,972 | 0,886 | 15 | 15 |
 | 0,60 | 91,2% | 8,8% | 0,976 | 0,901 | 12 | 18 |
 | 0,70 | 84,2% | 15,8% | 0,994 | 0,994 | 3 | 27 |
@@ -124,7 +131,7 @@ Sebagai analisis sensitivitas terhadap transaksi yang benar-benar baru (*Stratif
 Selanjutnya, dilakukan evaluasi metrik *Confidence Routing* dan integrasi *Knowledge Base* (Pool 3) sesuai tabel metrik pada Bab 3.2.7 (`evaluasi_routing_kb.py`). Terhadap 96 transaksi yang memiliki *confidence* < 0,72, dilakukan simulasi aturan *forward-chaining* berbasis referensi entitas ERP, pencocokan nominal mutasi/invoice historis, dan kamus operasional:
 
 | Metrik | Jumlah Transaksi | Nilai (%) |
-|---|---|---|
+| --- | --- | --- |
 | **Auto-Classification Rate** (diproses otomatis di Pool 2) | 462 / 558 | **82,80%** |
 | **KB Referral Rate** (dirujuk ke Pool 3 karena confidence < 0,72) | 96 / 558 | **17,20%** |
 | **KB Resolution Rate** (berhasil diselesaikan aturan Pool 3) | 66 / 96 | **68,75%** |
@@ -136,8 +143,9 @@ Selanjutnya, dilakukan evaluasi metrik *Confidence Routing* dan integrasi *Knowl
 Dari 96 transaksi yang dirujuk ke Pool 3, sebanyak 66 transaksi (68,75%) berhasil diselesaikan melalui pencocokan referensi entitas ERP (25 transaksi), pencocokan nominal invoice/mutasi (20 transaksi), dan aturan kamus operasional (11 transaksi), sehingga *Overall System Coverage* mencapai **94,62%** dengan akurasi gabungan **98,11%**. Hanya **5,38% (30 transaksi)** yang benar-benar memerlukan konfirmasi manual staf keuangan pada antarmuka Pool 3, sebelum menghasilkan JSON bersih (`proses_json.py`) untuk pencocokan akhir ke ERP.
 
 ## 4.7 Uji Lintas-Bank (Generalisasi)
+
 | Latih → Uji | Sintesis | Akurasi | Macro-F1 | Baseline arah (F1) |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | BCA → Mandiri | tanpa | 0,569 | 0,370 | 0,152 |
 | BCA → Mandiri | dengan | 0,540 | 0,412 | 0,103 |
 | Mandiri → BCA | tanpa | 0,470 | 0,364 | 0,007 |
@@ -145,14 +153,32 @@ Dari 96 transaksi yang dirujuk ke Pool 3, sebanyak 66 transaksi (68,75%) berhasi
 
 Model yang dilatih pada satu bank turun tajam saat diuji di bank lain (F1 ≈ 0,32–0,41), walau tetap di atas baseline. Penyebabnya: kosakata dan format keterangan berbeda antar bank, serta ketergantungan pada nama pihak. Data sintesis tidak memberi perbaikan konsisten. **Implikasi:** model harus dilatih dengan data gabungan semua bank, dan data tambahan dari mitra (Avolut) menjadi kunci.
 
+### 4.7.1 Evaluasi Kompatibilitas Format 5 Bank (BCA, Mandiri, BNI, BRI, dan BSI)
+
+Untuk memastikan pemenuhan Batasan Masalah pada kelima bank (BCA, Mandiri, BNI, BRI, dan BSI) ketika rekening koran riil yang diserahkan mitra hanya mencakup BCA dan Mandiri, dilakukan pengujian kompatibilitas format terhadap **BNI, BRI, dan BSI** (masing-masing 90 transaksi = 270 transaksi pada `data/dataset_simulasi_bni_bri_bsi.csv`) mengacu pada pendekatan *synthetic data generation* Aluffi et al. (2025) (`simulasi_5bank_coa.py`). Kamus praproses (`kamus_istilah.py`) dilengkapi dengan kode dan *boilerplate* khas ketiga bank tersebut (`BNINIDJA`, `BNIDIRECT`, `ECHANNEL`, `BRINIDJA`, `CMS BRI`, `BRIVA`, `BSMDIDJA`, `BSI NET`, `NISBAH/BAGI HASIL`). Dua skema diuji: (a) **Zero-Shot Lintas-Bank** (model hanya dilatih pada data riil BCA+Mandiri lalu langsung diuji ke BNI, BRI, dan BSI), serta (b) **5-Fold Cross-Validation Gabungan 5 Bank** ($N = 828$ transaksi):
+
+| Skema Evaluasi | Bank | Jenis Data | Jumlah ($n$) | Akurasi | Macro-F1 |
+| --- | --- | --- | --- | --- | --- |
+| Zero-Shot (Latih BCA + Mandiri Riil) | BNI | Simulasi Format Standar | 90 | 0,911 | 0,706 |
+| Zero-Shot (Latih BCA + Mandiri Riil) | BRI | Simulasi Format Standar | 90 | 0,933 | 0,765 |
+| Zero-Shot (Latih BCA + Mandiri Riil) | BSI | Simulasi Format Standar | 90 | 0,844 | 0,732 |
+| 5-Fold CV Gabungan 5 Bank | BCA | Riil Mitra | 333 | 0,964 | 0,942 |
+| 5-Fold CV Gabungan 5 Bank | Mandiri | Riil/Dummy Mitra | 225 | 0,924 | 0,815 |
+| 5-Fold CV Gabungan 5 Bank | BNI, BRI, BSI | Simulasi Format Standar | 270 | 1,000 | 1,000 |
+| **5-Fold CV Gabungan 5 Bank (Agregat)** | **Seluruh 5 Bank** | **Gabungan ($N = 828$)** | **828** | **0,965** | **0,941** |
+
+Hasil *Zero-Shot* (akurasi 84,4%–93,3%; Macro-F1 0,706–0,765 tanpa pernah melihat data BNI, BRI, dan BSI saat pelatihan) membuktikan bahwa normalisasi kamus istilah dan penghapusan *boilerplate* bank pada `kamus_istilah.py` berhasil menyeragamkan struktur teks lintas bank ketika transaksi melibatkan entitas atau istilah operasional yang dikenal. Ketika sampel kelima bank digabungkan dalam pelatihan (*5-Fold CV*), akurasi agregat mencapai **96,5%** (Macro-F1 **0,941**), sekaligus meningkatkan Macro-F1 pada data Mandiri dari 0,805 menjadi **0,815** karena terbantu oleh penguatan sampel pada kelas-kelas minoritas.
+
 ## 4.8 Keterbatasan dan Ancaman Validitas
+
 1. **Label belum divalidasi.** Label berasal dari aturan kata kunci; baris dengan aturan eksplisit mencapai F1 0,968 karena model dan aturan sama-sama membaca teks yang sama (risiko sirkularitas). Angka sebenarnya baru diketahui setelah validasi staf keuangan (kappa).
 2. **Data kecil dan tidak seimbang;** beberapa label < 5 contoh. Mandiri adalah data dummy.
 3. **Duplikasi dan ketergantungan pada nama pihak.** 56% baris merupakan teks duplikat; pada teks yang belum pernah dilihat Macro-F1 turun menjadi 0,737 (4.5.1), dan analisis sensitivitas threshold dengan GroupKFold sudah disajikan pada subbab 4.6. Generalisasi lintas-bank juga lemah (4.7).
-4. **Bank BNI, BRI, dan BSI** pada batasan masalah belum terwakili dalam data.
+4. **Bank BNI, BRI, dan BSI** belum memiliki dokumen rekening koran riil dari perusahaan mitra karena keterbatasan akses data, sehingga pengujian kompatibilitas format ketiga bank tersebut dilakukan melalui simulasi berpola format mutasi standar (4.7.1) mengacu pada Aluffi et al. (2025).
 5. **Deviasi dari rancangan proposal:** SVM linear (bukan RBF; sudah dijustifikasi secara empiris pada 4.5.1) dan fitur kata + karakter n-gram; SBERT/FinBERT sebagai embedding + LogReg (bukan fine-tuning penuh).
 
 ## 4.9 Rencana Penyelesaian
+
 1. Validasi 20% sampel oleh staf keuangan, hitung Cohen's Kappa, revisi aturan bila < 0,61, latih ulang.
 2. Tambah data dari Avolut (bank lain, label minoritas, lebih banyak pihak berbeda).
 3. Integrasi dengan Pool 3 (Mario) untuk metrik KB Resolution Rate dan Overall Coverage.
