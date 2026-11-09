@@ -1,0 +1,311 @@
+{
+  "file": "bni_01.pdf",
+  "transactions": [
+    {
+      "row_index": 1,
+      "waktu_transaksi": "2026-02-01",
+      "keterangan": "Transfer BNI - NI LUH PUTU SRI WIDANI",
+      "debit": 0.00,
+      "kredit": 4000000.00,
+      "saldo": 8137502.00
+    },
+    {
+      "row_index": 2,
+      "waktu_transaksi": "2026-02-01",
+      "keterangan": "Pembayaran PENDIDIKAN ITS - ARYA WIRAGUNA DWIPUT",
+      "debit": 7500000.00,
+      "kredit": 0.00,
+      "saldo": 637502.00
+    },
+    {
+      "row_index": 3,
+      "waktu_transaksi": "2026-02-02",
+      "keterangan": "Virtual Account PT FINNET INDONESIA - FINPAY-MYTELKOMSEL",
+      "debit": 111000.00,
+      "kredit": 0.00,
+      "saldo": 526502.00
+    },
+    {
+      "row_index": 4,
+      "waktu_transaksi": "2026-02-02",
+      "keterangan": "Lainnya TOP UP LIFE GOALS",
+      "debit": 50000.00,
+      "kredit": 0.00,
+      "saldo": 476502.00
+    },
+    {
+      "row_index": 5,
+      "waktu_transaksi": "2026-02-05",
+      "keterangan": "Pembayaran Qris WARUNG BU NUR 2, DNPSR TR - DENPASAR",
+      "debit": 32000.00,
+      "kredit": 0.00,
+      "saldo": 444502.00
+    },
+    {
+      "row_index": 6,
+      "waktu_transaksi": "2026-02-05",
+      "keterangan": "Transfer BNC - ARYA WIRAGUNA DWIPUTRA",
+      "debit": 103000.00,
+      "kredit": 0.00,
+      "saldo": 341502.00
+    },
+    {
+      "row_index": 7,
+      "waktu_transaksi": "2026-02-05",
+      "keterangan": "Biaya Transfer BI-FAST",
+      "debit": 2500.00,
+      "kredit": 0.00,
+      "saldo": 339002.00
+    },
+    {
+      "row_index": 8,
+      "waktu_transaksi": "2026-02-06",
+      "keterangan": "Ewallet TOP UP GOPAY 6287844412168",
+      "debit": 105000.00,
+      "kredit": 0.00,
+      "saldo": 234002.00
+    },
+    {
+      "row_index": 9,
+      "waktu_transaksi": "2026-02-06",
+      "keterangan": "Biaya EWALLET TOP UP GOPAY",
+      "debit": 1000.00,
+      "kredit": 0.00,
+      "saldo": 233002.00
+    },
+    {
+      "row_index": 10,
+      "waktu_transaksi": "2026-02-08",
+      "keterangan": "Transfer BCA - JUAN FERDINANT GUNAWAN S",
+      "debit": 0.00,
+      "kredit": 7500000.00,
+      "saldo": 7733002.00
+    },
+    {
+      "row_index": 11,
+      "waktu_transaksi": "2026-02-08",
+      "keterangan": "Pembayaran PENDIDIKAN ITS - JUAN FERDINANT GUNAW",
+      "debit": 7500000.00,
+      "kredit": 0.00,
+      "saldo": 233002.00
+    },
+
+
+
+
+
+    {
+      "row_index": 12,
+      "waktu_transaksi": "2026-02-10",
+      "keterangan": "Pembayaran Qris WARUNG BU NUR 2, DNPSR TR - DENPASAR",
+      "debit": 23000.00,
+      "kredit": 0.00,
+      "saldo": 210002.00
+    },
+    {
+      "row_index": 13,
+      "waktu_transaksi": "2026-02-11",
+      "keterangan": "Transfer BCA - KEVIN ADI SANTOSO",
+      "debit": 0.00,
+      "kredit": 80000.00,
+      "saldo": 290002.00
+    },
+    {
+      "row_index": 14,
+      "waktu_transaksi": "2026-02-13",
+      "keterangan": "Transfer BNI - NI LUH PUTU SRI WIDANI",
+      "debit": 0.00,
+      "kredit": 800000.00,
+      "saldo": 1090002.00
+    },
+    {
+      "row_index": 15,
+      "waktu_transaksi": "2026-02-13",
+      "keterangan": "Virtual Account SINAR DIGITAL TERDEPAN PT - TRAVELOKA-TRAVELOKA 13",
+      "debit": 744900.00,
+      "kredit": 0.00,
+      "saldo": 345102.00
+    },
+    {
+      "row_index": 16,
+      "waktu_transaksi": "2026-02-13",
+      "keterangan": "Biaya SINAR DIGITAL TERDEPAN PT - TRAVELOKA-TRAVELOKA 13",
+      "debit": 1000.00,
+      "kredit": 0.00,
+      "saldo": 344102.00
+    },
+    {
+      "row_index": 17,
+      "waktu_transaksi": "2026-02-13",
+      "keterangan": "Ewallet TOP UP SHOPEEPAY - 081236027765",
+      "debit": 100000.00,
+      "kredit": 0.00,
+      "saldo": 244102.00
+    },
+    {
+      "row_index": 18,
+      "waktu_transaksi": "2026-02-13",
+      "keterangan": "Transfer MANDIRI - ARYA WIRAGUNA DWIPUT",
+      "debit": 100000.00,
+      "kredit": 0.00,
+      "saldo": 144102.00
+    },
+    {
+      "row_index": 19,
+      "waktu_transaksi": "2026-02-13",
+      "keterangan": "Biaya Transfer BI-FAST",
+      "debit": 2500.00,
+      "kredit": 0.00,
+      "saldo": 141602.00
+    },
+    {
+      "row_index": 20,
+      "waktu_transaksi": "2026-02-16",
+      "keterangan": "Virtual Account DOMPET ANAK BANGSA - GOPAY",
+      "debit": 103530.00,
+      "kredit": 0.00,
+      "saldo": 38072.00
+    },
+    {
+      "row_index": 21,
+      "waktu_transaksi": "2026-02-16",
+      "keterangan": "Pembayaran Qris SLO PAKUWON YK TEA POINT - SLEMAN (KAB)",
+      "debit": 15000.00,
+      "kredit": 0.00,
+      "saldo": 23072.00
+    },
+    {
+      "row_index": 22,
+      "waktu_transaksi": "2026-02-24",
+      "keterangan": "Transfer BNI - I KETUT MUWARANATA",
+      "debit": 0.00,
+      "kredit": 4200000.00,
+      "saldo": 4223072.00
+    },
+    {
+      "row_index": 23,
+      "waktu_transaksi": "2026-02-24",
+      "keterangan": "Virtual Account COMFIN-SPAYLATER-AXXXXXXXXXXXXXX",
+      "debit": 998625.00,
+      "kredit": 0.00,
+      "saldo": 3224447.00
+    },
+    {
+      "row_index": 24,
+      "waktu_transaksi": "2026-02-24",
+      "keterangan": "Transfer SEABANK - ARYA WIRAGUNA DWIPUTRA",
+      "debit": 2000000.00,
+      "kredit": 0.00,
+      "saldo": 1224447.00
+    },
+    {
+      "row_index": 25,
+      "waktu_transaksi": "2026-02-24",
+      "keterangan": "Biaya Transfer BI-FAST",
+      "debit": 2500.00,
+      "kredit": 0.00,
+      "saldo": 1221947.00
+    },
+    {
+      "row_index": 26,
+      "waktu_transaksi": "2026-02-25",
+      "keterangan": "Pembayaran Qris NASI BEBEK SANJAI - SURABAYA (KOTA)",
+      "debit": 27000.00,
+      "kredit": 0.00,
+      "saldo": 1194947.00
+    },
+
+
+
+
+
+    {
+      "row_index": 27,
+      "waktu_transaksi": "2026-02-26",
+      "keterangan": "Transfer SEABANK - ARYA WIRAGUNA DWIPUTRA",
+      "debit": 800000.00,
+      "kredit": 0.00,
+      "saldo": 394947.00
+    },
+    {
+      "row_index": 28,
+      "waktu_transaksi": "2026-02-26",
+      "keterangan": "Biaya Transfer BI-FAST",
+      "debit": 2500.00,
+      "kredit": 0.00,
+      "saldo": 392447.00
+    },
+    {
+      "row_index": 29,
+      "waktu_transaksi": "2026-02-26",
+      "keterangan": "Transfer BNI - NI LUH PUTU SRI WIDANI",
+      "debit": 0.00,
+      "kredit": 1300000.00,
+      "saldo": 1692447.00
+    },
+    {
+      "row_index": 30,
+      "waktu_transaksi": "2026-02-27",
+      "keterangan": "Ewallet TOP UP GOPAY 6282134852903",
+      "debit": 50000.00,
+      "kredit": 0.00,
+      "saldo": 1642447.00
+    },
+    {
+      "row_index": 31,
+      "waktu_transaksi": "2026-02-27",
+      "keterangan": "Biaya EWALLET TOP UP GOPAY",
+      "debit": 1000.00,
+      "kredit": 0.00,
+      "saldo": 1641447.00
+    },
+    {
+      "row_index": 32,
+      "waktu_transaksi": "2026-02-27",
+      "keterangan": "Transfer SEABANK - ARYA WIRAGUNA DWIPUTRA",
+      "debit": 600000.00,
+      "kredit": 0.00,
+      "saldo": 1041447.00
+    },
+    {
+      "row_index": 33,
+      "waktu_transaksi": "2026-02-27",
+      "keterangan": "Biaya Transfer BI-FAST",
+      "debit": 2500.00,
+      "kredit": 0.00,
+      "saldo": 1038947.00
+    },
+    {
+      "row_index": 34,
+      "waktu_transaksi": "2026-02-28",
+      "keterangan": "Transfer SEABANK - ARYA WIRAGUNA DWIPUTRA",
+      "debit": 800000.00,
+      "kredit": 0.00,
+      "saldo": 238947.00
+    },
+    {
+      "row_index": 35,
+      "waktu_transaksi": "2026-02-28",
+      "keterangan": "Biaya Transfer BI-FAST",
+      "debit": 2500.00,
+      "kredit": 0.00,
+      "saldo": 236447.00
+    },
+    {
+      "row_index": 36,
+      "waktu_transaksi": "2026-02-28",
+      "keterangan": "Biaya Admin Rekening",
+      "debit": 11000.00,
+      "kredit": 0.00,
+      "saldo": 225447.00
+    },
+    {
+      "row_index": 37,
+      "waktu_transaksi": "2026-02-28",
+      "keterangan": "Biaya Admin Kartu",
+      "debit": 4000.00,
+      "kredit": 0.00,
+      "saldo": 221447.00
+    }
+  ]
+}

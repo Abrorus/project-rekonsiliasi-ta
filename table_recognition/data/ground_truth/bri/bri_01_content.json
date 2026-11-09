@@ -1,0 +1,309 @@
+{
+  "file": "bri_01.pdf",
+  "transactions": [
+    {
+      "row_index": 1,
+      "waktu_transaksi": "2026-09-01T09:10:01",
+      "keterangan": "QRISRNS204429153473#9360000210103581337",
+      "debit": 40987.0,
+      "kredit": 0.0,
+      "saldo": 591041.22
+    },
+    {
+      "row_index": 2,
+      "waktu_transaksi": "2026-09-01T19:02:11",
+      "keterangan": "QRISRNS204887565718#9360000210103581337",
+      "debit": 35000.0,
+      "kredit": 0.0,
+      "saldo": 556041.22
+    },
+    {
+      "row_index": 3,
+      "waktu_transaksi": "2026-09-01T20:58:28",
+      "keterangan": "Transfer Dari Mulyo Utomo via BRImo",
+      "debit": 0.0,
+      "kredit": 2750000.0,
+      "saldo": 3306041.22
+    },
+    {
+      "row_index": 4,
+      "waktu_transaksi": "2026-09-01T23:08:32",
+      "keterangan": "QRISRNS205076352015#9360000210103581337",
+      "debit": 64800.0,
+      "kredit": 0.0,
+      "saldo": 3241241.22
+    },
+    {
+      "row_index": 5,
+      "waktu_transaksi": "2026-09-02T21:28:27",
+      "keterangan": "QRISRNS205741182070#9360000210103581337",
+      "debit": 69700.0,
+      "kredit": 0.0,
+      "saldo": 3171541.22
+    },
+    {
+      "row_index": 6,
+      "waktu_transaksi": "2026-09-02T23:09:01",
+      "keterangan": "QRISRNS205781871970#9360000210103581337",
+      "debit": 55000.0,
+      "kredit": 0.0,
+      "saldo": 3116541.22
+    },
+    {
+      "row_index": 7,
+      "waktu_transaksi": "2026-09-03T19:00:38",
+      "keterangan": "QRIS206278885321#9360000210103581337",
+      "debit": 22000.0,
+      "kredit": 0.0,
+      "saldo": 3094541.22
+    },
+    {
+      "row_index": 8,
+      "waktu_transaksi": "2026-09-04T11:40:50",
+      "keterangan": "QRISRNS206632474838#9360000210103581337",
+      "debit": 11111.0,
+      "kredit": 0.0,
+      "saldo": 3083430.22
+    },
+    {
+      "row_index": 9,
+      "waktu_transaksi": "2026-09-04T13:48:28",
+      "keterangan": "QRISRNS206707278877#9360000210103581337",
+      "debit": 1.0,
+      "kredit": 0.0,
+      "saldo": 3083429.22
+    },
+    {
+      "row_index": 10,
+      "waktu_transaksi": "2026-09-04T21:33:35",
+      "keterangan": "QRISRNS206994647965#9360000210103581337",
+      "debit": 6000.0,
+      "kredit": 0.0,
+      "saldo": 3077429.22
+    },
+    {
+      "row_index": 11,
+      "waktu_transaksi": "2026-09-04T21:42:42",
+      "keterangan": "QRISRNS206998882520#9360000210103581337",
+      "debit": 18000.0,
+      "kredit": 0.0,
+      "saldo": 3059429.22
+    },
+    {
+      "row_index": 12,
+      "waktu_transaksi": "2026-09-06T10:05:19",
+      "keterangan": "QRISRNS207778656167#9360000210103581337",
+      "debit": 5000.0,
+      "kredit": 0.0,
+      "saldo": 3054429.22
+    },
+    {
+      "row_index": 13,
+      "waktu_transaksi": "2026-09-06T15:35:28",
+      "keterangan": "QRISRNS207934598820#9360000210103581337",
+      "debit": 22000.0,
+      "kredit": 0.0,
+      "saldo": 3032429.22
+    },
+    {
+      "row_index": 14,
+      "waktu_transaksi": "2026-09-06T18:37:40",
+      "keterangan": "QRISRNS208031232966#9360000210103581337",
+      "debit": 9400.0,
+      "kredit": 0.0,
+      "saldo": 3023029.22
+    },
+    {
+      "row_index": 15,
+      "waktu_transaksi": "2026-09-07T12:52:57",
+      "keterangan": "QRISRNS208422527652#9360000210103581337",
+      "debit": 10000.0,
+      "kredit": 0.0,
+      "saldo": 3013029.22
+    },
+    {
+      "row_index": 16,
+      "waktu_transaksi": "2026-09-07T19:34:28",
+      "keterangan": "QRIS208667767110#9360000210103581337",
+      "debit": 13000.0,
+      "kredit": 0.0,
+      "saldo": 3000029.22
+    },
+    {
+      "row_index": 17,
+      "waktu_transaksi": "2026-09-08T01:34:14",
+      "keterangan": "QRISRNS208793585520#9360000210103581337",
+      "debit": 66400.0,
+      "kredit": 0.0,
+      "saldo": 2933629.22
+    },
+    {
+      "row_index": 18,
+      "waktu_transaksi": "2026-09-08T22:26:33",
+      "keterangan": "QRISRNS209346141798#9360000210103581337",
+      "debit": 17000.0,
+      "kredit": 0.0,
+      "saldo": 2916629.22
+    },
+    {
+      "row_index": 19,
+      "waktu_transaksi": "2026-09-09T07:14:22",
+      "keterangan": "QRISRNS209439775213#9360000210103581337",
+      "debit": 130000.0,
+      "kredit": 0.0,
+      "saldo": 2786629.22
+    },
+    {
+      "row_index": 20,
+      "waktu_transaksi": "2026-09-09T07:54:43",
+      "keterangan": "456022#497639264210#9360000214565486632",
+      "debit": 19000.0,
+      "kredit": 0.0,
+      "saldo": 2767629.22
+    },
+    {
+      "row_index": 21,
+      "waktu_transaksi": "2026-09-09T12:53:07",
+      "keterangan": "Pembayaran QRIS WARUNG TENDA BIRU BPK H SALEH.",
+      "debit": 21000.0,
+      "kredit": 0.0,
+      "saldo": 2746629.22
+    },
+    {
+      "row_index": 22,
+      "waktu_transaksi": "2026-09-09T22:22:21",
+      "keterangan": "QRISRNS209957830708#9360000210103581337",
+      "debit": 19000.0,
+      "kredit": 0.0,
+      "saldo": 2727629.22
+    },
+    {
+      "row_index": 23,
+      "waktu_transaksi": "2026-09-12T09:53:39",
+      "keterangan": "Penarikan tunai di ATM - KK ITS via BRImo",
+      "debit": 200000.0,
+      "kredit": 0.0,
+      "saldo": 2527629.22
+    },
+    {
+      "row_index": 24,
+      "waktu_transaksi": "2026-09-12T17:39:40",
+      "keterangan": "QRISRNS211596713008#9360000210103581337",
+      "debit": 30000.0,
+      "kredit": 0.0,
+      "saldo": 2497629.22
+    },
+    {
+      "row_index": 25,
+      "waktu_transaksi": "2026-09-12T18:58:43",
+      "keterangan": "QRISRNS211648245106#9360000210103581337",
+      "debit": 26941.0,
+      "kredit": 0.0,
+      "saldo": 2470688.22
+    },
+    {
+      "row_index": 26,
+      "waktu_transaksi": "2026-09-13T10:51:53",
+      "keterangan": "QRISRNS211945976560#9360000210103581337",
+      "debit": 290000.0,
+      "kredit": 0.0,
+      "saldo": 2180688.22
+    },
+    {
+      "row_index": 27,
+      "waktu_transaksi": "2026-09-13T17:40:19",
+      "keterangan": "QRISRNS212141448963#9360000210103581337",
+      "debit": 15000.0,
+      "kredit": 0.0,
+      "saldo": 2165688.22
+    },
+    {
+      "row_index": 28,
+      "waktu_transaksi": "2026-09-13T18:02:35",
+      "keterangan": "QRISRNS212154136879#9360000210103581337",
+      "debit": 6000.0,
+      "kredit": 0.0,
+      "saldo": 2159688.22
+    },
+    {
+      "row_index": 29,
+      "waktu_transaksi": "2026-09-13T21:24:02",
+      "keterangan": "QRISRNS212269290899#9360000210103581337",
+      "debit": 15000.0,
+      "kredit": 0.0,
+      "saldo": 2144688.22
+    },
+    {
+      "row_index": 30,
+      "waktu_transaksi": "2026-09-14T17:50:07",
+      "keterangan": "QRISRNS212734123352#9360000210103581337",
+      "debit": 30000.0,
+      "kredit": 0.0,
+      "saldo": 2114688.22
+    },
+    {
+      "row_index": 31,
+      "waktu_transaksi": "2026-09-14T22:31:34",
+      "keterangan": "QRISRNS212891472335#9360000210103581337",
+      "debit": 65000.0,
+      "kredit": 0.0,
+      "saldo": 2049688.22
+    },
+    {
+      "row_index": 32,
+      "waktu_transaksi": "2026-09-15T12:26:57",
+      "keterangan": "QRIS213154904731#9360000210103581337",
+      "debit": 19000.0,
+      "kredit": 0.0,
+      "saldo": 2030688.22
+    },
+    {
+      "row_index": 33,
+      "waktu_transaksi": "2026-09-15T12:58:49",
+      "keterangan": "QRIS213174265720#9360000210103581337",
+      "debit": 10000.0,
+      "kredit": 0.0,
+      "saldo": 2020688.22
+    },
+    {
+      "row_index": 34,
+      "waktu_transaksi": "2026-09-15T21:26:13",
+      "keterangan": "QRISRNS213490505326#9360000210103581337",
+      "debit": 18000.0,
+      "kredit": 0.0,
+      "saldo": 2002688.22
+    },
+    {
+      "row_index": 35,
+      "waktu_transaksi": "2026-09-16T12:55:22",
+      "keterangan": "QRISRNS213798678395#9360000210103581337",
+      "debit": 8000.0,
+      "kredit": 0.0,
+      "saldo": 1994688.22
+    },
+    {
+      "row_index": 36,
+      "waktu_transaksi": "2026-09-16T13:00:57",
+      "keterangan": "QRISRNS213801967690#9360000210103581337",
+      "debit": 5000.0,
+      "kredit": 0.0,
+      "saldo": 1989688.22
+    },
+    {
+      "row_index": 37,
+      "waktu_transaksi": "2026-09-16T23:59:59",
+      "keterangan": "Admin Fee",
+      "debit": 8000.0,
+      "kredit": 0.0,
+      "saldo": 1981688.22
+    },
+    {
+      "row_index": 38,
+      "waktu_transaksi": "2026-09-16T23:59:59",
+      "keterangan": "Monthly Fee ATM",
+      "debit": 3500.0,
+      "kredit": 0.0,
+      "saldo": 1978188.22
+    }
+  ]
+}
