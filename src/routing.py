@@ -165,9 +165,9 @@ def klasifikasi_transaksi(input_data, model, vectorizer=None, threshold=0.72, je
         kb_result["status_ui"] = "NOT_FOUND"
 
     if nlp_output["confidence_tinggi"] and kb_result.get("status") not in ("MANUAL_REVIEW", "PERLU_REVIEW"):
-        kb_result["pool"] = "Pool 1 (NLP Confident + KB Validated)"
+        kb_result["pool"] = "Jalur Otomatis (NLP + KB Validated)"
     else:
-        kb_result["pool"] = "Pool 3 (Knowledge Base)"
+        kb_result["pool"] = "Jalur KB (Knowledge Base)"
 
     return kb_result
 

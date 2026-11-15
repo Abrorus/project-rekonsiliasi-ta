@@ -141,19 +141,19 @@ def main():
     f1_gabungan = f1_score(y[tertangani_mask], pred_final[tertangani_mask], average="macro", zero_division=0) * 100
 
     metrik_routing = pd.DataFrame([
-        {"Metrik": "Auto-Classification Rate (Pool 2)", "Jumlah": f"{n_auto}/{n_total}", "Nilai (%)": round(auto_rate, 2)},
-        {"Metrik": "KB Referral Rate (Dirujuk ke Pool 3)", "Jumlah": f"{n_referred}/{n_total}", "Nilai (%)": round(ref_rate, 2)},
-        {"Metrik": "KB Resolution Rate (Diselesaikan Aturan Pool 3)", "Jumlah": f"{n_resolved}/{n_referred}", "Nilai (%)": round(res_rate, 2)},
-        {"Metrik": "Overall System Coverage (Pool 2 + Pool 3)", "Jumlah": f"{n_auto + n_resolved}/{n_total}", "Nilai (%)": round(cov_rate, 2)},
+        {"Metrik": "Auto-Classification Rate (Jalur Otomatis)", "Jumlah": f"{n_auto}/{n_total}", "Nilai (%)": round(auto_rate, 2)},
+        {"Metrik": "KB Referral Rate (Dirujuk ke Jalur KB)", "Jumlah": f"{n_referred}/{n_total}", "Nilai (%)": round(ref_rate, 2)},
+        {"Metrik": "KB Resolution Rate (Diselesaikan Aturan Jalur KB)", "Jumlah": f"{n_resolved}/{n_referred}", "Nilai (%)": round(res_rate, 2)},
+        {"Metrik": "Overall System Coverage (Jalur Otomatis + Jalur KB)", "Jumlah": f"{n_auto + n_resolved}/{n_total}", "Nilai (%)": round(cov_rate, 2)},
         {"Metrik": "Sisa Review Manual Staf Keuangan", "Jumlah": f"{n_unresolved}/{n_total}", "Nilai (%)": round(n_unresolved / n_total * 100, 2)},
-        {"Metrik": "Akurasi Klasifikasi Otomatis Pool 2", "Jumlah": f"{n_auto} baris", "Nilai (%)": round(acc_auto, 2)},
-        {"Metrik": "Akurasi Sistem Hibrida (Pool 2 + Pool 3)", "Jumlah": f"{n_auto + n_resolved} baris", "Nilai (%)": round(acc_gabungan, 2)},
-        {"Metrik": "Macro-F1 Sistem Hibrida (Pool 2 + Pool 3)", "Jumlah": f"{n_auto + n_resolved} baris", "Nilai (%)": round(f1_gabungan, 2)},
+        {"Metrik": "Akurasi Jalur Otomatis", "Jumlah": f"{n_auto} baris", "Nilai (%)": round(acc_auto, 2)},
+        {"Metrik": "Akurasi Sistem Hibrida (Jalur Otomatis + Jalur KB)", "Jumlah": f"{n_auto + n_resolved} baris", "Nilai (%)": round(acc_gabungan, 2)},
+        {"Metrik": "Macro-F1 Sistem Hibrida (Jalur Otomatis + Jalur KB)", "Jumlah": f"{n_auto + n_resolved} baris", "Nilai (%)": round(f1_gabungan, 2)},
     ])
     metrik_routing.to_csv(DATA / "hasil_metrik_routing_kb.csv", index=False)
     print("\n=== Hasil Pengukuran Performa Confidence Routing & Integrasi KB ===")
     print(metrik_routing.to_string(index=False))
-    print("\nRincian resolusi di Pool 3:")
+    print("\nRincian resolusi di Jalur KB:")
     print(pd.Series(aturan_log).value_counts().to_string())
 
 

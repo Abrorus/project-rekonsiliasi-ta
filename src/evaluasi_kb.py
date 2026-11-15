@@ -47,8 +47,8 @@ def tandai_data_latih(df):
 
 def cetak_ringkasan(df_hasil, judul):
     total = len(df_hasil)
-    pool1 = df_hasil[df_hasil['jalur_pool'].str.contains('Pool 1', na=False)]
-    pool3 = df_hasil[~df_hasil['jalur_pool'].str.contains('Pool 1', na=False)]
+    pool1 = df_hasil[df_hasil['jalur_pool'].str.contains('Jalur Otomatis', na=False)]
+    pool3 = df_hasil[~df_hasil['jalur_pool'].str.contains('Jalur Otomatis', na=False)]
     pool3_kb = pool3[pool3['status_akhir'] == 'KB_TEREALISASI']
     pool3_manual = pool3[pool3['status_akhir'] == 'MANUAL_REVIEW']
 
@@ -65,10 +65,10 @@ def cetak_ringkasan(df_hasil, judul):
     print("=" * 75)
     print(f"Total Dataset Transaksi                : {total} transaksi (100.0%)")
     print("-" * 75)
-    print(f"1. POOL 1 - Otomatisasi ML (NLP)       : {len(pool1)} transaksi ({persen(len(pool1), total):.1f}%)")
+    print(f"1. JALUR OTOMATIS (NLP + KB Validated) : {len(pool1)} transaksi ({persen(len(pool1), total):.1f}%)")
     print(f"   - Akurasi Model ML                  : {pool1_benar}/{len(pool1)} ({persen(pool1_benar, len(pool1)):.1f}%)")
     print()
-    print(f"2. POOL 3 - Rujukan Ambigu ke KB       : {len(pool3)} transaksi ({persen(len(pool3), total):.1f}%)")
+    print(f"2. JALUR KB - Rujukan Ambigu ke KB     : {len(pool3)} transaksi ({persen(len(pool3), total):.1f}%)")
     print(f"   - Berhasil Diselamatkan oleh KB     : {len(pool3_kb)} transaksi ({persen(len(pool3_kb), len(pool3)):.1f}%)")
     print(f"   - Akurasi Penyelamatan Aturan KB    : {pool3_kb_benar}/{len(pool3_kb)} ({persen(pool3_kb_benar, len(pool3_kb)):.1f}%)")
     print(f"   - Sisa Memerlukan Manual Review     : {len(pool3_manual)} transaksi ({persen(len(pool3_manual), total):.1f}%)")
@@ -79,7 +79,7 @@ def cetak_ringkasan(df_hasil, judul):
 
 def evaluasi_end_to_end():
     print("=" * 75)
-    print("   EVALUASI KINERJA INTEGRASI KNOWLEDGE BASE (POOL 3) & NLP (POOL 1)")
+    print("   EVALUASI KINERJA INTEGRASI KNOWLEDGE BASE (JALUR KB) & NLP (JALUR OTOMATIS)")
     print("   Tugas Akhir: Sistem Rekonsiliasi Transaksi Keuangan")
     print("=" * 75)
 
@@ -110,7 +110,7 @@ def evaluasi_end_to_end():
         # Ekstraksi kode akun dari hasil prediksi
         pred_kode = res.get('kode_akun', '')
         if not pred_kode:
-            # Jika dari Pool 1 (ML), petakan nama kategori ML ke kode akun
+            # Jika dari Jalur Otomatis (ML), petakan nama kategori ML ke kode akun
             pred_nama = res.get('kategori_prediksi', '')
             pred_kode = NAMA_KE_KODE.get(pred_nama, 'UNKNOWN')
 
@@ -153,7 +153,7 @@ def evaluasi_end_to_end():
     rekap_coa = df_uji.groupby(['kode_akun_groundtruth', 'expected_coa', 'kategori_groundtruth']).agg(
         Total=('evaluasi', 'count'),
         Benar=('evaluasi', lambda x: (x == 'TEPAT').sum()),
-        Otomatis_ML=('jalur_pool', lambda x: x.str.contains('Pool 1').sum()),
+        Otomatis_ML=('jalur_pool', lambda x: x.str.contains('Jalur Otomatis').sum()),
         Diselamatkan_KB=('status_akhir', lambda x: (x == 'KB_TEREALISASI').sum()),
         Manual_Review=('status_akhir', lambda x: (x == 'MANUAL_REVIEW').sum())
     ).reset_index()
