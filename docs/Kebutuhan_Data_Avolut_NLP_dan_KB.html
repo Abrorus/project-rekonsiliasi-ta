@@ -1,0 +1,55 @@
+<!doctype html><html><head><meta charset='utf-8'>
+<title>Kebutuhan Data & Konfirmasi Mitra (Avolut) - Modul NLP & KB</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #222; max-width: 780px; margin: 24px auto; }
+  h1 { font-size: 14pt; color: #1a3373; margin-bottom: 2px; }
+  .sub { font-size: 10pt; font-weight: bold; color: #444; border-bottom: 2px solid #1a3373; padding-bottom: 6px; margin-bottom: 12px; }
+  h2 { font-size: 11pt; color: #1a3373; margin: 14px 0 6px 0; }
+  p, ul { margin: 5px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 6px 0 8px 0; font-size: 9.5pt; }
+  th, td { border: 1px solid #444; padding: 5px 8px; text-align: left; vertical-align: top; }
+  th { background: #e8edf5; font-weight: bold; }
+</style></head><body>
+<h1>DAFTAR KEBUTUHAN DATA & KONFIRMASI MITRA (AVOLUT)</h1>
+<div class='sub'>Proyek Tugas Akhir Sistem Rekonsiliasi Keuangan (SIREKON) — Modul NLP & Knowledge Base</div>
+<p>Saat ini pengembangan <b>Modul NLP</b> (klasifikasi teks mutasi) dan <b>Modul Knowledge Base</b> (pencocokan data ERP) sudah berjalan dengan baik. Agar sistem dan pengujian akhir berjalan optimal, kami memohon bantuan konfirmasi serta dukungan data dari pihak mitra untuk 4 poin berikut:</p>
+
+<h2>1. Konfirmasi Kode Akun (CoA) untuk 5 Kategori Transaksi & Singkatan Mutasi (NLP & KB)</h2>
+<p>Berdasarkan pencocokan mutasi BCA (2023) & Mandiri dengan file CoA (313 akun), terdapat 5 jenis transaksi rutin yang belum memiliki kode akun spesifik di CoA:</p>
+<table>
+  <tr><th style='width:28px'>No</th><th style='width:210px'>Jenis Transaksi</th><th style='width:190px'>Contoh di Mutasi Bank</th><th>Status di CoA Saat Ini</th></tr>
+  <tr><td>1</td><td><b>Biaya Admin Bank</b> (admin bulanan, biaya transfer, SKN/RTGS)</td><td>"BIAYA ADM", "BIAYA TRANSFER"</td><td>Belum ada akun biaya bank di CoA</td></tr>
+  <tr><td>2</td><td><b>Biaya Tolakan</b> (retur / gagal transfer)</td><td>Transaksi tolakan / pengembalian</td><td>Belum ada akun tolakan di CoA</td></tr>
+  <tr><td>3</td><td><b>Bunga Bank / Jasa Giro</b> (pendapatan bunga)</td><td>"BUNGA", "JASA GIRO", "CR BUNGA"</td><td>Belum ada akun pendapatan bunga (Revenue di 4.1.01.xx hanya untuk produk)</td></tr>
+  <tr><td>4</td><td><b>Setoran Pajak</b> (PPh/PPN disetor ke negara)</td><td>"BYR VIA E-BANKING PENERIMAAN NEGARA"</td><td>Ada Prepaid Tax (1.1.08.xx) & Withholding Tax (2.1.04.xx), belum ada akun pajak yang disetor ke negara</td></tr>
+  <tr><td>5</td><td><b>BPJS</b> (TK & Kesehatan)</td><td>"TRSF E-BANKING 89000/BPJS TK", "BPJS KS"</td><td>Belum ada akun spesifik BPJS. Apakah bisa masuk ke Employee Benefit (6.2.02.01)?</td></tr>
+</table>
+<ul>
+  <li><b>Yang dibutuhkan:</b> Apakah 5 kategori di atas perlu dibuatkan kode akun baru di CoA, atau dimasukkan ke akun yang sudah ada (mohon info kode & nama akunnya)?</li>
+  <li><b>Konfirmasi singkatan mutasi Mandiri:</b> Apakah keterangan <code>LN interco to3PL</code> / <code>Rturn LN</code> merupakan Pinjaman (Loan), serta transaksi <code>gkar</code> (DARI ARTA SEJAHTERA) dan <code>KE GNC</code> masuk ke kategori akun apa?</li>
+</ul>
+
+<h2>2. Validasi Sampel Transaksi untuk Pengujian Akurasi (Modul NLP)</h2>
+<table>
+  <tr><th style='width:28px'>No</th><th style='width:230px'>File Lampiran</th><th>Kebutuhan Validasi</th></tr>
+  <tr><td>1</td><td><b>sampel_validasi_20persen.xlsx</b> (121 baris transaksi acak)</td><td>Mohon bantuan mengisi kolom <code>label_validator</code> pada sheet <b>Sampel</b> menggunakan kode kategori di sheet <b>Daftar Label</b> (sebagai syarat validasi <i>domain expert</i> pada buku TA).</td></tr>
+  <tr><td>2</td><td><b>review_catatan_unik.xlsx</b> (opsional / bahan diskusi)</td><td>Daftar keterangan unik Mandiri yang sudah kami beri label usulan, untuk dikonfirmasi apabila ada yang kurang sesuai.</td></tr>
+</table>
+
+<h2>3. Akses Data ERP: API Sandbox atau Export Data (Modul Knowledge Base)</h2>
+<p>Modul KB telah menyiapkan koneksi ke ERP untuk mencocokkan transaksi dengan rekanan & invoice secara otomatis (saat ini masih memakai data dummy):</p>
+<table>
+  <tr><th style='width:28px'>No</th><th style='width:230px'>Data yang Dibutuhkan</th><th>Fungsi di Sistem</th></tr>
+  <tr><td>1</td><td><b>Daftar Vendor & Customer Terdaftar</b></td><td>Mencocokkan nama pada mutasi bank dengan rekanan resmi perusahaan</td></tr>
+  <tr><td>2</td><td><b>Daftar Invoice Outstanding</b> (belum lunas)</td><td>Rekonsiliasi otomatis: mencocokkan nominal mutasi dengan tagihan terbuka</td></tr>
+  <tr><td>3</td><td><b>CoA Terbaru</b> (jika ada update)</td><td>Memastikan mapping kode akun selalu up-to-date</td></tr>
+</table>
+<ul>
+  <li><b>Yang dibutuhkan:</b> Base URL API ERP (atau URL sandbox/testing) beserta API Key/Token otentikasi, atau export data CSV/Excel.</li>
+</ul>
+
+<h2>4. Ketersediaan Sampel Mutasi Bank Lain: BNI, BRI, BSI (Modul NLP)</h2>
+<ul>
+  <li>Sesuai ruang lingkup proposal (5 bank: BCA, Mandiri, BNI, BRI, BSI), apakah di Avolut terdapat sampel/dummy mutasi untuk <b>BNI, BRI, atau BSI</b>? Apabila tidak tersedia, kami izin menggunakan data simulasi berformat standar bank tersebut.</li>
+</ul>
+</body></html>
