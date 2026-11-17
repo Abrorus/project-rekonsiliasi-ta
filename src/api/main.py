@@ -179,8 +179,18 @@ async def reconcile_pdf(file: UploadFile = File(...)):
         tmp_path = tmp.name
 
     try:
-        raw_records = process_pdf_table(tmp_path)
-        if deduplicate_records:
+        result = process_pdf_table(tmp_path)
+        # process_file() returns {"file", "bank", "status", "transaksi": [...], ...}
+        if isinstance(result, dict):
+            raw_records = result.get("transaksi", [])
+            source_bank = result.get("bank", "")
+            source_file = result.get("file", file.filename)
+            for rec in raw_records:
+                rec.setdefault("bank", source_bank)
+                rec.setdefault("source_file", source_file)
+        else:
+            raw_records = result or []
+        if deduplicate_records and raw_records:
             raw_records = deduplicate_records(raw_records)
 
         if not raw_records:
