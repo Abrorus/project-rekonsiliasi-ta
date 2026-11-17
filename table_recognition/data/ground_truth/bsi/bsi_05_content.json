@@ -1,0 +1,117 @@
+{
+  "file": "bsi_05.pdf",
+  "transactions": [
+    {
+      "row_index": 1,
+      "waktu_transaksi": "2026-07-02T00:47",
+      "keterangan": "By. Adm. BSINet JUN 26",
+      "debit": 10000.0,
+      "kredit": 0.0,
+      "saldo": 472500.0
+    },
+    {
+      "row_index": 2,
+      "waktu_transaksi": "2026-07-02T18:31",
+      "keterangan": "BIFAST - TRF Dari - Bank Mandiri - KANIA PUTRI BAIHAKIM",
+      "debit": 0.0,
+      "kredit": 45000.0,
+      "saldo": 517500.0
+    },
+    {
+      "row_index": 3,
+      "waktu_transaksi": "2026-07-06T17:38",
+      "keterangan": "BIFAST - TRF Dari - Bank Seabank - FARADITA SYAHARANI MURDIYANA",
+      "debit": 0.0,
+      "kredit": 500000.0,
+      "saldo": 1017500.0
+    },
+    {
+      "row_index": 4,
+      "waktu_transaksi": "2026-07-07T10:41",
+      "keterangan": "BIFAST - TRF Dari - BANK CIMB Niaga - DOMPET ANAK BANGSA",
+      "debit": 0.0,
+      "kredit": 30000.0,
+      "saldo": 1047500.0
+    },
+    {
+      "row_index": 5,
+      "waktu_transaksi": "2026-07-09T10:26",
+      "keterangan": "BIFAST - TRF Dari - Bank BCA - AHMAD MAULANA AL FAREL R",
+      "debit": 0.0,
+      "kredit": 15000.0,
+      "saldo": 1062500.0
+    },
+    {
+      "row_index": 6,
+      "waktu_transaksi": "2026-07-10T13:35",
+      "keterangan": "BIFAST - TRF Dari - BANK BNI - RAFI BARTIE PUTRA NAYAR",
+      "debit": 0.0,
+      "kredit": 40000.0,
+      "saldo": 1102500.0
+    },
+    {
+      "row_index": 7,
+      "waktu_transaksi": "2026-07-10T22:14",
+      "keterangan": "BIFAST - TRF Dari - Bank BRI Jkt - ROFIFAH ZAIN NUR ALF",
+      "debit": 0.0,
+      "kredit": 30000.0,
+      "saldo": 1132500.0
+    },
+    {
+      "row_index": 8,
+      "waktu_transaksi": "2026-07-10T22:53",
+      "keterangan": "KAS HMSI Zahra FL1215485559-12 70- 54855590 - TRF Dari - PT FLIP",
+      "debit": 0.0,
+      "kredit": 60000.0,
+      "saldo": 1192500.0
+    },
+    {
+      "row_index": 9,
+      "waktu_transaksi": "2026-07-11T04:56",
+      "keterangan": "BIFAST - TRF Dari - BANK CIMB Niaga - DOMPET ANAK BANGSA",
+      "debit": 0.0,
+      "kredit": 30000.0,
+      "saldo": 1222500.0
+    },
+    {
+      "row_index": 10,
+      "waktu_transaksi": "2026-07-11T22:03",
+      "keterangan": "BIFAST - TRF Dari - BANK CIMB Niaga - DOMPET ANAK BANGSA",
+      "debit": 0.0,
+      "kredit": 20000.0,
+      "saldo": 1242500.0
+    },
+    {
+      "row_index": 11,
+      "waktu_transaksi": "2026-07-14T17:45",
+      "keterangan": "BIFAST - TRF Dari - Bank BCA - RAFFI DEVA ANARGYA",
+      "debit": 0.0,
+      "kredit": 140000.0,
+      "saldo": 1382500.0
+    },
+    {
+      "row_index": 12,
+      "waktu_transaksi": "2026-07-15T16:58",
+      "keterangan": "BIFAST - TRF Dari - Bank Mandiri - MUHAMMAD AKBAR ILMAN",
+      "debit": 0.0,
+      "kredit": 20000.0,
+      "saldo": 1402500.0
+    },
+    {
+      "row_index": 13,
+      "waktu_transaksi": "2026-07-25T23:34",
+      "keterangan": "BIFAST - TRF Dari - Bank Digital BCA - Raffly Faizal Altariq",
+      "debit": 0.0,
+      "kredit": 45000.0,
+      "saldo": 1447500.0
+    },
+    {
+      "row_index": 14,
+      "waktu_transaksi": "2026-07-29T16:16",
+      "keterangan": "BIFAST - TRF Dari - Bank CIMB Niaga Syariah - EDWIN RIKSAKOMARA",
+      "debit": 0.0,
+      "kredit": 4105144.0,
+      "saldo": 5552644.0
+    }
+  ]
+}
