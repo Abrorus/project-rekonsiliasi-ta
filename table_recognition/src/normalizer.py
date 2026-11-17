@@ -1,107 +1,183 @@
-import pandas as pd
-import dateparser
+"""Normalisasi baris mentah hasil ekstraksi -> skema standar.
+
+Murni stdlib. Semua perbedaan antar bank dibaca dari profiles.PROFILES.
+"""
 import re
-import os
-import logging
-from typing import List, Dict
+from datetime import datetime
 
-logger = logging.getLogger(__name__)
+from .profiles import get_profile
 
-HEADER_MAPPING = {
-    'waktu_transaksi': ['tanggal', 'date', 'tgl', 'tanggal transaksi', 'tgl transaksi'],
-    'keterangan': ['keterangan', 'description', 'uraian', 'deskripsi'],
-    'debit': ['debet', 'debit', 'db'],
-    'kredit': ['kredit', 'credit', 'cr'],
-    'saldo': ['saldo', 'balance', 'saldo akhir'],
-    'mutasi': ['mutasi'],           # Kasus khusus BCA
-    'nominal': ['nominal'],         # Kasus khusus BNI
-    'tipe': ['tipe', 'type', 'c/d'] # Kasus khusus BNI
+BULAN = {
+    "JANUARI": 1, "FEBRUARI": 2, "MARET": 3, "APRIL": 4, "MEI": 5, "JUNI": 6,
+    "JULI": 7, "AGUSTUS": 8, "SEPTEMBER": 9, "OKTOBER": 10, "NOVEMBER": 11, "DESEMBER": 12,
 }
 
-def standardize_headers(row: Dict) -> Dict:
-    """Memetakan header mentah ke skema standar, menampung UNKNOWN_HEADER."""
-    standardized = {}
-    for raw_header, val in row.items():
-        raw_clean = str(raw_header).lower().strip()
-        matched = False
-        for std_col, variants in HEADER_MAPPING.items():
-            if raw_clean in variants:
-                standardized[std_col] = val
-                matched = True
-                break
-        if not matched:
-            logger.debug(f"UNKNOWN_HEADER terdeteksi: {raw_header}")
-            standardized[raw_header] = val
-    return standardized
+_AMOUNT = {
+    "us": re.compile(r"^(?:\d{1,3}(?:,\d{3})+|\d+)\.\d{2}$"),
+    "id": re.compile(r"^(?:\d{1,3}(?:\.\d{3})+|\d+),\d{2}$"),
+}
 
-def parse_date(date_str: str, source_file: str) -> str:
-    """Normalisasi tanggal. Menarik tahun dari file jika formatnya DD/MM."""
-    if not date_str: return ""
-    
-    parsed = dateparser.parse(date_str, languages=['id', 'en'])
-    if not parsed:
+
+def parse_amount(text, locale="us"):
+    """Parse nominal secara ketat per locale. Mengembalikan float bertanda.
+
+    Tanda: awalan '+'/'-' atau akhiran '-' (BSI). Format di luar pola -> ValueError
+    (tidak ada tebakan, supaya salah baca tidak diam-diam jadi angka salah).
+    """
+    if locale not in _AMOUNT:
+        raise ValueError(f"locale tidak dikenal: {locale!r}")
+    s = "".join(str(text).split())
+    sign = 1.0
+    if s.startswith("+"):
+        s = s[1:]
+    elif s.startswith("-"):
+        sign, s = -1.0, s[1:]
+    elif s.endswith("-"):
+        sign, s = -1.0, s[:-1]
+    if not _AMOUNT[locale].match(s):
+        raise ValueError(f"format nominal tidak valid untuk locale {locale}: {text!r}")
+    if locale == "us":
+        s = s.replace(",", "")
+    else:
+        s = s.replace(".", "").replace(",", ".")
+    return sign * float(s)
+
+
+def tahun_dari_periode(teks):
+    """'PERIODE : JULI 2023' atau 'JULI 2023' -> (2023, 7)."""
+    m = re.search(r"([A-Za-z]+)\s+(\d{4})", str(teks))
+    if not m or m.group(1).upper() not in BULAN:
+        raise ValueError(f"periode tidak dikenali: {teks!r}")
+    return int(m.group(2)), BULAN[m.group(1).upper()]
+
+
+def parse_waktu(text, profile, tahun=None):
+    """Teks waktu -> ISO dengan presisi yang tersedia (tanggal / menit / detik)."""
+    prof = get_profile(profile) if isinstance(profile, str) else profile
+    s = " ".join(str(text).split())
+    for pat in prof["waktu_patterns"]:
+        m = re.match(pat, s)
+        if not m:
+            continue
+        g = m.groupdict()
+        if g.get("y"):
+            y = int(g["y"])
+            y = 2000 + y if y < 100 else y
+        elif tahun is not None:
+            y = int(tahun)
+        else:
+            raise ValueError(f"tahun tidak tersedia untuk {text!r}")
+        d, mo = int(g["d"]), int(g["m"])
+        if g.get("H") is None:
+            datetime(y, mo, d)  # validasi tanggal
+            return f"{y:04d}-{mo:02d}-{d:02d}"
+        H, M = int(g["H"]), int(g["M"])
+        if g.get("S") is None:
+            datetime(y, mo, d, H, M)
+            return f"{y:04d}-{mo:02d}-{d:02d}T{H:02d}:{M:02d}"
+        S = int(g["S"])
+        datetime(y, mo, d, H, M, S)
+        return f"{y:04d}-{mo:02d}-{d:02d}T{H:02d}:{M:02d}:{S:02d}"
+    raise ValueError(f"format waktu tidak dikenali: {text!r}")
+
+
+def _canon(s):
+    return " ".join(str(s).lower().split())
+
+
+def standardize_headers(row, profile):
+    """Ubah kunci baris mentah (nama kolom hasil ekstraksi) -> nama standar profil."""
+    prof = get_profile(profile) if isinstance(profile, str) else profile
+    lookup = {}
+    for std, aliases in prof["headers"].items():
+        for a in aliases:
+            lookup[_canon(a)] = std
+    out = {}
+    for k, v in row.items():
+        std = lookup.get(_canon(k))
+        if std is None:
+            raise ValueError(f"nama kolom tidak dikenali untuk profil ini: {k!r}")
+        out[std] = v
+    return out
+
+
+def _kosong(v):
+    return v is None or str(v).strip() == ""
+
+
+def _debit_kredit(row, prof):
+    loc = prof["locale"]
+    mode = prof["amount_mode"]
+    if mode == "mutasi_label":
+        s = " ".join(str(row.get("mutasi", "")).split())
+        lab = prof["debit_label"]
+        is_db = s.endswith(" " + lab)
+        body = s[: -len(lab)].strip() if is_db else s
+        if body == "":
+            raise ValueError("kolom mutasi kosong")
+        val = abs(parse_amount(body, loc))
+        return (val, 0.0) if is_db else (0.0, val)
+    if mode == "debit_kredit":
+        d = 0.0 if _kosong(row.get("debit")) else abs(parse_amount(row["debit"], loc))
+        k = 0.0 if _kosong(row.get("kredit")) else abs(parse_amount(row["kredit"], loc))
+        if d and k:
+            raise ValueError("debit dan kredit sama-sama terisi")
+        if not d and not k and _kosong(row.get("debit")) and _kosong(row.get("kredit")):
+            raise ValueError("debit dan kredit sama-sama kosong")
+        return d, k
+    raise NotImplementedError(f"amount_mode {mode!r} belum diimplementasi")
+
+
+def normalize_data(raw_rows, profile, meta=None, strict=True):
+    """Baris mentah -> daftar record standar.
+
+    Record: bank, no_rekening, source_file, waktu_transaksi, keterangan, debit, kredit, saldo.
+    `saldo` = nilai tercetak (float) atau None bila tidak tercetak (BCA) -> diisi balance.hitung_saldo.
+    strict=True : baris yang tidak valid -> ValueError (menyebut nomor baris).
+    strict=False: baris tetap dikeluarkan, field bermasalah None, record['flag']='PERIKSA'.
+    """
+    meta = meta or {}
+    key = profile if isinstance(profile, str) else profile.get("bank")
+    prof = get_profile(profile) if isinstance(profile, str) else profile
+    if not prof.get("ready", False):
+        raise NotImplementedError(f"Profil {key!r} belum siap (ditunda ke langkah OCR).")
+    bank = key if isinstance(profile, str) else prof.get("bank", "")
+
+    tahun = None
+    if prof.get("year_source") == "periode":
+        if "periode" not in meta:
+            raise ValueError("meta['periode'] wajib untuk profil ini")
+        tahun, _ = tahun_dari_periode(meta["periode"])
+
+    drops = [re.compile(p) for p in prof.get("drop_patterns", [])]
+    records = []
+    for i, raw in enumerate(raw_rows, start=1):
         try:
-            parsed = pd.to_datetime(date_str)
-        except:
-            return date_str
-            
-    # Penanganan BCA: DD/MM (Tanpa Tahun)
-    if len(date_str.split('/')) == 2 or len(date_str.split('-')) == 2:
-        file_year_match = re.search(r'20\d{2}', source_file)
-        if file_year_match:
-            parsed = parsed.replace(year=int(file_year_match.group()))
-            
-    return parsed.strftime('%Y-%m-%d')
-
-def parse_amount(amount_str: str) -> float:
-    """Membersihkan format IDR (titik ribuan, koma desimal) ke float."""
-    if not amount_str or str(amount_str).strip() == '': return 0.0
-    
-    cleaned = re.sub(r'[^\d,-]', '', str(amount_str))
-    # Ubah format Indonesia (1.000.000,00) menjadi standar komputasi (1000000.00)
-    cleaned = cleaned.replace('.', '').replace(',', '.')
-    try:
-        return float(cleaned)
-    except ValueError:
-        return 0.0
-
-def normalize_data(raw_data: List[Dict], source_file: str) -> List[Dict]:
-    """Mengeksekusi normalisasi pada seluruh row transaksi."""
-    normalized_records = []
-    
-    for row in raw_data:
-        std_row = standardize_headers(row)
-        
-        # Penanganan Kasus Khusus BCA: Kolom Mutasi (DB/CR)
-        if 'mutasi' in std_row and std_row['mutasi']:
-            mutasi_val = str(std_row['mutasi']).strip().upper()
-            amt = parse_amount(mutasi_val.replace('DB', '').replace('CR', ''))
-            if 'DB' in mutasi_val:
-                std_row['debit'], std_row['kredit'] = amt, 0.0
-            elif 'CR' in mutasi_val:
-                std_row['debit'], std_row['kredit'] = 0.0, amt
-                
-        # Penanganan Kasus Khusus BNI: Nominal + Tipe
-        if 'nominal' in std_row and 'tipe' in std_row:
-            amt = parse_amount(std_row['nominal'])
-            tipe_val = str(std_row['tipe']).strip().upper()
-            if tipe_val == 'D':
-                std_row['debit'], std_row['kredit'] = amt, 0.0
-            elif tipe_val == 'C':
-                std_row['debit'], std_row['kredit'] = 0.0, amt
-
-        waktu = parse_date(std_row.get('waktu_transaksi', ''), source_file)
-        
-        record = {
-            'source_file': os.path.basename(source_file),
-            'waktu_transaksi': waktu,
-            'keterangan': std_row.get('keterangan', ''),
-            'debit': parse_amount(std_row.get('debit', 0.0)),
-            'kredit': parse_amount(std_row.get('kredit', 0.0)),
-            'saldo': parse_amount(std_row.get('saldo', 0.0))
-        }
-        
-        if record['waktu_transaksi'] or record['keterangan']:
-            normalized_records.append(record)
-            
-    return normalized_records
+            r = standardize_headers(raw, prof)
+            ket = " ".join(str(r.get("keterangan", "")).split())
+            if any(p.match(ket) for p in drops):
+                continue
+            waktu = parse_waktu(r["waktu"], prof, tahun)
+            debit, kredit = _debit_kredit(r, prof)
+            saldo = None if _kosong(r.get("saldo")) else parse_amount(r["saldo"], prof["locale"])
+            if prof["saldo_per_row"] and saldo is None:
+                raise ValueError("saldo kosong padahal profil mewajibkan saldo per baris")
+            rec = {
+                "bank": bank,
+                "no_rekening": meta.get("no_rekening"),
+                "source_file": meta.get("source_file"),
+                "waktu_transaksi": waktu,
+                "keterangan": ket,
+                "debit": debit,
+                "kredit": kredit,
+                "saldo": saldo,
+            }
+        except (ValueError, KeyError) as e:
+            if strict:
+                raise ValueError(f"baris {i}: {e}") from e
+            rec = {"bank": bank, "no_rekening": meta.get("no_rekening"),
+                   "source_file": meta.get("source_file"), "waktu_transaksi": None,
+                   "keterangan": " ".join(str(raw.get("KETERANGAN", raw.get("keterangan", ""))).split()),
+                   "debit": None, "kredit": None, "saldo": None, "flag": "PERIKSA"}
+        records.append(rec)
+    return records

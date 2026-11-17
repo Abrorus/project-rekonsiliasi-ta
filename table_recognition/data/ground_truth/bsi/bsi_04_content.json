@@ -1,0 +1,181 @@
+{
+  "file": "bsi_04.pdf",
+  "transactions": [
+    {
+      "row_index": 1,
+      "waktu_transaksi": "2026-10-01T13:50",
+      "keterangan": "BIFAST - TRF Dari - BANK BNI - FADHIIL AKMAL HAMIZAN",
+      "debit": 0.0,
+      "kredit": 45000.0,
+      "saldo": 9497144.0
+    },
+    {
+      "row_index": 2,
+      "waktu_transaksi": "2026-10-01T13:59",
+      "keterangan": "BIFAST - TRF Dari - Bank Mandiri - ALIYA NUR KAMILA SIL",
+      "debit": 0.0,
+      "kredit": 75000.0,
+      "saldo": 9572144.0
+    },
+    {
+      "row_index": 3,
+      "waktu_transaksi": "2026-10-01T14:04",
+      "keterangan": "BIFAST - TRF Dari - BANK CIMB Niaga - DOMPET ANAK BANGSA",
+      "debit": 0.0,
+      "kredit": 20000.0,
+      "saldo": 9592144.0
+    },
+    {
+      "row_index": 4,
+      "waktu_transaksi": "2026-10-01T15:00",
+      "keterangan": "BIFAST - TRF Dari - Bank CIMB Niaga Syariah - EDWIN RIKSAKOMARA",
+      "debit": 0.0,
+      "kredit": 8500000.0,
+      "saldo": 18092144.0
+    },
+    {
+      "row_index": 5,
+      "waktu_transaksi": "2026-10-01T15:48",
+      "keterangan": "BIFAST - TRF Dari - BANK CIMB Niaga - DOMPET ANAK BANGSA",
+      "debit": 0.0,
+      "kredit": 30000.0,
+      "saldo": 18122144.0
+    },
+    {
+      "row_index": 6,
+      "waktu_transaksi": "2026-10-02T01:04",
+      "keterangan": "By. Adm. BSINet SEP 26",
+      "debit": 10000.0,
+      "kredit": 0.0,
+      "saldo": 18112144.0
+    },
+    {
+      "row_index": 7,
+      "waktu_transaksi": "2026-10-02T08:09",
+      "keterangan": "BIFAST - TRF Ke - Bank Seabank - Dana talangan 1 Wisuda",
+      "debit": 2500.0,
+      "kredit": 0.0,
+      "saldo": 18109644.0
+    },
+    {
+      "row_index": 8,
+      "waktu_transaksi": "2026-10-02T08:09",
+      "keterangan": "BIFAST - TRF Ke - Bank Seabank - Dana talangan 1 Wisuda",
+      "debit": 4500000.0,
+      "kredit": 0.0,
+      "saldo": 13609644.0
+    },
+    {
+      "row_index": 9,
+      "waktu_transaksi": "2026-10-03T19:58",
+      "keterangan": "BIFAST - TRF Dari - Bank CIMB Niaga Syariah - EDWIN RIKSAKOMARA",
+      "debit": 0.0,
+      "kredit": 11017062.0,
+      "saldo": 24626706.0
+    },
+    {
+      "row_index": 10,
+      "waktu_transaksi": "2026-10-03T21:22",
+      "keterangan": "BIFAST - TRF Dari - Bank Mandiri - MILAWATI",
+      "debit": 0.0,
+      "kredit": 30000.0,
+      "saldo": 24656706.0
+    },
+    {
+      "row_index": 11,
+      "waktu_transaksi": "2026-10-05T11:24",
+      "keterangan": "BIFAST - TRF Ke - Bank Seabank - Dana Talangan 2 Wisuda 134",
+      "debit": 2500.0,
+      "kredit": 0.0,
+      "saldo": 24654206.0
+    },
+    {
+      "row_index": 12,
+      "waktu_transaksi": "2026-10-05T11:24",
+      "keterangan": "BIFAST - TRF Ke - Bank Seabank - Dana Talangan 2 Wisuda 134",
+      "debit": 4000000.0,
+      "kredit": 0.0,
+      "saldo": 20654206.0
+    },
+    {
+      "row_index": 13,
+      "waktu_transaksi": "2026-10-06T09:05",
+      "keterangan": "QR 051026 P8NJ SOSIAL HMSI ITS",
+      "debit": 0.0,
+      "kredit": 40000.0,
+      "saldo": 20694206.0
+    },
+    {
+      "row_index": 14,
+      "waktu_transaksi": "2026-10-06T09:07",
+      "keterangan": "QR 051026 4152 SOSIAL HMSI ITS",
+      "debit": 0.0,
+      "kredit": 60000.0,
+      "saldo": 20754206.0
+    },
+    {
+      "row_index": 15,
+      "waktu_transaksi": "2026-10-06T09:08",
+      "keterangan": "QR 051026 1410 SOSIAL HMSI ITS",
+      "debit": 0.0,
+      "kredit": 60000.0,
+      "saldo": 20814206.0
+    },
+    {
+      "row_index": 16,
+      "waktu_transaksi": "2026-10-06T09:09",
+      "keterangan": "QR 051026 9245 SOSIAL HMSI ITS",
+      "debit": 0.0,
+      "kredit": 15000.0,
+      "saldo": 20829206.0
+    },
+    {
+      "row_index": 17,
+      "waktu_transaksi": "2026-10-06T09:09",
+      "keterangan": "QR 051026 0645 SOSIAL HMSI ITS",
+      "debit": 0.0,
+      "kredit": 90000.0,
+      "saldo": 20919206.0
+    },
+    {
+      "row_index": 18,
+      "waktu_transaksi": "2026-10-06T09:10",
+      "keterangan": "QR 051026 5342 SOSIAL HMSI ITS",
+      "debit": 0.0,
+      "kredit": 45000.0,
+      "saldo": 20964206.0
+    },
+    {
+      "row_index": 19,
+      "waktu_transaksi": "2026-10-06T09:13",
+      "keterangan": "QR 051026 7072 SOSIAL HMSI ITS",
+      "debit": 0.0,
+      "kredit": 60000.0,
+      "saldo": 21024206.0
+    },
+    {
+      "row_index": 20,
+      "waktu_transaksi": "2026-10-06T09:14",
+      "keterangan": "QR 051026 4977 SOSIAL HMSI ITS",
+      "debit": 0.0,
+      "kredit": 105000.0,
+      "saldo": 21129206.0
+    },
+    {
+      "row_index": 21,
+      "waktu_transaksi": "2026-10-06T09:14",
+      "keterangan": "QR 051026 0161 SOSIAL HMSI ITS",
+      "debit": 0.0,
+      "kredit": 60000.0,
+      "saldo": 21189206.0
+    },
+    {
+      "row_index": 22,
+      "waktu_transaksi": "2026-10-07T08:16",
+      "keterangan": "QR 061026 9698 SOSIAL HMSI ITS",
+      "debit": 0.0,
+      "kredit": 30000.0,
+      "saldo": 21219206.0
+    }
+  ]
+}
