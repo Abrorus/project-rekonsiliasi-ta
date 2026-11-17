@@ -1,0 +1,213 @@
+{
+  "file": "bca_01.pdf",
+  "transactions": [
+    {
+      "row_index": 1,
+      "waktu_transaksi": "2026-07-01",
+      "keterangan": "SALDO AWAL",
+      "debit": 0,
+      "kredit": 0,
+      "saldo": 250906.71
+    },
+    {
+      "row_index": 2,
+      "waktu_transaksi": "2026-07-07",
+      "keterangan": "TRSF E-BANKING CR 0707/FTSCY/WS95051 16561371.00 PUTU SADNYANA",
+      "debit": 0,
+      "kredit": 16561371.00,
+      "saldo": 16812277.71
+    },
+    {
+      "row_index": 3,
+      "waktu_transaksi": "2026-07-07",
+      "keterangan": "TRSF E-BANKING DB 0707/FTFVA/WS95051 89000/BPJS TK - - 420047685000",
+      "debit": 16561371.00,
+      "kredit": 0,
+      "saldo": 250906.71
+    },
+    {
+      "row_index": 4,
+      "waktu_transaksi": "2026-07-10",
+      "keterangan": "TRSF E-BANKING CR 1007/FTSCY/WS95051 15546634.00 PRANAFOOD",
+      "debit": 0,
+      "kredit": 15546634.00,
+      "saldo": 15797540.71
+    },
+    {
+      "row_index": 5,
+      "waktu_transaksi": "2026-07-10",
+      "keterangan": "BYR VIA E-BANKING 10/07 WSID95051 PENERIMAAN NEGARA 027806983940079",
+      "debit": 14978282.00,
+      "kredit": 0,
+      "saldo": 819258.71
+    },
+    {
+      "row_index": 6,
+      "waktu_transaksi": "2026-07-10",
+      "keterangan": "BYR VIA E-BANKING 10/07 WSID95051 PENERIMAAN NEGARA 027806978203155",
+      "debit": 126040.00,
+      "kredit": 0,
+      "saldo": 693218.71
+    },
+    {
+      "row_index": 7,
+      "waktu_transaksi": "2026-07-10",
+      "keterangan": "BYR VIA E-BANKING 10/07 WSID95051 PENERIMAAN NEGARA 027806975903024",
+      "debit": 114553.00,
+      "kredit": 0,
+      "saldo": 578665.71
+    },
+    {
+      "row_index": 8,
+      "waktu_transaksi": "2026-07-10",
+      "keterangan": "BYR VIA E-BANKING 10/07 WSID95051 PENERIMAAN NEGARA 027806973723015",
+      "debit": 101039.00,
+      "kredit": 0,
+      "saldo": 477626.71
+    },
+    {
+      "row_index": 9,
+      "waktu_transaksi": "2026-07-10",
+      "keterangan": "BYR VIA E-BANKING 10/07 WSID95051 PENERIMAAN NEGARA 027806969731051",
+      "debit": 226720.00,
+      "kredit": 0,
+      "saldo": 250906.71
+    },
+    {
+      "row_index": 10,
+      "waktu_transaksi": "2026-07-10",
+      "keterangan": "TRSF E-BANKING CR 1007/FTSCY/WS95051 12659680.00 PANCA BERSAUDARA",
+      "debit": 0,
+      "kredit": 12659680.00,
+      "saldo": 12910586.71
+    },
+    {
+      "row_index": 11,
+      "waktu_transaksi": "2026-07-10",
+      "keterangan": "BYR VIA E-BANKING 10/07 WSID95051 PENERIMAAN NEGARA 027807030582024",
+      "debit": 133500.00,
+      "kredit": 0,
+      "saldo": 12777086.71
+    },
+    {
+      "row_index": 12,
+      "waktu_transaksi": "2026-07-10",
+      "keterangan": "BYR VIA E-BANKING 10/07 WSID95051 PENERIMAAN NEGARA 027807031772140",
+      "debit": 105181.00,
+      "kredit": 0,
+      "saldo": 12671905.71
+    },
+    {
+      "row_index": 13,
+      "waktu_transaksi": "2026-07-10",
+      "keterangan": "BYR VIA E-BANKING 10/07 WSID95051 PENERIMAAN NEGARA 027807032842042",
+      "debit": 128111.00,
+      "kredit": 0,
+      "saldo": 12543794.71
+    },
+    {
+      "row_index": 14,
+      "waktu_transaksi": "2026-07-10",
+      "keterangan": "BYR VIA E-BANKING 10/07 WSID95051 PENERIMAAN NEGARA 027807028628131",
+      "debit": 100000.00,
+      "kredit": 0,
+      "saldo": 12443794.71
+    },
+    {
+      "row_index": 15,
+      "waktu_transaksi": "2026-07-10",
+      "keterangan": "BYR VIA E-BANKING 10/07 WSID95051 PENERIMAAN NEGARA 027807025808102",
+      "debit": 12192888.00,
+      "kredit": 0,
+      "saldo": 250906.71
+    },
+    {
+      "row_index": 16,
+      "waktu_transaksi": "2026-07-20",
+      "keterangan": "TRSF E-BANKING CR 2007/FTSCY/WS95051 1900635.00 NI LUH WIRANTINI",
+      "debit": 0,
+      "kredit": 1900635.00,
+      "saldo": 2151541.71
+    },
+    {
+      "row_index": 17,
+      "waktu_transaksi": "2026-07-20",
+      "keterangan": "BYR VIA E-BANKING 20/07 WSID95051020860 PLN JATIM 511463678767 DARBE JAYA ABADI P",
+      "debit": 1694321.00,
+      "kredit": 0,
+      "saldo": 457220.71
+    },
+    {
+      "row_index": 18,
+      "waktu_transaksi": "2026-07-27",
+      "keterangan": "SWITCHING CR TANGGAL :26/07 TRANSFER DR 008 PANCA BERSAUDARA /PLAZA MANDI",
+      "debit": 0,
+      "kredit": 50000000.00,
+      "saldo": 50457220.71
+    },
+    {
+      "row_index": 19,
+      "waktu_transaksi": "2026-07-27",
+      "keterangan": "SWITCHING CR TANGGAL :26/07 TRANSFER DR 008 PANCA BERSAUDARA /PLAZA MANDI",
+      "debit": 0,
+      "kredit": 50000000.00,
+      "saldo": 100457220.71
+    },
+    {
+      "row_index": 20,
+      "waktu_transaksi": "2026-07-27",
+      "keterangan": "SWITCHING CR TANGGAL :26/07 TRANSFER DR 008 PANCA BERSAUDARA /PLAZA MANDI",
+      "debit": 0,
+      "kredit": 38444000.00,
+      "saldo": 138901220.71
+    },
+    {
+      "row_index": 21,
+      "waktu_transaksi": "2026-07-27",
+      "keterangan": "TRSF E-BANKING DB 2707/FTSCY/WS95051 138500000.00 BAREKA LINTAS INDO",
+      "debit": 138500000.00,
+      "kredit": 0,
+      "saldo": 401220.71
+    },
+    {
+      "row_index": 22,
+      "waktu_transaksi": "2026-07-28",
+      "keterangan": "TRSF E-BANKING CR 2807/FTSCY/WS95051 595075045.00 AMERTHA JAYA",
+      "debit": 0,
+      "kredit": 595075045.00,
+      "saldo": 595476265.71
+    },
+    {
+      "row_index": 23,
+      "waktu_transaksi": "2026-07-28",
+      "keterangan": "TRSF E-BANKING DB 2807/FTSCY/WS95051 580075045.00 CIOMAS ADISATWA",
+      "debit": 580075045.00,
+      "kredit": 0,
+      "saldo": 15401220.71
+    },
+    {
+      "row_index": 24,
+      "waktu_transaksi": "2026-07-28",
+      "keterangan": "SWITCHING DB TRANSFER KE 009 SENTOT PRABOWO /KBB",
+      "debit": 15000000.00,
+      "kredit": 0,
+      "saldo": 401220.71
+    },
+    {
+      "row_index": 25,
+      "waktu_transaksi": "2026-07-28",
+      "keterangan": "SWITCHING DB TRANSFER KE 009 /KBB",
+      "debit": 6500.00,
+      "kredit": 0,
+      "saldo": 394720.71
+    },
+    {
+      "row_index": 26,
+      "waktu_transaksi": "2026-07-31",
+      "keterangan": "BIAYA ADM",
+      "debit": 30000.00,
+      "kredit": 0,
+      "saldo": 3634720.71
+    }
+  ]
+}
