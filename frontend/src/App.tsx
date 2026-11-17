@@ -1370,8 +1370,8 @@ function App() {
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-200/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 shrink-0 cursor-pointer" onClick={handleReset}>
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200/50">
-              <Database size={18} className="text-white" />
+            <div className="h-9 w-auto bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200/50 px-2 py-1.5">
+              <img src="/logo-sirekon.png" alt="SiRekon" className="h-full w-auto object-contain" />
             </div>
             <div className="hidden sm:block">
               <h1 className="text-lg font-bold text-gray-900 tracking-tight">SiRekon</h1>
