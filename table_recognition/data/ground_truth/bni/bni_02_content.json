@@ -1,0 +1,396 @@
+{
+  "file": "bni_02.pdf",
+  "transactions": [
+    {
+      "row_index": 1,
+      "waktu_transaksi": "2026-01-01",
+      "keterangan": "Pencairan BUNGA DEPOSITO",
+      "debit": 0.00,
+      "kredit": 7817.00,
+      "saldo": 28237.00
+    },
+    {
+      "row_index": 2,
+      "waktu_transaksi": "2026-01-01",
+      "keterangan": "Pencairan DEPOSITO",
+      "debit": 0.00,
+      "kredit": 4090829.00,
+      "saldo": 4119066.00
+    },
+    {
+      "row_index": 3,
+      "waktu_transaksi": "2026-01-01",
+      "keterangan": "Transfer BNI - PT AIRPAY INTERNATIONAL INDONESIA",
+      "debit": 0.00,
+      "kredit": 500000.00,
+      "saldo": 4619066.00
+    },
+    {
+      "row_index": 4,
+      "waktu_transaksi": "2026-01-01",
+      "keterangan": "Virtual Account COMFIN-SPAYLATER-AXXXXXXXXXXXXXXX",
+      "debit": 3367901.00,
+      "kredit": 0.00,
+      "saldo": 1251165.00
+    },
+    {
+      "row_index": 5,
+      "waktu_transaksi": "2026-01-01",
+      "keterangan": "Transfer BNI - NI LUH PUTU SRI WIDANI",
+      "debit": 0.00,
+      "kredit": 4000000.00,
+      "saldo": 5251165.00
+    },
+    {
+      "row_index": 6,
+      "waktu_transaksi": "2026-01-02",
+      "keterangan": "Virtual Account PT FINNET INDONESIA - FINPAY-MYTELKOMSEL",
+      "debit": 101000.00,
+      "kredit": 0.00,
+      "saldo": 5150165.00
+    },
+    {
+      "row_index": 7,
+      "waktu_transaksi": "2026-01-03",
+      "keterangan": "Ewallet TOP UP GOPAY 6281236027765",
+      "debit": 71451.00,
+      "kredit": 0.00,
+      "saldo": 5078714.00
+    },
+    {
+      "row_index": 8,
+      "waktu_transaksi": "2026-01-03",
+      "keterangan": "Biaya EWALLET TOP UP GOPAY",
+      "debit": 1000.00,
+      "kredit": 0.00,
+      "saldo": 5077714.00
+    },
+    {
+      "row_index": 9,
+      "waktu_transaksi": "2026-01-03",
+      "keterangan": "Transfer PERMATA - XENDIT AJAIB ARYA WI",
+      "debit": 100000.00,
+      "kredit": 0.00,
+      "saldo": 4977714.00
+    },
+    {
+      "row_index": 10,
+      "waktu_transaksi": "2026-01-03",
+      "keterangan": "Biaya Transfer Antarbank",
+      "debit": 6500.00,
+      "kredit": 0.00,
+      "saldo": 4971214.00
+    },
+    {
+      "row_index": 11,
+      "waktu_transaksi": "2026-01-05",
+      "keterangan": "Pembayaran Qris MIE AYAM ROCK N ROLL - DENPASAR",
+      "debit": 25300.00,
+      "kredit": 0.00,
+      "saldo": 4945914.00
+    },
+
+
+
+
+
+    {
+      "row_index": 12,
+      "waktu_transaksi": "2026-01-05",
+      "keterangan": "Lainnya GOPAY",
+      "debit": 100000.00,
+      "kredit": 0.00,
+      "saldo": 4845914.00
+    },
+    {
+      "row_index": 13,
+      "waktu_transaksi": "2026-01-05",
+      "keterangan": "Lainnya BIAYA ADMIN (GOPAY)",
+      "debit": 1000.00,
+      "kredit": 0.00,
+      "saldo": 4844914.00
+    },
+    {
+      "row_index": 14,
+      "waktu_transaksi": "2026-01-06",
+      "keterangan": "Transfer MANDIRI - NI PUTU MUTIARA DIVA",
+      "debit": 22000.00,
+      "kredit": 0.00,
+      "saldo": 4822914.00
+    },
+    {
+      "row_index": 15,
+      "waktu_transaksi": "2026-01-06",
+      "keterangan": "Biaya Transfer BI-FAST",
+      "debit": 2500.00,
+      "kredit": 0.00,
+      "saldo": 4820414.00
+    },
+    {
+      "row_index": 16,
+      "waktu_transaksi": "2026-01-07",
+      "keterangan": "Pembayaran Qris LALAPAN JAMUR CRISPY TA - DENPASAR",
+      "debit": 23000.00,
+      "kredit": 0.00,
+      "saldo": 4797414.00
+    },
+    {
+      "row_index": 17,
+      "waktu_transaksi": "2026-01-08",
+      "keterangan": "Transfer MANDIRI - NI PUTU MUTIARA DIVA",
+      "debit": 0.00,
+      "kredit": 20000.00,
+      "saldo": 4817414.00
+    },
+    {
+      "row_index": 18,
+      "waktu_transaksi": "2026-01-08",
+      "keterangan": "Pembayaran Qris MIE AYAM ROCK N ROLL - DENPASAR",
+      "debit": 34100.00,
+      "kredit": 0.00,
+      "saldo": 4783314.00
+    },
+    {
+      "row_index": 19,
+      "waktu_transaksi": "2026-01-08",
+      "keterangan": "Ewallet TOP UP GOPAY 6281236027765",
+      "debit": 73500.00,
+      "kredit": 0.00,
+      "saldo": 4709814.00
+    },
+    {
+      "row_index": 20,
+      "waktu_transaksi": "2026-01-08",
+      "keterangan": "Biaya EWALLET TOP UP GOPAY",
+      "debit": 1000.00,
+      "kredit": 0.00,
+      "saldo": 4708814.00
+    },
+    {
+      "row_index": 21,
+      "waktu_transaksi": "2026-01-09",
+      "keterangan": "Pembayaran Qris SEVEN BARBER - DENPASAR",
+      "debit": 80000.00,
+      "kredit": 0.00,
+      "saldo": 4628814.00
+    },
+    {
+      "row_index": 22,
+      "waktu_transaksi": "2026-01-10",
+      "keterangan": "Ewallet TOP UP GOPAY 6281236027765",
+      "debit": 43062.00,
+      "kredit": 0.00,
+      "saldo": 4585762.00
+    },
+    {
+      "row_index": 23,
+      "waktu_transaksi": "2026-01-10",
+      "keterangan": "Biaya EWALLET TOP UP GOPAY",
+      "debit": 1000.00,
+      "kredit": 0.00,
+      "saldo": 4584762.00
+    },
+    {
+      "row_index": 24,
+      "waktu_transaksi": "2026-01-12",
+      "keterangan": "Pembayaran Qris TOKO KOPI JAYA DPS - DENPASAR",
+      "debit": 78000.00,
+      "kredit": 0.00,
+      "saldo": 4506762.00
+    },
+    {
+      "row_index": 25,
+      "waktu_transaksi": "2026-01-12",
+      "keterangan": "Ewallet TOP UP GOPAY 6281236027765",
+      "debit": 83500.00,
+      "kredit": 0.00,
+      "saldo": 4423262.00
+    },
+    {
+      "row_index": 26,
+      "waktu_transaksi": "2026-01-12",
+      "keterangan": "Biaya EWALLET TOP UP GOPAY",
+      "debit": 1000.00,
+      "kredit": 0.00,
+      "saldo": 4422262.00
+    },
+
+
+
+
+
+    {
+      "row_index": 27,
+      "waktu_transaksi": "2026-01-26",
+      "keterangan": "Transfer SEABANK - ARYA WIRAGUNA DWIPUTRA",
+      "debit": 800000.00,
+      "kredit": 0.00,
+      "saldo": 394947.00
+    },
+    {
+      "row_index": 28,
+      "waktu_transaksi": "2026-01-26",
+      "keterangan": "Biaya Transfer BI-FAST",
+      "debit": 2500.00,
+      "kredit": 0.00,
+      "saldo": 392447.00
+    },
+    {
+      "row_index": 29,
+      "waktu_transaksi": "2026-01-26",
+      "keterangan": "Transfer BNI - NI LUH PUTU SRI WIDANI",
+      "debit": 0.00,
+      "kredit": 1300000.00,
+      "saldo": 1692447.00
+    },
+    {
+      "row_index": 30,
+      "waktu_transaksi": "2026-01-27",
+      "keterangan": "Ewallet TOP UP GOPAY 6282134852903",
+      "debit": 50000.00,
+      "kredit": 0.00,
+      "saldo": 1642447.00
+    },
+    {
+      "row_index": 31,
+      "waktu_transaksi": "2026-01-27",
+      "keterangan": "Biaya EWALLET TOP UP GOPAY",
+      "debit": 1000.00,
+      "kredit": 0.00,
+      "saldo": 1641447.00
+    },
+    {
+      "row_index": 32,
+      "waktu_transaksi": "2026-01-27",
+      "keterangan": "Transfer SEABANK - ARYA WIRAGUNA DWIPUTRA",
+      "debit": 600000.00,
+      "kredit": 0.00,
+      "saldo": 1041447.00
+    },
+    {
+      "row_index": 33,
+      "waktu_transaksi": "2026-01-27",
+      "keterangan": "Biaya Transfer BI-FAST",
+      "debit": 2500.00,
+      "kredit": 0.00,
+      "saldo": 1038947.00
+    },
+    {
+      "row_index": 34,
+      "waktu_transaksi": "2026-01-28",
+      "keterangan": "Transfer SEABANK - ARYA WIRAGUNA DWIPUTRA",
+      "debit": 800000.00,
+      "kredit": 0.00,
+      "saldo": 238947.00
+    },
+    {
+      "row_index": 35,
+      "waktu_transaksi": "2026-01-28",
+      "keterangan": "Biaya Transfer BI-FAST",
+      "debit": 2500.00,
+      "kredit": 0.00,
+      "saldo": 236447.00
+    },
+    {
+      "row_index": 36,
+      "waktu_transaksi": "2026-01-28",
+      "keterangan": "Biaya Admin Rekening",
+      "debit": 11000.00,
+      "kredit": 0.00,
+      "saldo": 225447.00
+    },
+    {
+      "row_index": 37,
+      "waktu_transaksi": "2026-01-28",
+      "keterangan": "Biaya Admin Kartu",
+      "debit": 4000.00,
+      "kredit": 0.00,
+      "saldo": 221447.00
+    },
+    {
+      "row_index": 38,
+      "waktu_transaksi": "2026-01-28",
+      "keterangan": "Biaya Admin Kartu",
+      "debit": 4000.00,
+      "kredit": 0.00,
+      "saldo": 217447.00
+    },
+    {
+      "row_index": 39,
+      "waktu_transaksi": "2026-01-28",
+      "keterangan": "Biaya Admin Kartu",
+      "debit": 4000.00,
+      "kredit": 0.00,
+      "saldo": 213447.00
+    },
+    {
+      "row_index": 40,
+      "waktu_transaksi": "2026-01-28",
+      "keterangan": "Biaya Admin Kartu",
+      "debit": 4000.00,
+      "kredit": 0.00,
+      "saldo": 209447.00
+    },
+    {
+      "row_index": 41,
+      "waktu_transaksi": "2026-01-28",
+      "keterangan": "Biaya Admin Kartu",
+      "debit": 4000.00,
+      "kredit": 0.00,
+      "saldo": 205447.00
+    },
+
+
+
+
+
+    {
+      "row_index": 42,
+      "waktu_transaksi": "2026-01-28",
+      "keterangan": "Biaya Admin Kartu",
+      "debit": 4000.00,
+      "kredit": 0.00,
+      "saldo": 201447.00
+    },
+    {
+      "row_index": 43,
+      "waktu_transaksi": "2026-01-28",
+      "keterangan": "Biaya Admin Kartu",
+      "debit": 4000.00,
+      "kredit": 0.00,
+      "saldo": 197447.00
+    },
+    {
+      "row_index": 44,
+      "waktu_transaksi": "2026-01-28",
+      "keterangan": "Biaya Admin Kartu",
+      "debit": 4000.00,
+      "kredit": 0.00,
+      "saldo": 193447.00
+    },
+    {
+      "row_index": 45,
+      "waktu_transaksi": "2026-01-28",
+      "keterangan": "Biaya Admin Kartu",
+      "debit": 4000.00,
+      "kredit": 0.00,
+      "saldo": 189447.00
+    },
+    {
+      "row_index": 46,
+      "waktu_transaksi": "2026-01-28",
+      "keterangan": "Biaya Admin Kartu",
+      "debit": 4000.00,
+      "kredit": 0.00,
+      "saldo": 185447.00
+    },
+    {
+      "row_index": 47,
+      "waktu_transaksi": "2026-01-28",
+      "keterangan": "Biaya Admin Kartu",
+      "debit": 4000.00,
+      "kredit": 0.00,
+      "saldo": 181447.00
+    }
+  ]
+}

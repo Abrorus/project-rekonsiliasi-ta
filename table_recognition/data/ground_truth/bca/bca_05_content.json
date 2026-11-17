@@ -1,0 +1,525 @@
+{
+  "file": "bca_05.pdf",
+  "transactions": [
+    {
+      "row_index": 1,
+      "waktu_transaksi": "2023-11-01",
+      "keterangan": "TRSF E-BANKING CR 0111/FTSCY/WS95051 35393750.00 SERA FOOD INDONESI",
+      "debit": 0.00,
+      "kredit": 35393750.00,
+      "saldo": 36351150.71
+    },
+    {
+      "row_index": 2,
+      "waktu_transaksi": "2023-11-01",
+      "keterangan": "TRSF E-BANKING DB 0111/FTSCY/WS95051 35393750.00 BAREKA LINTAS IND",
+      "debit": 35393750.00,
+      "kredit": 0.00,
+      "saldo": 957400.71
+    },
+    {
+      "row_index": 3,
+      "waktu_transaksi": "2023-11-02",
+      "keterangan": "TRSF E-BANKING CR 0211/FTSCY/WS95051 70787500.00 SERA FOOD INDONESI",
+      "debit": 0.00,
+      "kredit": 70787500.00,
+      "saldo": 71744900.71
+    },
+    {
+      "row_index": 4,
+      "waktu_transaksi": "2023-11-02",
+      "keterangan": "TRSF E-BANKING DB 0211/FTSCY/WS95051 70787500.00 SENTOT PRABOWO",
+      "debit": 70787500.00,
+      "kredit": 0.00,
+      "saldo": 957400.71
+    },
+    {
+      "row_index": 5,
+      "waktu_transaksi": "2023-11-03",
+      "keterangan": "TRSF E-BANKING CR 0311/FTSCY/WS95051 74832500.00 PANCA BERSAUDARA",
+      "debit": 0.00,
+      "kredit": 74832500.00,
+      "saldo": 75789900.71
+    },
+    {
+      "row_index": 6,
+      "waktu_transaksi": "2023-11-03",
+      "keterangan": "TRSF E-BANKING DB 0311/FTSCY/WS95051 74832500.00 MADE KARMAYASA",
+      "debit": 74832500.00,
+      "kredit": 0.00,
+      "saldo": 957400.71
+    },
+    {
+      "row_index": 7,
+      "waktu_transaksi": "2023-11-04",
+      "keterangan": "TRSF E-BANKING DB 0411/FTCCY/WS95051 10.00 M. FAUZI",
+      "debit": 157450.00,
+      "kredit": 0.00,
+      "saldo": 799950.71
+    },
+    {
+      "row_index": 8,
+      "waktu_transaksi": "2023-11-04",
+      "keterangan": "TRSF E-BANKING CR 0411/FTSCY/WS95051 74832500.00 AMERTHA JAYA",
+      "debit": 0.00,
+      "kredit": 74832500.00,
+      "saldo": 75632450.71
+    },
+    {
+      "row_index": 9,
+      "waktu_transaksi": "2023-11-04",
+      "keterangan": "TRSF E-BANKING DB 0411/FTSCY/WS95051 74832500.00 BAREKA LINTAS INDO",
+      "debit": 74832500.00,
+      "kredit": 0.00,
+      "saldo": 799950.71
+    },
+    {
+      "row_index": 10,
+      "waktu_transaksi": "2023-11-06",
+      "keterangan": "TRSF E-BANKING CR 0611/FTSCY/WS95051 69978500.00 AMERTHA JAYA",
+      "debit": 0.00,
+      "kredit": 69978500.00,
+      "saldo": 70778450.71
+    },
+    {
+      "row_index": 11,
+      "waktu_transaksi": "2023-11-06",
+      "keterangan": "TRSF E-BANKING DB 0611/FTSCY/WS95051 69978500.00 SENTOT PRABOWO",
+      "debit": 69978500.00,
+      "kredit": 0.00,
+      "saldo": 799950.71
+    },
+    {
+      "row_index": 12,
+      "waktu_transaksi": "2023-11-07",
+      "keterangan": "TRSF E-BANKING CR 0711/FTSCY/WS95051 575252315.00 HARMONIS SENTRA SE",
+      "debit": 0.00,
+      "kredit": 575252315.00,
+      "saldo": 576052265.71
+    },
+    {
+      "row_index": 13,
+      "waktu_transaksi": "2023-11-07",
+      "keterangan": "TRSF E-BANKING DB 0711/FTSCY/WS95051 575252315.00 pembayaran inv DJA tgl 31 Agustus 23 CENTRAL ABAD SENTO",
+      "debit": 575252315.00,
+      "kredit": 0.00,
+      "saldo": 799950.71
+    },
+    {
+      "row_index": 14,
+      "waktu_transaksi": "2023-11-08",
+      "keterangan": "TRSF E-BANKING CR 0811/FTSCY/WS95051 72259600.00 SERA FOOD INDONESI",
+      "debit": 0.00,
+      "kredit": 72259600.00,
+      "saldo": 73059550.71
+    },
+    {
+      "row_index": 15,
+      "waktu_transaksi": "2023-11-08",
+      "keterangan": "TRSF E-BANKING DB 0811/FTSCY/WS95051 72259600.00 TIBAN SS",
+      "debit": 72259600.00,
+      "kredit": 0.00,
+      "saldo": 799950.71
+    },
+    {
+      "row_index": 16,
+      "waktu_transaksi": "2023-11-08",
+      "keterangan": "SETORAN TUNAI AMERTHA JAYA ARBE AYAM OKT 2 023",
+      "debit": 0.00,
+      "kredit": 450000000.00,
+      "saldo": 450799950.71
+    },
+    {
+      "row_index": 17,
+      "waktu_transaksi": "2023-11-08",
+      "keterangan": "BI-FAST DB BIF TRANSFER KE 009 BAREKA LINTAS IN KBB",
+      "debit": 20000000.00,
+      "kredit": 0.00,
+      "saldo": 430799950.71
+    },
+    {
+      "row_index": 18,
+      "waktu_transaksi": "2023-11-08",
+      "keterangan": "BI-FAST DB BIF BIAYA TXN KE 009 KBB",
+      "debit": 2500.00,
+      "kredit": 0.00,
+      "saldo": 430797450.71
+    },
+    {
+      "row_index": 19,
+      "waktu_transaksi": "2023-11-08",
+      "keterangan": "TRSF E-BANKING DB 0811/FTSCY/WS95051 430000000.00 CIOMAS ADISATWA",
+      "debit": 430000000.00,
+      "kredit": 0.00,
+      "saldo": 797450.71
+    },
+    {
+      "row_index": 20,
+      "waktu_transaksi": "2023-11-09",
+      "keterangan": "TRSF E-BANKING CR 0911/FTSCY/WS95051 72890000.00 SERA FOOD INDONESI",
+      "debit": 0.00,
+      "kredit": 72890000.00,
+      "saldo": 73687450.71
+    },
+    {
+      "row_index": 21,
+      "waktu_transaksi": "2023-11-09",
+      "keterangan": "TRSF E-BANKING DB 0911/FTSCY/WS95051 72890000.00 SENTOT PRABOWO",
+      "debit": 72890000.00,
+      "kredit": 0.00,
+      "saldo": 797450.71
+    },
+    {
+      "row_index": 22,
+      "waktu_transaksi": "2023-11-09",
+      "keterangan": "SETORAN TUNAI AMERTHA JAYA KEKURANGAN DARBE AYAM OKT OBER 2023",
+      "debit": 0.00,
+      "kredit": 73860950.00,
+      "saldo": 74658400.71
+    },
+    {
+      "row_index": 23,
+      "waktu_transaksi": "2023-11-09",
+      "keterangan": "TRSF E-BANKING DB 0911/FTSCY/WS95051 73860950.00 BAREKA LINTAS INDO",
+      "debit": 73860950.00,
+      "kredit": 0.00,
+      "saldo": 797450.71
+    },
+    {
+      "row_index": 24,
+      "waktu_transaksi": "2023-11-10",
+      "keterangan": "TRSF E-BANKING CR 1011/FTSCY/WS95051 69462200.00 SERA FOOD INDONESI",
+      "debit": 0.00,
+      "kredit": 69462200.00,
+      "saldo": 70259650.71
+    },
+    {
+      "row_index": 25,
+      "waktu_transaksi": "2023-11-10",
+      "keterangan": "TRSF E-BANKING DB 1011/FTSCY/WS95051 69462200.00 BAREKA LINTAS INDO",
+      "debit": 69462200.00,
+      "kredit": 0.00,
+      "saldo": 797450.71
+    },
+    {
+      "row_index": 26,
+      "waktu_transaksi": "2023-11-11",
+      "keterangan": "TRSF E-BANKING CR 1111/FTSCY/WS95051 31520000.00 M. FAUZI",
+      "debit": 0.00,
+      "kredit": 31520000.00,
+      "saldo": 32317450.71
+    },
+    {
+      "row_index": 27,
+      "waktu_transaksi": "2023-11-11",
+      "keterangan": "TRSF E-BANKING DB 1111/FTSCY/WS95051 31520000.00 TIBAN SS",
+      "debit": 31520000.00,
+      "kredit": 0.00,
+      "saldo": 797450.71
+    },
+    {
+      "row_index": 28,
+      "waktu_transaksi": "2023-11-12",
+      "keterangan": "TRSF E-BANKING CR 1211/FTSCY/WS95051 55061500.00 PANCA BERSAUDARA",
+      "debit": 0.00,
+      "kredit": 55061500.00,
+      "saldo": 55858950.71
+    },
+    {
+      "row_index": 29,
+      "waktu_transaksi": "2023-11-12",
+      "keterangan": "TRSF E-BANKING DB 1211/FTSCY/WS95051 55061500.00 BAREKA LINTAS INDO",
+      "debit": 55061500.00,
+      "kredit": 0.00,
+      "saldo": 797450.71
+    },
+    {
+      "row_index": 30,
+      "waktu_transaksi": "2023-11-13",
+      "keterangan": "TRSF E-BANKING CR 1311/FTSCY/WS95051 19884568.00 HARMONIS SENTRA SE",
+      "debit": 0.00,
+      "kredit": 19884568.00,
+      "saldo": 20682018.71
+    },
+    {
+      "row_index": 31,
+      "waktu_transaksi": "2023-11-13",
+      "keterangan": "TRSF E-BANKING DB 1311/FTFVA/WS95051 07004/BPJS KESEHAT - - 8888890000014525",
+      "debit": 4202500.00,
+      "kredit": 0.00,
+      "saldo": 16479518.71
+    },
+    {
+      "row_index": 32,
+      "waktu_transaksi": "2023-11-13",
+      "keterangan": "TRSF E-BANKING DB 1311/FTFVA/WS95051 89000/BPJS TK - - 420047685000",
+      "debit": 15684568.00,
+      "kredit": 0.00,
+      "saldo": 794950.71
+    },
+    {
+      "row_index": 33,
+      "waktu_transaksi": "2023-11-13",
+      "keterangan": "TRSF E-BANKING CR 1311/FTSCY/WS95051 74860000.00 MAJU MAPAN BAHAGIA",
+      "debit": 0.00,
+      "kredit": 74860000.00,
+      "saldo": 75654950.71
+    },
+    {
+      "row_index": 34,
+      "waktu_transaksi": "2023-11-13",
+      "keterangan": "TRSF E-BANKING DB 1311/FTSCY/WS95051 74860000.00 SENTOT PRABOWO",
+      "debit": 74860000.00,
+      "kredit": 0.00,
+      "saldo": 794950.71
+    },
+    {
+      "row_index": 35,
+      "waktu_transaksi": "2023-11-14",
+      "keterangan": "TRSF E-BANKING CR 1411/FTSCY/WS95051 72968800.00 MAJU MAPAN BAHAGIA",
+      "debit": 0.00,
+      "kredit": 72968800.00,
+      "saldo": 73763750.71
+    },
+    {
+      "row_index": 36,
+      "waktu_transaksi": "2023-11-14",
+      "keterangan": "TRSF E-BANKING DB 1411/FTSCY/WS95051 72968800.00 DIDIK HARYANTO",
+      "debit": 72968800.00,
+      "kredit": 0.00,
+      "saldo": 794950.71
+    },
+    {
+      "row_index": 37,
+      "waktu_transaksi": "2023-11-16",
+      "keterangan": "TRSF E-BANKING CR 1611/FTSCY/WS95051 70787500.00 AMERTHA JAYA",
+      "debit": 0.00,
+      "kredit": 70787500.00,
+      "saldo": 71582450.71
+    },
+    {
+      "row_index": 38,
+      "waktu_transaksi": "2023-11-16",
+      "keterangan": "TRSF E-BANKING DB 1611/FTSCY/WS95051 70787500.00 DIDIK HARYANTO",
+      "debit": 70787500.00,
+      "kredit": 0.00,
+      "saldo": 794950.71
+    },
+    {
+      "row_index": 39,
+      "waktu_transaksi": "2023-11-17",
+      "keterangan": "ND-LAINNYA BIAYA SURAT REF ERENSI",
+      "debit": 50000.00,
+      "kredit": 0.00,
+      "saldo": 744950.71
+    },
+    {
+      "row_index": 40,
+      "waktu_transaksi": "2023-11-18",
+      "keterangan": "TRSF E-BANKING CR 1811/FTSCY/WS95051 72537500.00 PANCA BERSAUDARA",
+      "debit": 0.00,
+      "kredit": 72537500.00,
+      "saldo": 73282450.71
+    },
+    {
+      "row_index": 41,
+      "waktu_transaksi": "2023-11-18",
+      "keterangan": "TRSF E-BANKING DB 1811/FTSCY/WS95051 72537500.00 BAREKA LINTAS INDO",
+      "debit": 72537500.00,
+      "kredit": 0.00,
+      "saldo": 744950.71
+    },
+    {
+      "row_index": 42,
+      "waktu_transaksi": "2023-11-19",
+      "keterangan": "TRSF E-BANKING CR 1911/FTSCY/WS95051 72537500.00 PANCA BERSAUDARA",
+      "debit": 0.00,
+      "kredit": 72537500.00,
+      "saldo": 73282450.71
+    },
+    {
+      "row_index": 43,
+      "waktu_transaksi": "2023-11-19",
+      "keterangan": "TRSF E-BANKING DB 1911/FTSCY/WS95051 72537500.00 BAREKA LINTAS INDO",
+      "debit": 72537500.00,
+      "kredit": 0.00,
+      "saldo": 744950.71
+    },
+    {
+      "row_index": 44,
+      "waktu_transaksi": "2023-11-20",
+      "keterangan": "TRSF E-BANKING CR 2011/FTSCY/WS95051 70465000.00 PRANAFOOD",
+      "debit": 0.00,
+      "kredit": 70465000.00,
+      "saldo": 71209950.71
+    },
+    {
+      "row_index": 45,
+      "waktu_transaksi": "2023-11-20",
+      "keterangan": "TRSF E-BANKING DB 2011/FTSCY/WS95051 70465000.00 MAJU MAPAN BAHAGIA",
+      "debit": 70465000.00,
+      "kredit": 0.00,
+      "saldo": 744950.71
+    },
+    {
+      "row_index": 46,
+      "waktu_transaksi": "2023-11-21",
+      "keterangan": "TRSF E-BANKING CR 2111/FTSCY/WS95051 32123750.00 NI KETUT MAHAYANI",
+      "debit": 0.00,
+      "kredit": 32123750.00,
+      "saldo": 32868700.71
+    },
+    {
+      "row_index": 47,
+      "waktu_transaksi": "2023-11-21",
+      "keterangan": "TRSF E-BANKING DB 2111/FTSCY/WS95051 32123750.00 BAREKA LINTAS INDO",
+      "debit": 32123750.00,
+      "kredit": 0.00,
+      "saldo": 744950.71
+    },
+    {
+      "row_index": 48,
+      "waktu_transaksi": "2023-11-22",
+      "keterangan": "TRSF E-BANKING CR 2211/FTSCY/WS95051 58030000.00 PANCA BERSAUDARA",
+      "debit": 0.00,
+      "kredit": 58030000.00,
+      "saldo": 58774950.71
+    },
+    {
+      "row_index": 49,
+      "waktu_transaksi": "2023-11-22",
+      "keterangan": "TRSF E-BANKING DB 2211/FTSCY/WS95051 58030000.00 BAREKA LINTAS INDO",
+      "debit": 58030000.00,
+      "kredit": 0.00,
+      "saldo": 744950.71
+    },
+    {
+      "row_index": 50,
+      "waktu_transaksi": "2023-11-23",
+      "keterangan": "TRSF E-BANKING CR 2311/FTSCY/WS95051 74610000.00 HARMONIS SENTRA SE",
+      "debit": 0.00,
+      "kredit": 74610000.00,
+      "saldo": 75354950.71
+    },
+    {
+      "row_index": 51,
+      "waktu_transaksi": "2023-11-23",
+      "keterangan": "TRSF E-BANKING DB 2311/FTSCY/WS95051 74610000.00 SENTOT PRABOWO",
+      "debit": 74610000.00,
+      "kredit": 0.00,
+      "saldo": 744950.71
+    },
+    {
+      "row_index": 52,
+      "waktu_transaksi": "2023-11-24",
+      "keterangan": "TRSF E-BANKING CR 2411/FTSCY/WS95051 72537500.00 AMERTHA JAYA",
+      "debit": 0.00,
+      "kredit": 72537500.00,
+      "saldo": 73282450.71
+    },
+    {
+      "row_index": 53,
+      "waktu_transaksi": "2023-11-24",
+      "keterangan": "TRSF E-BANKING DB 2411/FTSCY/WS95051 72537500.00 TIBAN SS",
+      "debit": 72537500.00,
+      "kredit": 0.00,
+      "saldo": 744950.71
+    },
+    {
+      "row_index": 54,
+      "waktu_transaksi": "2023-11-26",
+      "keterangan": "TRSF E-BANKING CR 2611/FTSCY/WS95051 70645000.00 KELANA MAKMUR",
+      "debit": 0.00,
+      "kredit": 70645000.00,
+      "saldo": 71389950.71
+    },
+    {
+      "row_index": 55,
+      "waktu_transaksi": "2023-11-26",
+      "keterangan": "TRSF E-BANKING DB 2611/FTSCY/WS95051 70645000.00 GEDE ARYA WIRATMA",
+      "debit": 70645000.00,
+      "kredit": 0.00,
+      "saldo": 744950.71
+    },
+    {
+      "row_index": 56,
+      "waktu_transaksi": "2023-11-28",
+      "keterangan": "TRSF E-BANKING CR 2811/FTSCY/WS95051 72635000.00 MAJU MAPAN BAHAGIA",
+      "debit": 0.00,
+      "kredit": 72635000.00,
+      "saldo": 73379950.71
+    },
+    {
+      "row_index": 57,
+      "waktu_transaksi": "2023-11-28",
+      "keterangan": "TRSF E-BANKING DB 2811/FTSCY/WS95051 72635000.00 GEDE ARYA WIRATMA",
+      "debit": 72635000.00,
+      "kredit": 0.00,
+      "saldo": 744950.71
+    },
+    {
+      "row_index": 58,
+      "waktu_transaksi": "2023-11-29",
+      "keterangan": "ND-LAINNYA",
+      "debit": 50000.00,
+      "kredit": 0.00,
+      "saldo": 694950.71
+    },
+    {
+      "row_index": 59,
+      "waktu_transaksi": "2023-11-29",
+      "keterangan": "TRSF E-BANKING CR 2911/FTSCY/WS95051 72635000.00 PANCA BERSAUDARA",
+      "debit": 0.00,
+      "kredit": 72635000.00,
+      "saldo": 73329950.71
+    },
+    {
+      "row_index": 60,
+      "waktu_transaksi": "2023-11-30",
+      "keterangan": "TRSF E-BANKING DB TANGGAL :29/11 2911/FTSCY/WS95051 72635000.00 SENTOT PRABOWO",
+      "debit": 72635000.00,
+      "kredit": 0.00,
+      "saldo": 694950.71
+    },
+    {
+      "row_index": 61,
+      "waktu_transaksi": "2023-11-30",
+      "keterangan": "TRSF E-BANKING CR 3011/FTSCY/WS95051 70645000.00 AMERTHA JAYA",
+      "debit": 0.00,
+      "kredit": 70645000.00,
+      "saldo": 71339950.71
+    },
+    {
+      "row_index": 62,
+      "waktu_transaksi": "2023-11-30",
+      "keterangan": "TRSF E-BANKING DB 3011/FTCCY/WS95051 10.00 peng saldo min",
+      "debit": 155350.00,
+      "kredit": 0.00,
+      "saldo": 71184600.71
+    },
+    {
+      "row_index": 63,
+      "waktu_transaksi": "2023-11-30",
+      "keterangan": "TRSF E-BANKING DB 3011/FTSCY/WS95051 70645000.00 SENTOT PRABOWO",
+      "debit": 70645000.00,
+      "kredit": 0.00,
+      "saldo": 539600.71
+    },
+    {
+      "row_index": 64,
+      "waktu_transaksi": "2023-11-30",
+      "keterangan": "BIAYA ADM",
+      "debit": 30000.00,
+      "kredit": 0.00,
+      "saldo": 509600.71
+    },
+    {
+      "row_index": 65,
+      "waktu_transaksi": "2023-11-30",
+      "keterangan": "BIAYA ADM",
+      "debit": 25000.00,
+      "kredit": 0.00,
+      "saldo": 484600.71
+    }
+  ]
+}
