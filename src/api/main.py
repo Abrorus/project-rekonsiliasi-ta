@@ -21,6 +21,7 @@ Endpoints:
 
 import os
 import sys
+import hashlib
 import shutil
 import tempfile
 import logging
@@ -174,8 +175,31 @@ async def reconcile_pdf(file: UploadFile = File(...)):
     if not process_pdf_table:
         raise HTTPException(status_code=500, detail="Modul Table Recognition belum terpasang.")
 
+    # Baca file dan hitung hash SHA-256 untuk deteksi duplikat
+    file_bytes = await file.read()
+    file_hash = hashlib.sha256(file_bytes).hexdigest()
+    file_size = len(file_bytes)
+
+    # Cek apakah dokumen sudah pernah diupload
+    sb = get_supabase()
+    try:
+        existing = sb.table("dokumen_upload").select("id, nama_file, jumlah_transaksi, created_at") \
+            .eq("client_id", CLIENT_ID).eq("file_hash", file_hash).execute()
+        if existing.data and len(existing.data) > 0:
+            doc = existing.data[0]
+            raise HTTPException(
+                status_code=409,
+                detail=f"Dokumen ini sudah pernah diupload sebelumnya sebagai \"{doc['nama_file']}\" "
+                       f"pada {doc['created_at'][:10]} ({doc['jumlah_transaksi']} transaksi). "
+                       f"Upload dokumen yang berbeda untuk menghindari data redundan."
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(f"Cek duplikat dokumen dilewati: {e}")
+
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-        shutil.copyfileobj(file.file, tmp)
+        tmp.write(file_bytes)
         tmp_path = tmp.name
 
     try:
@@ -237,6 +261,19 @@ async def reconcile_pdf(file: UploadFile = File(...)):
             })
 
         results = proses_transaksi_batch(transaksi_list)
+
+        # Simpan record dokumen yang berhasil diproses
+        try:
+            sb.table("dokumen_upload").insert({
+                "client_id": CLIENT_ID,
+                "nama_file": file.filename,
+                "file_hash": file_hash,
+                "ukuran_byte": file_size,
+                "jumlah_transaksi": len(results),
+                "bank_terdeteksi": source_bank if isinstance(result, dict) else None,
+            }).execute()
+        except Exception as e:
+            logger.warning(f"Simpan record dokumen dilewati: {e}")
 
         return {
             "filename": file.filename,

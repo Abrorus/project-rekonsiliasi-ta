@@ -1217,8 +1217,14 @@ function App() {
       })
 
       if (!resp.ok) {
-        const errorText = await resp.text()
-        throw new Error(errorText || `Server error: ${resp.status}`)
+        let errorText = `Server error: ${resp.status}`
+        try {
+          const errJson = await resp.json()
+          errorText = errJson.detail || JSON.stringify(errJson)
+        } catch {
+          errorText = await resp.text() || errorText
+        }
+        throw new Error(errorText)
       }
 
       const json = await resp.json()

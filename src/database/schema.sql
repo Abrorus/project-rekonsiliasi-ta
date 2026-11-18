@@ -117,9 +117,27 @@ CREATE TABLE IF NOT EXISTS feedback_log (
 CREATE INDEX idx_feedback_client ON feedback_log(client_id);
 CREATE INDEX idx_feedback_transaksi ON feedback_log(transaksi_id);
 
--- 6. Enable RLS on all tables
+-- 6. Dokumen Upload (tracking file yang sudah diupload, cegah duplikat)
+CREATE TABLE IF NOT EXISTS dokumen_upload (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    client_id UUID NOT NULL,
+    nama_file TEXT NOT NULL,
+    file_hash TEXT NOT NULL,
+    ukuran_byte BIGINT,
+    jumlah_transaksi INTEGER DEFAULT 0,
+    bank_terdeteksi TEXT,
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(client_id, file_hash)
+);
+
+CREATE INDEX idx_dokumen_client ON dokumen_upload(client_id);
+CREATE INDEX idx_dokumen_hash ON dokumen_upload(client_id, file_hash);
+
+-- 7. Enable RLS on all tables
 ALTER TABLE tree_nodes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE mapping_layer ENABLE ROW LEVEL SECURITY;
 ALTER TABLE account_mapping ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transaksi ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feedback_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dokumen_upload ENABLE ROW LEVEL SECURITY;
