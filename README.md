@@ -1,17 +1,35 @@
-﻿# project-rekonsiliasi-ta
-Project TA Abror, Arya, dan Mario — SIREKON. Bagian ini: **Pool 2 (modul NLP)**, klasifikasi keterangan transaksi ke sub-kategori CoA.
+# SIREKON — Modul NLP Klasifikasi Transaksi Rekening Koran (Pool 2)
 
-## Urutan menjalankan (dari folder `src`, venv aktif)
-| Langkah | Perintah | Keluaran |
-|---|---|---|
-| 1. Siapkan & labeli data | `python siapkan_data_coa.py` | `data/data_riil_berlabel_coa.csv`, bahan validasi 20% |
-| 2. Metrik preprocessing | `python metrik_preprocessing.py` | `data/hasil_metrik_preprocessing.csv` |
-| 3. Latih & uji (CV, lintas-bank) | `python latih_model_coa.py` | `models/model_coa_final.pkl` |
-| 4. Bandingkan SVM/RF/SBERT/FinBERT | `python bandingkan_model_coa.py` | `data/hasil_banding_model_coa.csv` (SBERT/FinBERT: set `HF_HUB_OFFLINE=1` bila model sudah ter-cache) |
-| 5. Tentukan threshold | `python threshold_coa.py` | `models/threshold_coa.json` |
-| 6. Simulasi routing | `python routing.py` | — |
-| 7. Keluaran JSON untuk Pool 3 | `python proses_json.py input.json output.json` (tambah `--koreksi koreksi.json` setelah review manual) | JSON dengan status OTOMATIS / PERLU_REVIEW_MANUAL, lalu JSON bersih |
+Repositori Tugas Akhir **Abrorus Shobah (NRP 5026231145)** — bagian dari sistem rekonsiliasi keuangan cerdas **SIREKON** (bersama Arya pada Pool 1 *Table Recognition* dan Mario pada Pool 3 *Knowledge Base & ERP Integration*).
 
-## Catatan
-- Label masih "label perak" (aturan otomatis); belum divalidasi staf keuangan (target Cohen's Kappa >= 0.61).
-- Skrip lama (`training_*.py`, `confidence_threshold.py`, `retrain_gabungan.py`, dst.) memakai kategori sintesis lama dan dipertahankan sebagai riwayat.
+## Struktur Direktori
+
+### 1. `src/` (Kode Program Utama Pool 2)
+| Berkas | Fungsi |
+| --- | --- |
+| `kamus_istilah.py` | Normalisasi teks, kamus sinonim singkatan perbankan, dan *stopword removal* |
+| `kategori_keuangan.py` | Definisi 19 sub-kategori *Chart of Accounts* (CoA) dan pemetaan akun |
+| `siapkan_data_coa.py` | Persiapan dataset BCA & Mandiri, pelabelan CoA, dan pembuatan sampel validasi 20% |
+| `metrik_preprocessing.py` | Pengukuran performa *preprocessing* dan *sparsity* matriks TF-IDF |
+| `latih_model_coa.py` | Pelatihan model SVM, evaluasi *5-fold CV*, dan pengujian lintas-bank |
+| `bandingkan_model_coa.py` | Perbandingan performa SVM, Random Forest, SBERT, dan FinBERT + *paired t-test* |
+| `eksperimen_perbaikan.py` | Eksperimen kernel Linear vs RBF, *masking* nama pihak, dan *StratifiedGroupKFold* |
+| `threshold_coa.py` | Penentuan *confidence threshold* optimal ($\tau^* = 0,72$) |
+| `evaluasi_routing_kb.py` | Evaluasi metrik *confidence routing* dan simulasi integrasi Pool 3 (*Knowledge Base*) |
+| `simulasi_5bank_coa.py` | Pengujian kompatibilitas 5 bank (BCA, Mandiri, BNI, BRI, dan BSI) |
+| `hitung_kappa.py` | Perhitungan *Cohen's Kappa* setelah file validasi 20% diisi staf keuangan mitra |
+| `routing.py` | Fungsi dasar inferensi satu transaksi dan penyaringan *confidence threshold* |
+| `proses_json.py` | Fungsi integrasi `klasifikasi_batch()` dan `terapkan_koreksi()` untuk Pool 1 & Pool 3 |
+| `buat_visualisasi_bab4.py` | Generator grafik visualisasi Bab 4 (`.png` & `.svg`) |
+| `buat_docx_bab4.py` | Generator otomatis dokumen Buku TA Final (`.docx` & `.html`) |
+| `buat_pdf_kebutuhan_avolut.py` | Generator dokumen PDF ringkasan kebutuhan data mitra Avolut |
+
+### 2. `models/` (Model Terlatih Siap Pakai)
+- `model_coa_final.pkl` — Model final TF-IDF (*word* + *char n-gram*) + SVM Linear terkalibrasi
+- `threshold_coa.json` — Konfigurasi *confidence threshold* optimal (`0.72`)
+
+### 3. `docs/` (Dokumen Buku TA, Grafik, & Panduan Sidang)
+- `Buku_TA_Final_Bab1_sd_Bab5.docx` — Buku Tugas Akhir lengkap Bab 1 s.d. Bab 5
+- `ABSTRAK_final.md`, `BAB4_draft.md`, `BAB5_draft.md`, `BAB4_Siap_Copas_Word.html`
+- `PANDUAN_SIDANG_ABROR.md` — Rangkuman materi dan definisi istilah untuk persiapan sidang
+- `Kebutuhan_Data_Avolut_NLP_dan_KB.pdf` — Dokumen kebutuhan data & validasi untuk Avolut
