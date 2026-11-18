@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8">
+<title>Panduan Memahami Tugas Akhir Saya (Abror) - dari Nol</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10.6pt; line-height: 1.55; color: #1d1d1f; }
+  h1 { font-size: 21pt; color: #1a3373; margin: 0 0 4px 0; }
+  h2 { font-size: 14.5pt; color: #fff; background: #1a3373; padding: 5px 10px; border-radius: 4px; margin: 26px 0 10px 0; page-break-after: avoid; }
+  h3 { font-size: 11.8pt; color: #1a3373; margin: 16px 0 4px 0; page-break-after: avoid; }
+  p { margin: 5px 0 7px 0; }
+  .sub { color: #555; font-size: 10pt; margin-bottom: 10px; }
+  .box { border-left: 5px solid #2e7d32; background: #eef7ee; padding: 7px 12px; margin: 9px 0; border-radius: 3px; page-break-inside: avoid; }
+  .warn { border-left-color: #c62828; background: #fdeeee; }
+  .tip { border-left-color: #1565c0; background: #eaf2fc; }
+  .yel { border-left-color: #ef8f00; background: #fff6e3; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 11px 0; font-size: 9.6pt; page-break-inside: auto; }
+  th, td { border: 1px solid #777; padding: 4px 7px; text-align: left; vertical-align: top; }
+  th { background: #e6ebf5; }
+  tr { page-break-inside: avoid; }
+  code { background: #f1f1f1; padding: 0 3px; border-radius: 3px; font-size: 9.6pt; }
+  .flow { font-family: Consolas, monospace; font-size: 9.6pt; background: #f6f6f6; border: 1px solid #ccc; padding: 8px 10px; white-space: pre-wrap; border-radius: 4px; page-break-inside: avoid; }
+  ul, ol { margin: 4px 0 8px 0; padding-left: 22px; }
+  li { margin: 2px 0; }
+  .q { font-weight: bold; color: #8a1c1c; margin-top: 10px; }
+  .big { font-size: 12.5pt; font-weight: bold; }
+</style></head><body>
+
+<h1>Panduan Memahami Tugas Akhir Saya</h1>
+<div class="sub">Abrorus Shobah (5026231145) &middot; SIREKON Pool 2 &middot; Modul NLP untuk Klasifikasi Keterangan Transaksi Rekening Koran<br>
+Dibuat untuk persiapan sidang. Bahasa dibuat sesederhana mungkin; semua istilah dijelaskan saat pertama muncul.</div>
+
+<div class="box tip">
+<b>Tolong baca ini dulu.</b> Merasa bingung di tengah TA itu normal, karena TA kamu menggabungkan 5 hal sekaligus (data keuangan, pelabelan, NLP, machine learning, statistik). Kamu tidak perlu paham semuanya sedalam peneliti NLP. Yang perlu kamu kuasai untuk sidang adalah:
+<ol>
+<li>Cerita utuh: masalahnya apa, kamu bikin apa, hasilnya apa.</li>
+<li>Kenapa tiap keputusan diambil (kenapa SVM, kenapa 0,72, kenapa 4 model dibandingkan).</li>
+<li>Dari mana tiap angka berasal.</li>
+<li>Kelemahan TA kamu, dan jawaban jujurnya. Penguji lebih menghargai peneliti yang tahu batas hasilnya daripada yang mengklaim sempurna.</li>
+</ol>
+Semua itu ada di dokumen ini. Dua minggu belajar rutin sudah cukup (rencananya ada di Bagian 11).
+</div>
+
+<h2>1. TA kamu dalam satu paragraf</h2>
+<p>Sebuah perusahaan (Avolut) setiap bulan harus mencocokkan <b>rekening koran bank</b> dengan <b>catatan di sistem ERP</b> mereka. Itu namanya <b>rekonsiliasi</b>. Masalahnya, kolom <b>keterangan</b> di rekening koran isinya berantakan, misalnya <code>TRSF E-BANKING PANCA BERSAUDARA</code> atau <code>BPJS KS CTA Jan25 SANTOSA JAYA MAKMUR</code>. Staf keuangan harus membaca satu per satu untuk menentukan "ini uang apa". Lambat dan rawan salah.</p>
+<p><b>Yang kamu bikin:</b> program yang <b>membaca teks keterangan itu lalu menebak kategori akuntansinya</b> (misalnya "gaji", "bayar vendor", "biaya bank"), sekaligus mengeluarkan <b>angka keyakinan</b> (confidence score). Kalau program yakin, transaksi langsung diproses. Kalau ragu, transaksi dilempar ke modul teman kamu (Mario) untuk dicek lagi.</p>
+
+<div class="box">
+<b>Analogi mudah:</b> kamu membuat <b>petugas sortir surat</b>. Surat yang jelas alamatnya langsung dimasukkan ke kotak yang benar (otomatis). Surat yang tulisannya buram ditaruh di keranjang "tanya manusia dulu" (review manual). Pertanyaan penelitianmu: seberapa pintar petugas ini, siapa petugas terbaik di antara 4 kandidat, dan di angka keyakinan berapa sebaiknya surat dianggap "jelas"?
+</div>
+
+<h2>2. Posisimu di dalam sistem SIREKON (3 orang, 3 pool)</h2>
+<table>
+<tr><th>Pool</th><th>Pemilik</th><th>Tugas</th><th>Masukan &rarr; Keluaran</th></tr>
+<tr><td>1</td><td>Arya</td><td>Table recognition: membaca tabel dari PDF rekening koran</td><td>PDF &rarr; daftar baris (tanggal, keterangan, debit, kredit, saldo)</td></tr>
+<tr><td><b>2</b></td><td><b>Kamu (Abror)</b></td><td><b>NLP: menebak kategori akun dari teks keterangan + confidence</b></td><td>Daftar baris &rarr; daftar baris + <code>label</code>, <code>confidence</code>, <code>status</code></td></tr>
+<tr><td>3</td><td>Mario</td><td>Knowledge base + UI + cocokkan ke ERP, tangani transaksi yang kamu ragukan</td><td>Hasil Pool 2 &rarr; transaksi terkonfirmasi untuk rekonsiliasi</td></tr>
+</table>
+<p>Penyambungnya: backend FastAPI milik Mario memanggil fungsi Arya, lalu hasilnya langsung dioper ke fungsimu <code>klasifikasi_batch()</code> di <code>src/proses_json.py</code>. Tidak perlu server terpisah.</p>
+
+<h2>3. Satu transaksi, dari awal sampai akhir</h2>
+<p>Cara paling mudah memahami TA kamu: ikuti <b>satu baris</b> sampai selesai.</p>
+<div class="flow">Baris dari Pool 1 (Arya):
+  keterangan = "BPJS KS CTA Jan25 SANTOSA JAYA MAKMUR"   kredit = 0   debit = 1.250.000
+
+LANGKAH A - Tentukan arah uang
+  debit &gt; 0  -&gt; uang KELUAR -&gt; tanda "DB"  -&gt; ditambah kata penanda "arahdb" di depan teks
+
+LANGKAH B - Bersihkan teks (preprocessing, kamus_istilah.py)
+  huruf kecil semua, angka dibuang   : "bpjs ks cta jan santosa jaya makmur"
+  singkatan dibakukan ("ks" -&gt; kesehatan)
+  kata sampah dibuang (jan, cta ...)  : "arahdb bpjs kesehatan santosa jaya makmur"
+
+LANGKAH C - Ubah kata jadi angka (TF-IDF)
+  komputer tidak bisa membaca kata; tiap kata diberi bobot angka
+  hasil: deretan angka (vektor) panjang 754+ posisi, hampir semuanya 0
+
+LANGKAH D - Tebak kategori (SVM)
+  model menghitung skor untuk 17 kategori, lalu mengubahnya jadi probabilitas
+  hasil: EMP_BENEFIT (tunjangan &amp; BPJS) dengan confidence = 0,87
+
+LANGKAH E - Keputusan (routing)
+  0,87 &gt;= 0,72  -&gt;  status OTOMATIS  (langsung dipakai)
+  seandainya 0,45 &lt; 0,72 -&gt; status PERLU_REVIEW_MANUAL (dilempar ke Pool 3)</div>
+
+<h3>Kenapa "arahdb" ditambahkan?</h3>
+<p>Karena arah uang itu petunjuk kuat. Uang masuk hampir pasti bukan "gaji karyawan". Tanpa NLP pun, menebak berdasarkan arah saja sudah memberi akurasi 56%. Ini jadi <i>baseline</i> (pembanding paling sederhana) untuk membuktikan bahwa NLP-mu memang menambah nilai.</p>
+
+<h2>4. Kamus istilah (urut dari yang paling dasar)</h2>
+<table>
+<tr><th>Istilah</th><th>Arti sederhana</th></tr>
+<tr><td><b>Rekonsiliasi</b></td><td>Mencocokkan dua catatan (rekening koran bank vs catatan internal perusahaan) untuk memastikan angkanya sama.</td></tr>
+<tr><td><b>CoA (Chart of Accounts)</b></td><td>Daftar kode akun akuntansi milik perusahaan. Avolut punya 313 akun. Kamu merangkumnya jadi 19 kelompok (<code>SALARY</code>, <code>PAYABLE_VENDOR</code>, dst.).</td></tr>
+<tr><td><b>NLP</b></td><td>Cabang AI agar komputer bisa membaca dan mengolah bahasa manusia. Di TA kamu: membaca teks keterangan transaksi.</td></tr>
+<tr><td><b>Klasifikasi</b></td><td>Tugas memasukkan sebuah data ke salah satu kelompok yang sudah ditentukan (di sini: memilih 1 dari belasan kategori akun).</td></tr>
+<tr><td><b>Machine learning</b></td><td>Program "belajar" dari contoh berlabel (teks + kategori yang benar), lalu menebak data baru. Tidak ditulis aturan satu per satu.</td></tr>
+<tr><td><b>Label</b></td><td>Jawaban benar yang diberikan manusia untuk tiap contoh. Tanpa label, program tidak punya bahan belajar.</td></tr>
+<tr><td><b>Ground truth</b></td><td>Kumpulan label yang dianggap benar sebagai patokan penilaian.</td></tr>
+<tr><td><b>Preprocessing</b></td><td>Membersihkan teks sebelum diolah: huruf kecil, buang angka/simbol, bakukan singkatan, buang kata tidak berguna.</td></tr>
+<tr><td><b>Token</b></td><td>Satu potongan kata hasil memecah kalimat. "bpjs kesehatan" = 2 token.</td></tr>
+<tr><td><b>Stopword</b></td><td>Kata yang terlalu umum sehingga tidak membantu membedakan kategori (misalnya "trsf", "ebanking", nama bulan).</td></tr>
+<tr><td><b>Ekstraksi fitur</b></td><td>Mengubah teks menjadi angka supaya bisa dihitung komputer.</td></tr>
+<tr><td><b>TF-IDF</b></td><td>Cara memberi bobot ke kata. <b>TF</b> = seberapa sering kata muncul di satu transaksi. <b>IDF</b> = seberapa langka kata itu di seluruh data. Kata langka-tapi-khas ("bpjs", "pln") berbobot besar; kata yang ada di mana-mana berbobot kecil.</td></tr>
+<tr><td><b>N-gram</b></td><td>Cara memotong teks. <i>Word n-gram</i> (1-2) = per 1 atau 2 kata berurutan. <i>Character n-gram</i> (3-5) = per 3 sampai 5 huruf, supaya tahan typo dan singkatan menempel (<code>bpjstkfeb</code> tetap mirip <code>bpjs</code>).</td></tr>
+<tr><td><b>Sparsity</b></td><td>Persentase isi tabel angka yang bernilai 0. Punyamu 99,28%, artinya hampir semua angka nol karena satu transaksi hanya memuat beberapa kata.</td></tr>
+<tr><td><b>SVM</b></td><td>Algoritma penebak yang mencari "garis pembatas" terbaik antar kategori dengan jarak (margin) selebar mungkin.</td></tr>
+<tr><td><b>Kernel (Linear vs RBF)</b></td><td>Bentuk garis pembatas pada SVM. Linear = lurus. RBF = melengkung (lebih lentur tetapi lebih mudah "menghafal").</td></tr>
+<tr><td><b>Random Forest</b></td><td>Algoritma penebak berupa 100 "pohon keputusan" yang saling voting.</td></tr>
+<tr><td><b>SBERT / FinBERT</b></td><td>Model bahasa berbasis deep learning yang sudah dilatih pihak lain pada teks sangat banyak. Teks diubah menjadi angka yang menangkap makna. FinBERT dilatih pada teks keuangan berbahasa Inggris.</td></tr>
+<tr><td><b>Confidence score</b></td><td>Angka 0 sampai 1 yang menyatakan seberapa yakin model terhadap tebakannya. 0,87 = yakin 87%.</td></tr>
+<tr><td><b>Threshold (ambang)</b></td><td>Batas confidence. Di atas batas = otomatis; di bawah batas = dicek manusia/Pool 3. Punyamu 0,72.</td></tr>
+<tr><td><b>Cross-validation (5-fold)</b></td><td>Cara menguji adil: data dibagi 5 bagian; 4 bagian untuk belajar, 1 bagian untuk ujian, diulang 5 kali bergantian sampai setiap baris pernah jadi soal ujian.</td></tr>
+<tr><td><b>Imbalanced data</b></td><td>Jumlah contoh antar kategori timpang. Punyamu: <code>PAYABLE_VENDOR</code> 164 baris, sedangkan beberapa kategori hanya 5.</td></tr>
+<tr><td><b>Kappa (Cohen's)</b></td><td>Ukuran kesepakatan dua penilai setelah memperhitungkan faktor kebetulan. Dipakai untuk membuktikan labelmu dan label Pak Depta sejalan.</td></tr>
+</table>
+
+<h2>5. Dari mana angka-angka itu? (Metrik dijelaskan pakai contoh)</h2>
+
+<h3>5.1 Akurasi, Precision, Recall, F1</h3>
+<p>Misal ada 10 transaksi yang sebenarnya <code>SALARY</code>. Model menebak "SALARY" untuk 8 baris yang benar-benar SALARY, dan 2 baris SALARY lainnya salah ditebak. Selain itu model juga salah menyebut 2 baris non-SALARY sebagai SALARY.</p>
+<ul>
+<li><b>Precision</b> = dari semua yang ditebak SALARY, berapa yang benar. 8 dari 10 tebakan = <b>0,80</b>. (Ketepatan tebakan.)</li>
+<li><b>Recall</b> = dari semua SALARY yang sebenarnya ada, berapa yang berhasil ditemukan. 8 dari 10 = <b>0,80</b>. (Kelengkapan.)</li>
+<li><b>F1</b> = rata-rata khusus (harmonik) dari keduanya = 2 &times; P &times; R / (P + R). Kalau salah satu rendah, F1 ikut jatuh. Contoh P = 0,8 dan R = 0,6 &rarr; F1 = 0,686.</li>
+<li><b>Akurasi</b> = proporsi tebakan benar dari seluruh baris.</li>
+</ul>
+
+<h3>5.2 Kenapa pakai Macro-F1, bukan akurasi saja?</h3>
+<div class="box warn">
+<b>Ini bukti paling gampang di TA kamu.</b> Baseline "tebak kategori terbanyak berdasarkan arah uang" punya <b>akurasi 56,3%</b> tetapi <b>Macro-F1 hanya 0,106</b>. Akurasi kelihatan lumayan padahal model sebenarnya hampir tidak mengenali kategori kecil. Itu sebabnya data yang timpang tidak boleh dinilai dengan akurasi saja.
+</div>
+<p><b>Macro-F1</b> = hitung F1 untuk tiap kategori, lalu rata-ratakan dengan <b>bobot sama</b>. Kategori kecil (5 baris) sama pentingnya dengan kategori besar (164 baris). Landasan: Sasaki (2020) dan Aluffi dkk. (2025) di proposalmu menekankan F1 untuk data tidak seimbang.</p>
+
+<h3>5.3 Cross-validation: kenapa 5 kali, bukan sekali?</h3>
+<p>Kalau data hanya dibagi sekali (80:20), hasilnya bisa bagus atau jelek hanya karena kebetulan soal ujiannya. Dengan 5 kali bergantian, tiap baris pernah diuji dan kita punya <b>5 angka</b> (bukan 1) sehingga bisa dihitung rata-rata dan simpangan baku (std). Landasan: Kohavi (1995) yang kamu kutip di Bab 3. Contoh: SVM punya F1 per fold yang dirata-rata menjadi <code>0,873 &plusmn; 0,068</code>.</p>
+
+<h3>5.4 Paired t-test dan p-value</h3>
+<p>Pertanyaannya: "SVM menang dari FinBERT, tapi jangan-jangan cuma kebetulan?" Uji ini membandingkan <b>5 selisih F1 per fold</b>. <b>p-value</b> = peluang mendapat selisih sebesar ini kalau sebenarnya kedua model sama saja. Aturannya: <b>p &lt; 0,05 &rarr; selisih dianggap nyata (signifikan)</b>.</p>
+<table>
+<tr><th>Pasangan</th><th>p-value</th><th>Artinya</th></tr>
+<tr><td>SVM vs FinBERT</td><td>0,0168</td><td><b>Signifikan</b>: SVM benar-benar lebih baik.</td></tr>
+<tr><td>SVM vs Random Forest</td><td>0,0778</td><td>Belum signifikan (SVM unggul angka, tapi belum terbukti pasti).</td></tr>
+<tr><td>SVM vs SBERT</td><td>0,1352</td><td>Belum signifikan.</td></tr>
+</table>
+<div class="box yel">Dengan hanya 5 fold, uji ini memang "pelit". Jawaban jujur di sidang: <i>"SVM unggul secara nilai atas semua model, terbukti signifikan atas FinBERT, dan atas RF/SBERT belum signifikan; tetapi SVM jauh lebih ringan karena tanpa GPU."</i></div>
+
+<h3>5.5 Angka preprocessing</h3>
+<ul>
+<li><b>Token Reduction Rate 34,05%</b> = (2.761 &minus; 1.821) / 2.761. Artinya 34% kata-kata dibuang karena sampah. Sumber: <code>metrik_preprocessing.py</code>.</li>
+<li><b>Vocabulary 326</b> = jumlah kata unik yang tersisa. <b>754 fitur</b> = unik kata ditambah pasangan 2 kata.</li>
+<li><b>Sparsity 99,28%</b> = hampir semua sel tabel angka bernilai 0 (rata-rata hanya sekitar 5 kata aktif per transaksi dari 754 kemungkinan). Landasan: García-Méndez dkk. (2020) menunjukkan teks pendek perbankan memang sparse, dan SVM cocok untuk kondisi itu (Cortes &amp; Vapnik, 1995).</li>
+</ul>
+
+<h3>5.6 Cohen's Kappa (belum ada angkanya, menunggu Pak Depta)</h3>
+<p>Dua orang melabeli 100 baris. Mereka kebetulan akan setuju sebagian walau asal tebak. Kappa membuang bagian "setuju karena kebetulan" itu. Skala Landis &amp; Koch (1977): 0,61-0,80 = <i>substansial</i>, 0,81-1,00 = hampir sempurna. Target proposalmu: &ge; 0,61. Skrip: <code>hitung_kappa.py</code>, bahan: <code>sampel_validasi_20persen.xlsx</code> (121 baris).</p>
+
+<h2>6. Kenapa 4 model dibandingkan, dan kenapa SVM yang dipilih?</h2>
+<p>Tujuan membandingkan bukan untuk "membuat 4 sistem", melainkan <b>membuktikan bahwa pilihan SVM bukan sekadar selera</b>. Kamu menguji dua kelompok pendekatan:</p>
+<table>
+<tr><th>Kelompok</th><th>Model</th><th>Cara membaca teks</th><th>Hasil (F1 rata-rata per fold)</th></tr>
+<tr><td rowspan="2">Klasik (TF-IDF)</td><td><b>SVM</b> (pilihan)</td><td>Bobot kata</td><td><b>0,873</b> (akurasi 95,5%)</td></tr>
+<tr><td>Random Forest</td><td>Bobot kata</td><td>0,776 (akurasi 90,7%)</td></tr>
+<tr><td rowspan="2">Deep learning (embedding)</td><td>SBERT + Logistic Regression</td><td>Makna kalimat (umum)</td><td>0,780 (akurasi 87,3%)</td></tr>
+<tr><td>FinBERT + Logistic Regression</td><td>Makna kalimat (keuangan Inggris)</td><td>0,771 (akurasi 92,3%)</td></tr>
+</table>
+<h3>Kenapa SVM menang? (penjelasan yang bisa kamu pakai)</h3>
+<ol>
+<li><b>Bentuk data cocok.</b> Hasil TF-IDF itu berdimensi tinggi dan hampir semuanya nol. SVM terkenal bagus di kondisi ini (Cortes &amp; Vapnik, 1995; García-Méndez dkk., 2020).</li>
+<li><b>Teks mutasi bukan kalimat.</b> Isinya potongan kode, singkatan, dan nama PT. Model bahasa seperti SBERT dan FinBERT dilatih pada kalimat utuh, jadi keunggulannya tidak terpakai.</li>
+<li><b>FinBERT dilatih pada bahasa Inggris keuangan</b>, sementara datamu singkatan perbankan Indonesia (<code>lmbr</code>, <code>bsnn</code>, <code>pcash</code>). Wajar paling lemah, dan terbukti signifikan (p = 0,0168).</li>
+<li><b>Data kecil</b> (558 baris). Model besar cenderung kurang untung di data sekecil ini.</li>
+<li><b>Praktis:</b> SVM ringan, cepat, tanpa GPU, mudah dipasang di sistem mitra.</li>
+</ol>
+<div class="box tip"><b>Penting:</b> SVM = <b>algoritma penebak</b>. TF-IDF = <b>pengubah teks jadi angka</b>. Dua hal berbeda yang dipasang berurutan: TF-IDF dulu, baru SVM. SBERT/FinBERT menggantikan peran TF-IDF (bukan SVM). Di TA-mu SBERT/FinBERT hanya dipakai untuk mengekstrak angka makna, lalu ditebak dengan Logistic Regression.</div>
+
+<h3>Kenapa kernel Linear, padahal proposal menulis RBF?</h3>
+<p>Kamu menguji keduanya (<code>eksperimen_perbaikan.py</code>). Linear menang di semua skenario, dengan selisih Macro-F1 0,09 sampai 0,15:</p>
+<table>
+<tr><th>Skenario</th><th>Linear</th><th>RBF</th></tr>
+<tr><td>Validasi biasa (StratifiedKFold)</td><td>0,873</td><td>0,782</td></tr>
+<tr><td>Teks baru (GroupKFold)</td><td>0,737</td><td>0,586</td></tr>
+</table>
+<p><b>Alasannya:</b> pada data teks berdimensi tinggi, kategori biasanya sudah bisa dipisah dengan garis lurus; kernel melengkung hanya menambah risiko menghafal (overfitting). Ini deviasi dari proposal, tetapi punya bukti. Katakan terus terang di sidang bahwa kamu <b>menguji</b> RBF dan hasilnya lebih buruk.</p>
+
+<h2>7. Kenapa threshold 0,72? (pertanyaan dosen pembimbingmu)</h2>
+<p><b>0,72 bukan angka dari rumus atau teori.</b> Itu <b>hasil pencarian</b>. Ini langkahnya:</p>
+<ol>
+<li>Model menebak semua 558 baris saat ujian (cross-validation), masing-masing disertai confidence.</li>
+<li>Kamu mencoba 50 kandidat batas, dari 0,50, 0,51, ..., sampai 0,99.</li>
+<li>Untuk tiap batas, dihitung: (a) berapa persen transaksi lolos otomatis (<b>coverage</b>), dan (b) seberapa akurat transaksi yang lolos itu (<b>Macro-F1 & akurasi</b>).</li>
+<li><b>Aturan memilih:</b> ambil batas dengan Macro-F1 tertinggi, <b>dengan syarat coverage &ge; 70%</b> supaya sistem tetap berguna.</li>
+</ol>
+<table>
+<tr><th>Batas</th><th>Coverage</th><th>Akurasi lolos</th><th>Macro-F1 lolos</th><th>Salah yang lolos</th><th>Salah yang tertangkap</th></tr>
+<tr><td>0,50</td><td>95,2%</td><td>97,2%</td><td>0,886</td><td>15</td><td>15</td></tr>
+<tr><td>0,66</td><td>87,3%</td><td>99,0%</td><td>0,909</td><td>5</td><td>25</td></tr>
+<tr><td><b>0,72</b></td><td><b>82,8%</b></td><td><b>99,57%</b></td><td><b>0,995</b></td><td><b>2</b></td><td><b>28</b></td></tr>
+<tr><td>0,80</td><td>74,2%</td><td>99,5%</td><td>0,993</td><td>2</td><td>28</td></tr>
+<tr><td>0,82</td><td>68,3%</td><td>99,7%</td><td>0,996</td><td>1</td><td>29</td></tr>
+<tr><td>0,90</td><td>5,0%</td><td>100%</td><td>1,000</td><td>0</td><td>30</td></tr>
+</table>
+<div class="box">
+<b>Cara memahami grafiknya:</b> makin tinggi batas, makin <u>teliti</u> (salah yang lolos makin sedikit) tetapi makin <u>sedikit</u> yang otomatis (lebih banyak dikirim ke manusia). Ini tarik-ulur. Di 0,90, akurasi 100% tetapi hanya 5% transaksi otomatis, jadi tidak berguna. Di 0,50 hampir semua otomatis tetapi 15 kesalahan ikut lolos. Angka 0,72 adalah titik di mana kesalahan yang lolos sudah turun menjadi 2 sementara 82,8% transaksi masih otomatis.
+</div>
+<div class="box yel">
+<b>Jawaban jujur yang harus kamu siapkan:</b> dari 0,68 sampai 0,81, hasilnya hampir sama (Macro-F1 0,992-0,995). Jadi 0,72 adalah titik tertinggi dalam pencarian, bukan titik ajaib. Kamu bisa bilang: <i>"0,72 adalah nilai yang memaksimalkan F1 dengan syarat coverage minimal 70%; di sekitarnya hasilnya stabil, sehingga sistem tidak sensitif terhadap pilihan persisnya."</i><br>
+Syarat 70% adalah <b>kebijakan kepraktisan yang kamu tetapkan</b> (bukan dari literatur); sebaiknya katakan itu apa adanya dan bahwa nilainya bisa disesuaikan mitra.
+</div>
+<div class="box warn">
+<b>Hati-hati:</b> angka di atas diukur pada transaksi "rutin" (banyak teks yang berulang). Pada transaksi yang benar-benar baru (GroupKFold), di batas 0,72 coverage turun menjadi <b>60,6%</b> dan akurasi lolos <b>94,7%</b>, dengan 71 dari 89 kesalahan tertangkap. Artinya di dunia nyata, saat banyak transaksi baru, lebih banyak yang akan dikirim ke Pool 3. Itu bukan kegagalan, justru itu fungsi mekanismenya.
+</div>
+<p><b>Confidence itu dari mana?</b> SVM biasa hanya mengeluarkan "skor jarak ke garis". Kamu memakai kalibrasi (<code>CalibratedClassifierCV</code>) untuk mengubah skor itu menjadi probabilitas 0-1. Proposalmu menyebut sigmoid, implementasinya memakai kalibrasi sklearn yang prinsipnya serupa.</p>
+
+<h2>8. Rangkuman hasil: angka, sumber, artinya</h2>
+<table>
+<tr><th>Angka</th><th>Artinya</th><th>Sumber (skrip &rarr; file)</th></tr>
+<tr><td>606 baris (BCA 337 + Mandiri 269)</td><td>Data riil total</td><td><code>siapkan_data_coa.py</code> &rarr; <code>data_riil_berlabel_coa.csv</code></td></tr>
+<tr><td>558 baris, 14 kategori</td><td>Yang dipakai uji (40 baris tanpa keterangan dan kategori &lt; 5 contoh dibuang)</td><td><code>latih_model_coa.py</code></td></tr>
+<tr><td>Baseline: akurasi 56,3%, F1 0,106</td><td>Tebak dari arah uang saja</td><td><code>hasil_eksperimen_coa.csv</code></td></tr>
+<tr><td>SVM: akurasi 95,5%, Macro-F1 0,895</td><td>Hasil utama (prediksi 5 fold digabung)</td><td><code>hasil_eksperimen_coa.csv</code></td></tr>
+<tr><td>SVM F1 0,873 &plusmn; 0,068</td><td>Rata-rata dan sebaran per fold (untuk uji statistik)</td><td><code>hasil_banding_model_coa.csv</code></td></tr>
+<tr><td>Teks baru: akurasi 84,3%, F1 0,737</td><td>Skenario ketat, teks identik tidak boleh bocor</td><td><code>hasil_eksperimen_perbaikan.csv</code></td></tr>
+<tr><td>Threshold 0,72: coverage 82,8%, akurasi 99,57%</td><td>Titik optimal pencarian</td><td><code>hasil_threshold_coa.csv</code></td></tr>
+<tr><td>KB Resolution 68,75%; Overall Coverage 94,62%; akurasi gabungan 98,11%</td><td>Dari 96 transaksi yang dirujuk, 66 terselesaikan aturan simulasi Pool 3</td><td><code>hasil_metrik_routing_kb.csv</code></td></tr>
+<tr><td>Zero-shot BNI/BRI/BSI: akurasi 84-93%</td><td>Model dilatih di BCA+Mandiri, diuji di data simulasi tiga bank itu</td><td><code>hasil_evaluasi_5bank.csv</code></td></tr>
+</table>
+
+<h2>9. Kelemahan TA-mu dan cara menjawab dengan jujur</h2>
+<p>Penguji hampir pasti menyerang bagian ini. Siapkan jawabannya sekarang.</p>
+
+<div class="q">K1. "Labelnya dibuat dari aturan kata kunci. Bukankah model cuma menebak ulang aturanmu?"</div>
+<p><b>Ini kritik paling serius.</b> Label "perak" dibuat otomatis dari aturan, sehingga akurasi tinggi sebagian mencerminkan model meniru aturan itu. Karena itu validasi 20% oleh Pak Depta dan nilai kappa jadi sangat penting. Jawaban: <i>"Benar, itulah alasan 20% sampel divalidasi pakar mitra dengan Cohen's Kappa. Selain itu saya menguji pada teks yang belum pernah dilihat (GroupKFold) yang hasilnya lebih rendah (F1 0,737), dan itu estimasi yang lebih realistis."</i> <b>Usahakan kappa sudah ada sebelum sidang.</b></p>
+
+<div class="q">K2. "56% datamu duplikat. Apakah akurasinya tidak menggelembung?"</div>
+<p>Ya, sebagian. Dari 558 baris hanya 244 teks unik. Itu sebabnya kamu melapor dua skenario (rutin vs teks baru). Jawab terbuka, tunjukkan Tabel 4.7.</p>
+
+<div class="q">K3. "Dataset kecil dan timpang."</div>
+<p>Benar: 558 baris, 14 kategori, beberapa hanya 5 contoh (<code>OFFICE_GENERAL</code> F1 0,50). Jawab: itulah alasan Macro-F1 dipakai, dan mekanisme threshold mengalihkan yang ragu ke Pool 3. Rencana lanjutan: tambah data dari Avolut.</p>
+
+<div class="q">K4. "BNI, BRI, BSI dari mana datanya?"</div>
+<p>Data BNI/BRI/BSI <b>simulasi</b> (dibangkitkan dari pola format bank, mengacu Aluffi dkk., 2025), bukan data riil. Hasil 100% pada simulasi itu <b>jangan dibanggakan</b> karena templatenya seragam. Yang bermakna adalah uji <i>zero-shot</i> (84-93% akurasi). Katakan: <i>"Ini uji kompatibilitas format, bukan klaim performa pada data riil ketiga bank."</i></p>
+
+<div class="q">K5. "Angka KB Resolution 68,75% itu dari modul Mario?"</div>
+<p><b>Bukan.</b> Itu <b>simulasi aturan</b> yang kamu tulis sendiri di <code>evaluasi_routing_kb.py</code> (cocokkan entitas dari data latih, nominal, kamus kata kunci), bukan koneksi ke ERP asli. Jawab jujur: <i>"Ini estimasi dengan aturan simulasi; hasil sebenarnya bergantung implementasi Pool 3 dan data ERP."</i> Sebagian kata kunci di aturan simulasi (mis. "kopi", "pulsa") dibuat dengan mengetahui contoh uji, jadi angka ini cenderung optimistis.</p>
+
+<div class="q">K6. "Threshold dicari dan dinilai pada data yang sama."</div>
+<p>Benar, 0,72 dipilih dari prediksi out-of-fold seluruh data (bukan set validasi terpisah 10% seperti di proposal). Jawab: prediksi out-of-fold tetap prediksi pada data yang tidak dipakai melatih model itu, tetapi memang tidak ada set pengujian terpisah untuk threshold. Itu dicatat sebagai keterbatasan.</p>
+
+<div class="q">K7. "Kenapa tidak fine-tuning FinBERT/SBERT seperti proposal?"</div>
+<p>Dengan 558 baris, fine-tuning penuh berisiko overfit dan butuh GPU. Kamu memakai model sebagai pengekstrak makna lalu klasifikasi dengan Logistic Regression. Itu catatan keterbatasan, dan saran lanjutan (IndoBERT).</p>
+
+<div class="q">K8. "Generalisasi lintas bank lemah."</div>
+<p>Benar: dilatih di satu bank lalu diuji di bank lain, F1 hanya 0,32-0,41, karena kosakata dan nama pihak beda. Solusinya melatih dengan gabungan bank, dan itu yang dilakukan model akhir.</p>
+
+<h2>10. Latihan tanya-jawab singkat</h2>
+<div class="q">Apa kontribusi TA-mu dalam 2 kalimat?</div>
+<p>Modul NLP yang membaca keterangan mutasi bank berbahasa tidak baku dan mengelompokkannya ke kategori akun CoA, lengkap dengan confidence. Transaksi yang yakin diproses otomatis, yang ragu dialihkan ke modul Knowledge Base untuk dicek, sehingga staf keuangan hanya menangani sebagian kecil transaksi.</p>
+<div class="q">Kenapa tidak pakai aturan (rule-based) saja?</div>
+<p>Singkatan dan format tiap bank berbeda dan terus berubah; aturan harus ditulis tangan satu per satu dan tidak adaptif. Model belajar pola dari contoh, dan di sini terbukti jauh melampaui baseline (F1 0,895 vs 0,106). Aturan tetap dipakai sebagai pelengkap di Pool 3.</p>
+<div class="q">Apa itu TF-IDF dan kenapa dipakai?</div>
+<p>Pembobotan kata berdasarkan seberapa sering muncul di satu transaksi dikali seberapa langka di seluruh data, sehingga kata khas seperti "bpjs" berbobot tinggi dan kata umum rendah. Dipilih karena sederhana, cepat, dan cocok dengan SVM pada teks pendek.</p>
+<div class="q">Kenapa character n-gram?</div>
+<p>Supaya tahan typo dan singkatan menempel seperti <code>bpjstkfeb</code>. Hasil: Macro-F1 naik dari 0,893 (kata saja) ke 0,895 (kata + karakter). Perbedaannya kecil, jangan dilebih-lebihkan.</p>
+<div class="q">Apa arti confidence 0,87?</div>
+<p>Model memperkirakan peluang 87% bahwa tebakannya benar, hasil kalibrasi probabilitas SVM.</p>
+<div class="q">Kenapa Macro-F1 dan bukan akurasi?</div>
+<p>Data timpang. Baseline sederhana saja sudah akurasi 56% tetapi F1 0,106. Macro-F1 memberi bobot sama pada semua kategori.</p>
+<div class="q">Apa itu p-value 0,0168?</div>
+<p>Peluang selisih sebesar itu terjadi kebetulan hanya sekitar 1,7%. Karena di bawah 0,05, perbedaan SVM dan FinBERT dianggap nyata.</p>
+<div class="q">Apa saja yang belum selesai?</div>
+<p>Nilai kappa (menunggu validasi Pak Depta), integrasi dan pengujian langsung bersama Pool 3 (angka KB masih simulasi), serta data riil bank selain BCA dan Mandiri. Jujur menyebut ini menunjukkan kamu paham batas penelitianmu.</p>
+
+<h2>11. Rencana belajar sampai sidang (Desember)</h2>
+<table>
+<tr><th>Hari</th><th>Fokus</th><th>Target</th></tr>
+<tr><td>1-2</td><td>Bagian 1-3 dokumen ini + ceritakan alur satu transaksi dengan suara keras</td><td>Bisa menceritakan TA 3 menit tanpa melihat catatan</td></tr>
+<tr><td>3-4</td><td>Kamus istilah (Bagian 4) dan metrik (5.1-5.2)</td><td>Bisa jelaskan precision/recall/F1 dengan contoh sendiri</td></tr>
+<tr><td>5-6</td><td>Cross-validation, t-test, kappa (5.3-5.6)</td><td>Bisa jawab "kenapa 5-fold" dan "apa arti p-value"</td></tr>
+<tr><td>7-8</td><td>Perbandingan model dan kernel (Bagian 6)</td><td>Bisa jelaskan kenapa SVM, FinBERT paling lemah, linear &gt; RBF</td></tr>
+<tr><td>9-10</td><td>Threshold 0,72 (Bagian 7). Latihan menggambar sketsa grafik di kertas</td><td>Bisa menjelaskan grafik garis tanpa melihat</td></tr>
+<tr><td>11-12</td><td>Kelemahan (Bagian 9)</td><td>Hafal jawaban K1-K8</td></tr>
+<tr><td>13-14</td><td>Latihan tanya-jawab bersama teman. Minta Mario dan Arya menjelaskan bagian mereka agar kamu paham keseluruhan sistem</td><td>Simulasi sidang 20 menit</td></tr>
+</table>
+
+<div class="box tip">
+<b>Tips sidang:</b>
+<ul>
+<li>Kalau tidak tahu jawabannya: <i>"Itu belum saya uji, tetapi dugaan saya ... dan itu bisa menjadi pengembangan lanjutan."</i> Jauh lebih baik daripada mengarang.</li>
+<li>Jangan membantah kritik valid. Akui, jelaskan kenapa terjadi, dan tunjukkan sudah kamu catat sebagai keterbatasan di Bab 4.8.</li>
+<li>Buka laptop dengan <code>routing.py</code> atau <code>klasifikasi_batch()</code> siap didemokan: input beberapa baris, tunjukkan mana yang OTOMATIS dan mana yang PERLU_REVIEW. Demo kecil sangat meyakinkan.</li>
+<li>Prioritas sebelum sidang: <b>dapatkan nilai kappa dari Pak Depta</b>, karena itu menjawab kritik terberat (K1).</li>
+</ul>
+</div>
+
+<h2>12. Peta file kalau kamu perlu membuktikan sebuah angka</h2>
+<table>
+<tr><th>Kalau ditanya tentang ...</th><th>Buka</th></tr>
+<tr><td>Pembersihan teks, singkatan</td><td><code>src/kamus_istilah.py</code></td></tr>
+<tr><td>Data dan pelabelan</td><td><code>src/siapkan_data_coa.py</code>, <code>data/data_riil_berlabel_coa.csv</code></td></tr>
+<tr><td>Model dan evaluasi utama</td><td><code>src/latih_model_coa.py</code></td></tr>
+<tr><td>Perbandingan 4 model dan t-test</td><td><code>src/bandingkan_model_coa.py</code></td></tr>
+<tr><td>Linear vs RBF, teks baru</td><td><code>src/eksperimen_perbaikan.py</code></td></tr>
+<tr><td>Threshold 0,72</td><td><code>src/threshold_coa.py</code>, <code>data/hasil_threshold_coa.csv</code></td></tr>
+<tr><td>Metrik routing dan KB</td><td><code>src/evaluasi_routing_kb.py</code></td></tr>
+<tr><td>Integrasi dengan Mario/Arya</td><td><code>src/proses_json.py</code></td></tr>
+<tr><td>Isi buku</td><td><code>docs/Buku_TA_Final_Bab1_sd_Bab5.docx</code></td></tr>
+</table>
+
+<p class="sub">Kamu sudah membangun pipeline NLP lengkap, membandingkan 4 model dengan uji statistik, dan menentukan ambang keputusan secara empiris. Yang tersisa adalah memahami dan menceritakannya, dan itu bisa dilatih.</p>
+</body></html>
