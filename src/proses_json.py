@@ -2,21 +2,32 @@
 proses_json.py
 ==============
 Jembatan integrasi Python in-memory antara Pool 1 (Arya - Table Recognition),
-Pool 2 (Abror - Modul NLP), dan Pool 3 (Mario - Backend FastAPI & Knowledge Base).
+Pool 2 (Abror - Modul NLP + Feedback Learning), dan Pool 3 (Mario - Backend FastAPI & KB).
 
 Cara Pemakaian di Backend FastAPI (Pool 3 - Mario):
 ---------------------------------------------------
     from table_recognition.main import process_file
-    from src.proses_json import klasifikasi_batch, terapkan_koreksi
+    from src.proses_json import klasifikasi_batch, terapkan_koreksi, catat_koreksi_tunggal
 
     # 1. Pool 1 (Arya) mengekstrak PDF menjadi list[dict]
     raw_records = process_file(pdf_path)
 
-    # 2. Pool 2 (Abror) mengklasifikasikan list[dict] dari Pool 1 secara in-memory
+    # 2. Pool 2 (Abror) mengklasifikasikan list[dict] secara in-memory
     hasil_pool2 = klasifikasi_batch(raw_records)
 
-    # 3. Jika ada review manual dari UI Pool 3, gabungkan menjadi JSON bersih:
+    # 3. Saat user mengoreksi transaksi di UI (BAIK yang >= 0,72 maupun < 0,72):
+    #    otomatis disimpan ke memori feedback + model SVM dilatih ulang agar transaksi serupa
+    #    tidak salah klasifikasi di pemanggilan berikutnya.
     json_bersih = terapkan_koreksi(hasil_pool2, {"2": "COMMUNICATION"})
+
+    # Atau jika UI mengirim koreksi satu per satu saat user klik tombol Edit:
+    catat_koreksi_tunggal(
+        keterangan="TRSF E-BANKING PULSA KANTOR JAN",
+        jenis="DB",
+        label_baru="COMMUNICATION",
+        label_lama="PAYABLE_VENDOR",
+        confidence_lama=0.45,
+    )
 
 Cara Pemakaian lewat CLI:
 -------------------------
@@ -26,6 +37,8 @@ Cara Pemakaian lewat CLI:
 import json
 import sys
 
+from feedback_learning import catat_koreksi, latih_ulang_dengan_feedback, peta_memori_koreksi
+from kamus_istilah import normalisasi_teks
 from kategori_keuangan import LABEL_COA
 from routing import klasifikasi_transaksi, load_model
 
@@ -37,6 +50,13 @@ def _get_model():
     global _CACHE_MODEL
     if _CACHE_MODEL is None:
         _CACHE_MODEL = load_model()
+    return _CACHE_MODEL
+
+
+def refresh_model():
+    """Muat ulang model terbaru dari disk ke memori setelah retraining feedback."""
+    global _CACHE_MODEL
+    _CACHE_MODEL = load_model()
     return _CACHE_MODEL
 
 
@@ -63,19 +83,40 @@ def _tentukan_jenis(t):
 def proses(transaksi, model=None, threshold=None):
     """
     Menerima list[dict] dari Pool 1 (Arya) dan mengembalikan dict hasil klasifikasi Pool 2.
-    Mendukung skema kolom Pool 1 ('waktu_transaksi', 'source_file', 'keterangan', 'debit', 'kredit', 'saldo')
-    maupun skema umum ('tanggal', 'keterangan', 'debit', 'kredit', 'saldo').
+    Memeriksa memori koreksi terlebih dahulu untuk teks persis sama, dan memakai model SVM
+    (yang sudah diperbarui dari feedback) untuk seluruh transaksi termasuk transaksi serupa.
     """
     if model is None or threshold is None:
         m_default, t_default = _get_model()
         model = model or m_default
         threshold = t_default if threshold is None else threshold
 
+    memori = peta_memori_koreksi()
     hasil = []
     for i, t in enumerate(transaksi):
         jenis = _tentukan_jenis(t)
         ket = str(t.get("keterangan", ""))
-        h = klasifikasi_transaksi(ket, jenis, model, threshold)
+        teks_norm = f"arah{jenis.lower()} " + normalisasi_teks(ket)
+
+        if teks_norm in memori:
+            lab = memori[teks_norm]
+            h = {
+                "label": lab,
+                "nama_akun": LABEL_COA[lab]["nama"],
+                "confidence": 0.99,
+                "status": "OTOMATIS",
+                "sumber_label": "feedback_memory",
+            }
+        else:
+            pred = klasifikasi_transaksi(ket, jenis, model, threshold)
+            h = {
+                "label": pred["label"],
+                "nama_akun": pred["nama_akun"],
+                "confidence": pred["confidence"],
+                "status": "OTOMATIS" if pred["status"] == "OTOMATIS" else "PERLU_REVIEW_MANUAL",
+                "sumber_label": "model",
+            }
+
         tanggal = t.get("tanggal") or t.get("waktu_transaksi") or ""
         item = {
             **t,
@@ -86,8 +127,8 @@ def proses(transaksi, model=None, threshold=None):
             "label": h["label"],
             "nama_akun": h["nama_akun"],
             "confidence": h["confidence"],
-            "sumber_label": "model",
-            "status": "OTOMATIS" if h["status"] == "OTOMATIS" else "PERLU_REVIEW_MANUAL",
+            "sumber_label": h["sumber_label"],
+            "status": h["status"],
         }
         hasil.append(item)
     return _bungkus(hasil, threshold)
@@ -111,20 +152,63 @@ def _bungkus(hasil, threshold):
     }
 
 
-def terapkan_koreksi(paket, koreksi):
-    """Menerapkan koreksi manual dari UI Pool 3 ({'index': 'KODE_LABEL'}) menjadi JSON bersih."""
+def terapkan_koreksi(paket, koreksi, simpan_feedback=True, latih_ulang=True):
+    """
+    Menerapkan koreksi manual dari UI Pool 3 ({'index': 'KODE_LABEL'}) menjadi JSON bersih.
+    Berlaku untuk SEMUA transaksi yang dikoreksi, baik yang awalnya OTOMATIS (>= 0,72)
+    maupun PERLU_REVIEW_MANUAL (< 0,72).
+    Jika simpan_feedback=True dan latih_ulang=True, koreksi disimpan dan model langsung
+    dilatih ulang agar transaksi serupa di masa depan tidak salah lagi.
+    """
+    catatan = []
     for h in paket["transaksi"]:
         lab = koreksi.get(str(h["index"]), koreksi.get(h["index"]))
         if lab:
+            lab = str(lab).strip().upper()
             if lab not in LABEL_COA:
                 raise ValueError(f"label tidak dikenal: {lab}")
+            catatan.append({
+                "keterangan": h.get("keterangan", ""),
+                "jenis": h.get("jenis", "DB"),
+                "label_lama": h.get("label", ""),
+                "label_baru": lab,
+                "confidence_lama": h.get("confidence", 0.0),
+                "status_lama": h.get("status", ""),
+            })
             h.update(
                 label=lab,
                 nama_akun=LABEL_COA[lab]["nama"],
                 status="OTOMATIS",
                 sumber_label="manual",
             )
+
+    if simpan_feedback and catatan:
+        catat_koreksi(catatan)
+        if latih_ulang:
+            latih_ulang_dengan_feedback()
+            refresh_model()
+
     return _bungkus(paket["transaksi"], paket["threshold"])
+
+
+def catat_koreksi_tunggal(keterangan, jenis, label_baru, label_lama="", confidence_lama=0.0,
+                          status_lama="", latih_ulang=True):
+    """
+    Endpoint helper untuk Mario jika UI mengirim koreksi satu transaksi setiap kali user klik Edit
+    (baik untuk transaksi auto-match >= 0,72 maupun suggestion < 0,72).
+    """
+    catat_koreksi([{
+        "keterangan": keterangan,
+        "jenis": jenis,
+        "label_lama": label_lama,
+        "label_baru": label_baru,
+        "confidence_lama": confidence_lama,
+        "status_lama": status_lama,
+    }])
+    if latih_ulang:
+        latih_ulang_dengan_feedback()
+        refresh_model()
+    return {"status": "learned", "label_baru": str(label_baru).upper()}
 
 
 def main():

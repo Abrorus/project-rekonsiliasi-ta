@@ -18,6 +18,7 @@ Tabel 4.1 Daftar Modul dan Berkas Implementasi Pool 2
 | `evaluasi_routing_kb.py` | Pengukuran keempat metrik *confidence routing* dan simulasi integrasi *Knowledge Base* (Pool 3) |
 | `simulasi_5bank_coa.py` | Pengujian kompatibilitas format mutasi lima bank (BCA, Mandiri, BNI, BRI, dan BSI) |
 | `routing.py`, `proses_json.py` | Inferensi transaksi, penyaringan *confidence threshold*, dan kontrak pertukaran data JSON dengan Pool 3 |
+| `feedback_learning.py`, `uji_active_learning.py` | Penyimpanan koreksi manual pengguna, pelatihan ulang model (*feedback loop*), dan evaluasi *active learning* 5 putaran |
 
 ## 4.2 Dataset dan Pelabelan Data Transaksi
 
@@ -166,11 +167,30 @@ Tabel 4.9 Hasil Pengukuran Performa Confidence Routing dan Integrasi Knowledge B
 
 Tabel 4.9 menunjukkan bahwa dari 96 transaksi ambigu yang dirujuk ke Pool 3, sebanyak 66 transaksi (**68,75%**) berhasil diklasifikasikan melalui aturan *forward-chaining* (35 transaksi melalui referensi rekanan ERP, 20 transaksi melalui pencocokan nominal *invoice*/mutasi, dan 11 transaksi melalui kamus operasional). Dengan demikian, cakupan otomatisasi sistem secara keseluruhan (*Overall System Coverage*) mencapai **94,62%** dengan tingkat akurasi gabungan **98,11%**, dan hanya menyisakan **5,38%** transaksi (30 baris) yang memerlukan tindakan pemeriksaan manual oleh staf keuangan sebelum menghasilkan keluaran JSON bersih (`proses_json.py`).
 
+### 4.6.1 Mekanisme Pembelajaran Berkelanjutan (*Feedback Loop*) dan Evaluasi 5 Putaran
+
+Sesuai masukan praktisi mitra pada pertemuan evaluasi sistem (23 November 2026), sistem klasifikasi harus mampu belajar dari setiap koreksi pengguna, baik pada transaksi berkepercayaan rendah (*confidence* < 0,72) maupun transaksi berkepercayaan tinggi (*confidence* ≥ 0,72) yang tetap dikoreksi staf keuangan (misalnya koreksi transfer *in-house* antar-rekening perusahaan menjadi `INTERNAL_TRANSFER`). Mekanisme ini diimplementasikan pada `feedback_learning.py` dan diintegrasikan langsung ke `terapkan_koreksi()` serta `catat_koreksi_tunggal()` pada `proses_json.py` melalui dua lapis: (1) pencatatan permanen ke `data/feedback_koreksi.csv` sebagai memori koreksi langsung untuk pola teks yang sama, dan (2) pelatihan ulang model SVM dengan penimpaan (*override*) label lama serta penguatan bobot koreksi manusia agar *hyperplane* turut beradaptasi terhadap transaksi baru yang serupa.
+
+Untuk mengukur efektivitas pembelajaran dari koreksi manusia, dilakukan eksperimen *active learning* 5 putaran (`uji_active_learning.py`) dengan memisahkan 20% teks unik sebagai *hold-out test set* (93 transaksi yang tidak pernah masuk pelatihan), 20% sebagai data latih awal (84 transaksi), dan 60% sisanya dialirkan secara bertahap dalam 5 putaran. Pada setiap putaran, prediksi yang salah dikoreksi dan dimasukkan ke pelatihan ulang, lalu model diuji kembali pada *hold-out test set* yang sama. Hasilnya disajikan pada Tabel 4.10.
+
+Tabel 4.10 Hasil Evaluasi Pembelajaran Berkelanjutan (*Active Learning*) 5 Putaran pada Hold-Out Teks Baru (n = 93)
+
+| Putaran | Keterangan Tahap | Total Data Latih | Transaksi Masuk | Jumlah Dikoreksi | Akurasi Hold-Out | Macro-F1 Hold-Out |
+| --- | --- | --- | --- | --- | --- | --- |
+| 0 | Model Awal (sebelum koreksi) | 84 | 0 | 0 | 0,6559 | 0,4992 |
+| 1 | Setelah Koreksi Putaran 1 | 105 | 77 | 21 | 0,6344 | 0,5718 |
+| 2 | Setelah Koreksi Putaran 2 | 129 | 76 | 24 | 0,6774 | 0,7218 |
+| 3 | Setelah Koreksi Putaran 3 | 137 | 76 | 8 | 0,6774 | 0,7218 |
+| 4 | Setelah Koreksi Putaran 4 | 140 | 76 | 3 | **0,8817** | **0,7929** |
+| 5 | Setelah Koreksi Putaran 5 | 145 | 76 | 5 | **0,8817** | **0,7929** |
+
+Tabel 4.10 membuktikan bahwa mekanisme *feedback loop* meningkatkan kinerja klasifikasi pada transaksi baru secara nyata: Akurasi *hold-out* meningkat dari **65,59%** pada model awal menjadi **88,17%** (+22,58 poin persentase) dan Macro-F1 meningkat dari **0,4992** menjadi **0,7929** (+0,2937 poin) setelah 5 putaran koreksi (total 61 koreksi kumulatif), sementara beban koreksi pengguna turun drastis dari 21–24 transaksi pada putaran awal menjadi hanya 3–5 transaksi pada putaran ke-4 dan ke-5.
+
 ## 4.7 Evaluasi Lintas-Bank dan Kompatibilitas Format Lima Bank
 
-Untuk menguji kemampuan generalisasi model terhadap perbedaan struktur keterangan antar-bank, dilakukan pengujian pelatihan pada satu bank dan pengujian pada bank lainnya (BCA ke Mandiri dan sebaliknya), serta pengujian kompatibilitas terhadap kelima bank dalam ruang lingkup penelitian (BCA, Mandiri, BNI, BRI, dan BSI). Mengacu pada metode pembangkitan data sintesis terstruktur Aluffi et al. (2025), sebanyak 270 transaksi berpola format mutasi standar BNI (BNIDirect/E-Channel), BRI (CMS BRI/BRIVA), dan BSI (BSI Net/Syariah) dibangkitkan dan diuji melalui skrip `simulasi_5bank_coa.py`. Hasil evaluasi lintas-bank dan kompatibilitas lima bank disajikan pada Tabel 4.10.
+Untuk menguji kemampuan generalisasi model terhadap perbedaan struktur keterangan antar-bank, dilakukan pengujian pelatihan pada satu bank dan pengujian pada bank lainnya (BCA ke Mandiri dan sebaliknya), serta pengujian kompatibilitas terhadap kelima bank dalam ruang lingkup penelitian (BCA, Mandiri, BNI, BRI, dan BSI). Mengacu pada metode pembangkitan data sintesis terstruktur Aluffi et al. (2025), sebanyak 270 transaksi berpola format mutasi standar BNI (BNIDirect/E-Channel), BRI (CMS BRI/BRIVA), dan BSI (BSI Net/Syariah) dibangkitkan dan diuji melalui skrip `simulasi_5bank_coa.py`. Hasil evaluasi lintas-bank dan kompatibilitas lima bank disajikan pada Tabel 4.11.
 
-Tabel 4.10 Hasil Evaluasi Lintas-Bank dan Kompatibilitas Format Lima Bank
+Tabel 4.11 Hasil Evaluasi Lintas-Bank dan Kompatibilitas Format Lima Bank
 
 | Skema Pengujian | Sumber Data Uji | Jenis Data | Jumlah (n) | Akurasi | Macro-F1 |
 | --- | --- | --- | --- | --- | --- |
@@ -184,12 +204,12 @@ Tabel 4.10 Hasil Evaluasi Lintas-Bank dan Kompatibilitas Format Lima Bank
 | *5-Fold CV* Gabungan 5 Bank | BNI, BRI, BSI | Simulasi Format Standar | 270 | 1,000 | 1,000 |
 | ***5-Fold CV* Gabungan 5 Bank (Agregat)** | **Seluruh 5 Bank** | **Gabungan (N = 828)** | **828** | **0,965** | **0,941** |
 
-Hasil pada Tabel 4.10 menunjukkan bahwa pelatihan pada satu bank saja menghasilkan F1-Score lintas-bank yang rendah (0,364–0,412) akibat perbedaan kosakata dan rekanan transaksi. Namun, ketika model dilatih pada gabungan BCA dan Mandiri disertai pembersihan *boilerplate* lima bank pada `kamus_istilah.py`, pengujian *zero-shot* terhadap format BNI, BRI, dan BSI mampu mencapai akurasi 84,4% hingga 93,3% (Macro-F1 0,706–0,765). Ketika sampel kelima bank digabungkan dalam pelatihan (*N* = 828), akurasi agregat mencapai **96,5%** (Macro-F1 **0,941**) sekaligus meningkatkan Macro-F1 pada data Mandiri dari 0,805 menjadi **0,815**.
+Hasil pada Tabel 4.11 menunjukkan bahwa pelatihan pada satu bank saja menghasilkan F1-Score lintas-bank yang rendah (0,364–0,412) akibat perbedaan kosakata dan rekanan transaksi. Namun, ketika model dilatih pada gabungan BCA dan Mandiri disertai pembersihan *boilerplate* lima bank pada `kamus_istilah.py`, pengujian *zero-shot* terhadap format BNI, BRI, dan BSI mampu mencapai akurasi 84,4% hingga 93,3% (Macro-F1 0,706–0,765). Ketika sampel kelima bank digabungkan dalam pelatihan (*N* = 828), akurasi agregat mencapai **96,5%** (Macro-F1 **0,941**) sekaligus meningkatkan Macro-F1 pada data Mandiri dari 0,805 menjadi **0,815**.
 
 ## 4.8 Keterbatasan Penelitian dan Rencana Tindak Lanjut
 
 Beberapa keterbatasan teknis yang ditemukan dalam penelitian ini beserta langkah mitigasinya adalah sebagai berikut:
 
-1. **Ketidakseimbangan Sampel pada Sub-Kategori Minoritas:** Lima sub-kategori CoA (`UTILITIES`, `REVENUE_OTHER`, `REPAIR_MAINT`, `COMMUNICATION`, dan `TRAVEL`) memiliki kurang dari 5 transaksi pada data riil awal. Penanganan sementara dilakukan melalui penguatan data sintesis dan aturan *forward-chaining* pada Pool 3, sembari menunggu penambahan data mutasi dari perusahaan mitra.
-2. **Validasi Silang dengan Pakar Domain (*Domain Expert*):** Pelabelan awal dilakukan secara semi-otomatis berdasarkan aturan kata kunci dan struktur CoA mitra. Instrumen pengujian kesepakatan antar-penilai (*Inter-Annotator Agreement*) sebanyak 121 sampel transaksi (`sampel_validasi_20persen.xlsx`) dan pemetaan kode CoA untuk biaya admin bank serta bunga bank telah diserahkan kepada tim keuangan perusahaan mitra untuk perhitungan nilai akhir *Cohen's Kappa*.
-3. **Ketersediaan Dokumen Rekening Koran BNI, BRI, dan BSI:** Karena data riil yang diserahkan perusahaan mitra pada tahap ini berasal dari rekening aktif BCA dan Mandiri, pengujian terhadap bank BNI, BRI, dan BSI dilengkapi menggunakan simulasi berpola format mutasi standar ketiga bank tersebut mengacu pada metodologi Aluffi et al. (2025).
+1. **Ketidakseimbangan Sampel pada Sub-Kategori Minoritas:** Lima sub-kategori CoA (`UTILITIES`, `REVENUE_OTHER`, `REPAIR_MAINT`, `COMMUNICATION`, dan `TRAVEL`) memiliki kurang dari 5 transaksi pada data riil awal. Penanganan dilakukan melalui penguatan data sintesis, aturan *forward-chaining* pada Pool 3, serta mekanisme *feedback learning* yang langsung mempelajari koreksi pengguna.
+2. **Validasi dengan Pakar Domain (*Domain Expert*):** Pelabelan awal dilakukan secara semi-otomatis berdasarkan aturan kata kunci dan struktur CoA mitra. Pada pertemuan evaluasi sistem bersama perwakilan mitra (23 November 2026), pihak mitra telah meninjau langsung alur kategorisasi dan sampel data secara lisan (*expert walkthrough*) serta memberikan masukan bisnis penting (termasuk pemisahan transaksi *in-house* antar-rekening perusahaan sebagai `INTERNAL_TRANSFER` dan kewajiban pembelajaran dari koreksi manual). Validasi tertulis pada 121 baris Excel untuk perhitungan numerik *Cohen's Kappa* tetap direkomendasikan sebagai penguatan formal apabila tersedia penilai independen dari tim keuangan mitra.
+3. **Ketersediaan Dokumen Rekening Koran BNI, BRI, dan BSI:** Berdasarkan konfirmasi langsung pihak mitra pada pertemuan 23 November 2026, perusahaan tidak memiliki rekening koran aktif BSI dan mutasi BRI yang tersedia tidak variatif, sehingga mitra menyetujui penggunaan data simulasi berpola format standar bank BNI, BRI, dan BSI (Tabel 4.11) mengacu pada metodologi Aluffi et al. (2025).
