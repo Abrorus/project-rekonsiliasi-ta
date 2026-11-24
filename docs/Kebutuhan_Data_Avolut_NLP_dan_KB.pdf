@@ -1,0 +1,170 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Length 12091 >>
+stream
+BT /F2 13.5 Tf 0.100 0.200 0.450 rg 1 0 0 1 45.00 799.89 Tm (DAFTAR KEBUTUHAN DATA & KONFIRMASI MITRA \(AVOLUT\)) Tj ET
+BT /F2 10 Tf 0.250 0.250 0.250 rg 1 0 0 1 45.00 783.89 Tm (Proyek Tugas Akhir Sistem Rekonsiliasi Keuangan \(SIREKON\) - Modul NLP & Knowledge Base) Tj ET
+0.60 w 0.100 0.200 0.450 rg 45.00 774.69 505.00 1.20 re f
+BT /F1 9.5 Tf 0.000 0.000 0.000 rg 1 0 0 1 45.00 761.89 Tm (Saat ini pengembangan Modul NLP \(klasifikasi teks mutasi\) dan Modul Knowledge Base \(pencocokan) Tj ET
+BT /F1 9.5 Tf 0.000 0.000 0.000 rg 1 0 0 1 45.00 748.89 Tm (ERP\) sudah berjalan dengan baik. Agar sistem dan pengujian akhir berjalan optimal, kami memohon) Tj ET
+BT /F1 9.5 Tf 0.000 0.000 0.000 rg 1 0 0 1 45.00 735.89 Tm (bantuan konfirmasi serta dukungan data dari pihak mitra untuk 4 poin berikut:) Tj ET
+BT /F2 10.5 Tf 0.100 0.200 0.450 rg 1 0 0 1 45.00 716.89 Tm (1. Konfirmasi Kode Akun \(CoA\) untuk 5 Kategori Transaksi & Singkatan Mutasi \(NLP & KB\)) Tj ET
+BT /F1 9.2 Tf 0.000 0.000 0.000 rg 1 0 0 1 45.00 702.89 Tm (Berdasarkan pencocokan mutasi BCA \(2023\) & Mandiri dengan file CoA \(313 akun\), terdapat 5 jenis) Tj ET
+BT /F1 9.2 Tf 0.000 0.000 0.000 rg 1 0 0 1 45.00 690.89 Tm (transaksi rutin yang belum memiliki kode akun spesifik di CoA:) Tj ET
+0.60 w 0.910 0.930 0.960 rg 0.200 0.200 0.200 RG 45.00 652.89 22.00 22.00 re B
+BT /F2 9.2 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 660.05 Tm (No) Tj ET
+0.60 w 0.910 0.930 0.960 rg 0.200 0.200 0.200 RG 67.00 652.89 145.00 22.00 re B
+BT /F2 9.2 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 660.05 Tm (Jenis Transaksi) Tj ET
+0.60 w 0.910 0.930 0.960 rg 0.200 0.200 0.200 RG 212.00 652.89 143.00 22.00 re B
+BT /F2 9.2 Tf 0.000 0.000 0.000 rg 1 0 0 1 217.00 660.05 Tm (Contoh di Mutasi Bank) Tj ET
+0.60 w 0.910 0.930 0.960 rg 0.200 0.200 0.200 RG 355.00 652.89 195.00 22.00 re B
+BT /F2 9.2 Tf 0.000 0.000 0.000 rg 1 0 0 1 360.00 660.05 Tm (Status di CoA Saat Ini) Tj ET
+0.50 w 0.350 0.350 0.350 RG 45.00 606.89 22.00 46.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 638.05 Tm (1) Tj ET
+0.50 w 0.350 0.350 0.350 RG 67.00 606.89 145.00 46.00 re S
+BT /F2 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 638.05 Tm (Biaya Admin Bank \(admin) Tj ET
+BT /F2 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 626.05 Tm (bulanan, biaya transfer,) Tj ET
+BT /F2 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 614.05 Tm (SKN/RTGS\)) Tj ET
+0.50 w 0.350 0.350 0.350 RG 212.00 606.89 143.00 46.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 217.00 638.05 Tm ("BIAYA ADM", "BIAYA) Tj ET
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 217.00 626.05 Tm (TRANSFER") Tj ET
+0.50 w 0.350 0.350 0.350 RG 355.00 606.89 195.00 46.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 360.00 638.05 Tm (Belum ada akun biaya bank di CoA) Tj ET
+0.50 w 0.350 0.350 0.350 RG 45.00 572.89 22.00 34.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 592.05 Tm (2) Tj ET
+0.50 w 0.350 0.350 0.350 RG 67.00 572.89 145.00 34.00 re S
+BT /F2 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 592.05 Tm (Biaya Tolakan \(retur / gagal) Tj ET
+BT /F2 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 580.05 Tm (transfer\)) Tj ET
+0.50 w 0.350 0.350 0.350 RG 212.00 572.89 143.00 34.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 217.00 592.05 Tm (Transaksi tolakan /) Tj ET
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 217.00 580.05 Tm (pengembalian) Tj ET
+0.50 w 0.350 0.350 0.350 RG 355.00 572.89 195.00 34.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 360.00 592.05 Tm (Belum ada akun tolakan di CoA) Tj ET
+0.50 w 0.350 0.350 0.350 RG 45.00 538.89 22.00 34.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 558.05 Tm (3) Tj ET
+0.50 w 0.350 0.350 0.350 RG 67.00 538.89 145.00 34.00 re S
+BT /F2 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 558.05 Tm (Bunga Bank / Jasa Giro) Tj ET
+BT /F2 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 546.05 Tm (\(pendapatan bunga\)) Tj ET
+0.50 w 0.350 0.350 0.350 RG 212.00 538.89 143.00 34.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 217.00 558.05 Tm ("BUNGA", "JASA GIRO", "CR) Tj ET
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 217.00 546.05 Tm (BUNGA") Tj ET
+0.50 w 0.350 0.350 0.350 RG 355.00 538.89 195.00 34.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 360.00 558.05 Tm (Belum ada akun pendapatan bunga) Tj ET
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 360.00 546.05 Tm (\(Revenue di 4.1.01.xx hanya produk\)) Tj ET
+0.50 w 0.350 0.350 0.350 RG 45.00 492.89 22.00 46.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 524.05 Tm (4) Tj ET
+0.50 w 0.350 0.350 0.350 RG 67.00 492.89 145.00 46.00 re S
+BT /F2 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 524.05 Tm (Setoran Pajak \(PPh/PPN) Tj ET
+BT /F2 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 512.05 Tm (disetor ke negara\)) Tj ET
+0.50 w 0.350 0.350 0.350 RG 212.00 492.89 143.00 46.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 217.00 524.05 Tm ("BYR VIA E-BANKING) Tj ET
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 217.00 512.05 Tm (PENERIMAAN NEGARA") Tj ET
+0.50 w 0.350 0.350 0.350 RG 355.00 492.89 195.00 46.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 360.00 524.05 Tm (Ada Prepaid Tax \(1.1.08.xx\) &) Tj ET
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 360.00 512.05 Tm (Withholding Tax \(2.1.04.xx\), belum ada) Tj ET
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 360.00 500.05 Tm (akun setoran pajak) Tj ET
+0.50 w 0.350 0.350 0.350 RG 45.00 458.89 22.00 34.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 478.05 Tm (5) Tj ET
+0.50 w 0.350 0.350 0.350 RG 67.00 458.89 145.00 34.00 re S
+BT /F2 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 478.05 Tm (BPJS \(TK & Kesehatan\)) Tj ET
+0.50 w 0.350 0.350 0.350 RG 212.00 458.89 143.00 34.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 217.00 478.05 Tm ("TRSF E-BANKING 89000/BPJS) Tj ET
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 217.00 466.05 Tm (TK", "BPJS KS") Tj ET
+0.50 w 0.350 0.350 0.350 RG 355.00 458.89 195.00 34.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 360.00 478.05 Tm (Belum ada akun spesifik BPJS. Apakah) Tj ET
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 360.00 466.05 Tm (masuk ke Employee Benefit \(6.2.02.01\)?) Tj ET
+BT /F1 9.0 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 446.89 Tm (- Mohon konfirmasi: apakah 5 kategori di atas perlu dibuatkan kode akun baru, atau dimasukkan ke) Tj ET
+BT /F1 9.0 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 434.89 Tm (akun CoA yang sudah ada \(mohon info nomor akunnya\)?) Tj ET
+BT /F1 9.0 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 422.89 Tm (- Konfirmasi istilah di mutasi Mandiri: apakah 'LN interco to3PL' / 'Rturn LN' adalah Pinjaman) Tj ET
+BT /F1 9.0 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 410.89 Tm (\(Loan\), serta 'gkar' \(DARI ARTA SEJAHTERA\) dan 'KE GNC' masuk ke kategori apa?) Tj ET
+BT /F2 10.5 Tf 0.100 0.200 0.450 rg 1 0 0 1 45.00 390.89 Tm (2. Validasi Sampel Transaksi untuk Pengujian Akurasi NLP \(Modul NLP\)) Tj ET
+0.60 w 0.910 0.930 0.960 rg 0.200 0.200 0.200 RG 45.00 355.89 22.00 22.00 re B
+BT /F2 9.2 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 363.05 Tm (No) Tj ET
+0.60 w 0.910 0.930 0.960 rg 0.200 0.200 0.200 RG 67.00 355.89 185.00 22.00 re B
+BT /F2 9.2 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 363.05 Tm (File Lampiran) Tj ET
+0.60 w 0.910 0.930 0.960 rg 0.200 0.200 0.200 RG 252.00 355.89 298.00 22.00 re B
+BT /F2 9.2 Tf 0.000 0.000 0.000 rg 1 0 0 1 257.00 363.05 Tm (Kebutuhan Validasi) Tj ET
+0.50 w 0.350 0.350 0.350 RG 45.00 309.89 22.00 46.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 341.05 Tm (1) Tj ET
+0.50 w 0.350 0.350 0.350 RG 67.00 309.89 185.00 46.00 re S
+BT /F2 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 341.05 Tm (sampel_validasi_20persen.xlsx \(121) Tj ET
+BT /F2 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 329.05 Tm (baris transaksi acak\)) Tj ET
+0.50 w 0.350 0.350 0.350 RG 252.00 309.89 298.00 46.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 257.00 341.05 Tm (Mohon bantuan mengisi kolom 'label_validator' di sheet) Tj ET
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 257.00 329.05 Tm ('Sampel' memakai pilihan kode di sheet 'Daftar Label' \(syarat) Tj ET
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 257.00 317.05 Tm (uji reliabilitas Cohen's Kappa\).) Tj ET
+0.50 w 0.350 0.350 0.350 RG 45.00 275.89 22.00 34.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 295.05 Tm (2) Tj ET
+0.50 w 0.350 0.350 0.350 RG 67.00 275.89 185.00 34.00 re S
+BT /F2 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 295.05 Tm (review_catatan_unik.xlsx \(opsional /) Tj ET
+BT /F2 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 283.05 Tm (bahan diskusi\)) Tj ET
+0.50 w 0.350 0.350 0.350 RG 252.00 275.89 298.00 34.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 257.00 295.05 Tm (Daftar keterangan transaksi Mandiri yang sudah kami beri) Tj ET
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 257.00 283.05 Tm (label usulan, untuk dikonfirmasi jika ada yang kurang tepat.) Tj ET
+BT /F2 10.5 Tf 0.100 0.200 0.450 rg 1 0 0 1 45.00 261.89 Tm (3. Akses Data ERP: API Sandbox atau Export Data \(Modul Knowledge Base\)) Tj ET
+BT /F1 9.2 Tf 0.000 0.000 0.000 rg 1 0 0 1 45.00 248.89 Tm (Modul KB telah menyiapkan koneksi ke ERP untuk mencocokkan transaksi dengan rekanan & invoice) Tj ET
+BT /F1 9.2 Tf 0.000 0.000 0.000 rg 1 0 0 1 45.00 236.89 Tm (secara otomatis \(saat ini masih memakai data dummy\):) Tj ET
+0.60 w 0.910 0.930 0.960 rg 0.200 0.200 0.200 RG 45.00 198.89 22.00 22.00 re B
+BT /F2 9.2 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 206.05 Tm (No) Tj ET
+0.60 w 0.910 0.930 0.960 rg 0.200 0.200 0.200 RG 67.00 198.89 185.00 22.00 re B
+BT /F2 9.2 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 206.05 Tm (Data yang Dibutuhkan) Tj ET
+0.60 w 0.910 0.930 0.960 rg 0.200 0.200 0.200 RG 252.00 198.89 298.00 22.00 re B
+BT /F2 9.2 Tf 0.000 0.000 0.000 rg 1 0 0 1 257.00 206.05 Tm (Fungsi di Sistem) Tj ET
+0.50 w 0.350 0.350 0.350 RG 45.00 164.89 22.00 34.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 184.05 Tm (1) Tj ET
+0.50 w 0.350 0.350 0.350 RG 67.00 164.89 185.00 34.00 re S
+BT /F2 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 184.05 Tm (Daftar Vendor & Customer Terdaftar) Tj ET
+0.50 w 0.350 0.350 0.350 RG 252.00 164.89 298.00 34.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 257.00 184.05 Tm (Mencocokkan nama pada mutasi bank dengan rekanan resmi) Tj ET
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 257.00 172.05 Tm (perusahaan) Tj ET
+0.50 w 0.350 0.350 0.350 RG 45.00 130.89 22.00 34.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 150.05 Tm (2) Tj ET
+0.50 w 0.350 0.350 0.350 RG 67.00 130.89 185.00 34.00 re S
+BT /F2 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 150.05 Tm (Daftar Invoice Outstanding \(Belum) Tj ET
+BT /F2 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 138.05 Tm (Lunas\)) Tj ET
+0.50 w 0.350 0.350 0.350 RG 252.00 130.89 298.00 34.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 257.00 150.05 Tm (Rekonsiliasi otomatis: mencocokkan nominal mutasi dengan) Tj ET
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 257.00 138.05 Tm (tagihan terbuka) Tj ET
+0.50 w 0.350 0.350 0.350 RG 45.00 108.89 22.00 22.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 116.05 Tm (3) Tj ET
+0.50 w 0.350 0.350 0.350 RG 67.00 108.89 185.00 22.00 re S
+BT /F2 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 72.00 116.05 Tm (CoA Terbaru \(jika ada update\)) Tj ET
+0.50 w 0.350 0.350 0.350 RG 252.00 108.89 298.00 22.00 re S
+BT /F1 8.8 Tf 0.000 0.000 0.000 rg 1 0 0 1 257.00 116.05 Tm (Memastikan pemetaan kode akun selalu mutakhir) Tj ET
+BT /F1 9.0 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 97.89 Tm (- Yang dibutuhkan: Base URL API ERP \(atau URL sandbox/testing\) beserta API Key/Token, atau file export CSV/Excel.) Tj ET
+BT /F2 10.5 Tf 0.100 0.200 0.450 rg 1 0 0 1 45.00 79.89 Tm (4. Ketersediaan Sampel Mutasi Bank Lain: BNI, BRI, BSI \(Modul NLP\)) Tj ET
+BT /F1 9.0 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 66.89 Tm (- Sesuai ruang lingkup proposal \(5 bank: BCA, Mandiri, BNI, BRI, BSI\), apakah terdapat) Tj ET
+BT /F1 9.0 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 54.89 Tm (sampel/dummy mutasi untuk BNI, BRI, atau BSI? Apabila tidak tersedia, kami izin menggunakan data) Tj ET
+BT /F1 9.0 Tf 0.000 0.000 0.000 rg 1 0 0 1 50.00 42.89 Tm (simulasi berformat standar bank tersebut.) Tj ET
+endstream
+endobj
+4 0 obj
+<< /Type /Page /Parent 5 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 3 0 R >>
+endobj
+5 0 obj
+<< /Type /Pages /Kids [4 0 R] /Count 1 >>
+endobj
+6 0 obj
+<< /Type /Catalog /Pages 5 0 R >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000015 00000 n 
+0000000112 00000 n 
+0000000214 00000 n 
+0000012358 00000 n 
+0000012500 00000 n 
+0000012557 00000 n 
+trailer
+<< /Size 7 /Root 6 0 R >>
+startxref
+12606
+%%EOF

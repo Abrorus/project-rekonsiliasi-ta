@@ -155,70 +155,106 @@ def buat_gambar_cm():
 
 
 # ---------------------------------------------------------------------
-# 2. KURVA CONFIDENCE THRESHOLD
+# 2. KURVA CONFIDENCE THRESHOLD (AKURASI, MACRO-F1, DAN COVERAGE)
 # ---------------------------------------------------------------------
 def buat_gambar_threshold():
     df = pd.read_csv(DATA / "hasil_threshold_coa.csv")
-    df = df[df["threshold"] <= 0.90].reset_index(drop=True)
-    W, H = 720, 400
-    L, T, R, B = 70, 50, 40, 60
+    df = df[(df["threshold"] >= 0.50) & (df["threshold"] <= 0.86)].reset_index(drop=True)
+    W, H = 760, 430
+    L, T, R, B = 75, 55, 45, 75
     pw, ph = W - L - R, H - T - B
+    y_min, y_max = 0.55, 1.00
 
     def xy(t, val):
-        x = L + (t - 0.50) / 0.40 * pw
-        y = T + (1.0 - val) * ph
+        x = L + (t - 0.50) / (0.86 - 0.50) * pw
+        val_clip = max(y_min, min(y_max, float(val)))
+        y = T + (y_max - val_clip) / (y_max - y_min) * ph
         return int(x), int(y)
 
     # SVG
-    svg = [f"<svg xmlns='http://www.w3.org/2000/svg' width='{W}' height='{H}' viewBox='0 0 {W} {H}' style='font-family:Arial,sans-serif;background:#fff'>",
-           f"<text x='{W//2}' y='26' text-anchor='middle' font-size='15' font-weight='bold'>Kurva Optimasi Confidence Threshold (Macro-F1 vs Auto-Classification Rate)</text>",
-           f"<rect x='{L}' y='{T}' width='{pw}' height='{ph}' fill='none' stroke='#333'/>"]
-    for v in [0.0, 0.2, 0.4, 0.6, 0.7, 0.8, 1.0]:
-        _, y = xy(0.5, v)
-        svg.append(f"<line x1='{L}' y1='{y}' x2='{L+pw}' y2='{y}' stroke='#e0e0e0' stroke-dasharray='3,3'/>")
-        svg.append(f"<text x='{L-8}' y='{y+4}' text-anchor='end' font-size='11'>{int(v*100)}%</text>")
-    for t in [0.50, 0.55, 0.60, 0.65, 0.70, 0.72, 0.75, 0.80, 0.85, 0.90]:
-        x, _ = xy(t, 0)
-        svg.append(f"<text x='{x}' y='{T+ph+20}' text-anchor='middle' font-size='11'>{t:.2f}</text>")
+    svg = [
+        f"<svg xmlns='http://www.w3.org/2000/svg' width='{W}' height='{H}' viewBox='0 0 {W} {H}' style='font-family:Arial,sans-serif;background:#fff'>",
+        f"<text x='{W//2}' y='26' text-anchor='middle' font-size='14' font-weight='bold'>Grafik Garis Confidence Threshold terhadap Akurasi, Macro-F1, dan Coverage</text>",
+        f"<rect x='{L}' y='{T}' width='{pw}' height='{ph}' fill='#fcfcfc' stroke='#333'/>",
+    ]
+    for v in [0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00]:
+        _, y = xy(0.50, v)
+        stroke = "#f0ad4e" if abs(v - 0.70) < 1e-6 else "#e2e2e2"
+        svg.append(f"<line x1='{L}' y1='{y}' x2='{L+pw}' y2='{y}' stroke='{stroke}' stroke-dasharray='3,3'/>")
+        svg.append(f"<text x='{L-8}' y='{y+4}' text-anchor='end' font-size='10.5'>{int(round(v*100))}%</text>")
+    for t in [0.50, 0.54, 0.58, 0.62, 0.66, 0.70, 0.72, 0.76, 0.80, 0.84]:
+        x, _ = xy(t, y_min)
+        svg.append(f"<line x1='{x}' y1='{T}' x2='{x}' y2='{T+ph}' stroke='#f0f0f0'/>")
+        svg.append(f"<text x='{x}' y='{T+ph+18}' text-anchor='middle' font-size='10.5' font-weight='{'bold' if abs(t-0.72)<1e-4 else 'normal'}'>{t:.2f}</text>")
+    svg.append(f"<text x='{W//2}' y='{T+ph+38}' text-anchor='middle' font-size='11.5' font-weight='bold'>Nilai Ambang Confidence Score (Threshold)</text>")
 
+    pts_acc = " ".join(f"{xy(r.threshold, r.akurasi_auto)[0]},{xy(r.threshold, r.akurasi_auto)[1]}" for _, r in df.iterrows())
     pts_f1 = " ".join(f"{xy(r.threshold, r.f1_macro_auto)[0]},{xy(r.threshold, r.f1_macro_auto)[1]}" for _, r in df.iterrows())
     pts_cov = " ".join(f"{xy(r.threshold, r.auto_rate)[0]},{xy(r.threshold, r.auto_rate)[1]}" for _, r in df.iterrows())
-    x_opt, y_opt = xy(0.72, 0.995)
+
+    x_opt, y_acc_opt = xy(0.72, 0.9957)
+    _, y_f1_opt = xy(0.72, 0.9947)
+    _, y_cov_opt = xy(0.72, 0.8280)
+
     svg.append(f"<line x1='{x_opt}' y1='{T}' x2='{x_opt}' y2='{T+ph}' stroke='#d9534f' stroke-width='2' stroke-dasharray='5,4'/>")
+    svg.append(f"<polyline fill='none' stroke='#d9534f' stroke-width='2.8' points='{pts_acc}'/>")
     svg.append(f"<polyline fill='none' stroke='#1f77b4' stroke-width='2.5' points='{pts_f1}'/>")
     svg.append(f"<polyline fill='none' stroke='#2ca02c' stroke-width='2.5' points='{pts_cov}'/>")
-    svg.append(f"<circle cx='{x_opt}' cy='{y_opt}' r='5' fill='#d9534f'/>")
-    svg.append(f"<text x='{x_opt+8}' y='{T+25}' font-size='11' fill='#d9534f' font-weight='bold'>Optimal t* = 0.72 (F1=99.5%, Auto=82.8%)</text>")
+
+    for y_pt, col in [(y_acc_opt, "#d9534f"), (y_f1_opt, "#1f77b4"), (y_cov_opt, "#2ca02c")]:
+        svg.append(f"<circle cx='{x_opt}' cy='{y_pt}' r='4.5' fill='{col}' stroke='#fff' stroke-width='1.2'/>")
+
+    svg.append(f"<text x='{x_opt-8}' y='{T+22}' text-anchor='end' font-size='11' fill='#b52b27' font-weight='bold'>Optimal t* = 0,72 (Akurasi = 99,6%, F1 = 99,5%, Coverage = 82,8%)</text>")
+    # Legend SVG
+    ly = H - 14
+    svg.append(f"<rect x='{L}' y='{ly-9}' width='16' height='4' fill='#d9534f'/><text x='{L+22}' y='{ly-4}' font-size='10.5' font-weight='bold'>Akurasi Otomatis (%)</text>")
+    svg.append(f"<rect x='{L+175}' y='{ly-9}' width='16' height='4' fill='#1f77b4'/><text x='{L+197}' y='{ly-4}' font-size='10.5' font-weight='bold'>Macro-F1 Otomatis (%)</text>")
+    svg.append(f"<rect x='{L+365}' y='{ly-9}' width='16' height='4' fill='#2ca02c'/><text x='{L+387}' y='{ly-4}' font-size='10.5' font-weight='bold'>Cakupan Otomatis / Coverage (%)</text>")
     svg.append("</svg>")
     (DOCS / "gambar_4_2_kurva_threshold.svg").write_text("\n".join(svg), encoding="utf-8")
 
     # PNG
     c = Canvas(W, H)
-    c.text(W // 2, 16, "OPTIMASI CONFIDENCE THRESHOLD (F1 VS COVERAGE)", scale=2, align="center")
+    c.text(W // 2, 16, "GRAFIK GARIS CONFIDENCE THRESHOLD VS AKURASI, F1 & COVERAGE", scale=2, align="center")
     c.rect(L, T, L + pw, T + ph, (252, 252, 252), border=(80, 80, 80))
-    for v in [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]:
-        _, y = xy(0.5, v)
-        c.line(L, y, L + pw, y, (230, 230, 230), thick=1)
-        c.text(L - 8, y - 3, f"{int(v*100)}%", scale=1, align="right")
-    for t in [0.50, 0.60, 0.70, 0.72, 0.80, 0.90]:
-        x, _ = xy(t, 0)
+    for v in [0.60, 0.70, 0.80, 0.90, 0.95, 1.00]:
+        _, y = xy(0.50, v)
+        col_grid = (240, 180, 100) if abs(v - 0.70) < 1e-6 else (228, 228, 228)
+        c.line(L, y, L + pw, y, col_grid, thick=1)
+        c.text(L - 8, y - 3, f"{int(round(v*100))}%", scale=1, align="right")
+    for t in [0.50, 0.58, 0.66, 0.70, 0.72, 0.78, 0.84]:
+        x, _ = xy(t, y_min)
         c.text(x, T + ph + 10, f"{t:.2f}", scale=1, align="center")
-    c.text(W // 2, H - 20, "CONFIDENCE THRESHOLD", scale=1, align="center")
+    c.text(W // 2, T + ph + 28, "CONFIDENCE THRESHOLD", scale=1, align="center")
 
-    prev_f1, prev_cov = None, None
+    prev_acc, prev_f1, prev_cov = None, None, None
     for _, r in df.iterrows():
-        p1 = xy(r.threshold, r.f1_macro_auto)
-        p2 = xy(r.threshold, r.auto_rate)
-        if prev_f1:
-            c.line(prev_f1[0], prev_f1[1], p1[0], p1[1], (31, 119, 180), thick=3)
-            c.line(prev_cov[0], prev_cov[1], p2[0], p2[1], (44, 160, 44), thick=3)
-        prev_f1, prev_cov = p1, p2
-    c.line(x_opt, T, x_opt, T + ph, (217, 83, 79), thick=2)
-    c.text(x_opt - 5, T + 12, "OPT=0.72 (F1=99.5%, AUTO=82.8%)", color=(200, 40, 40), scale=1, align="right")
-    c.text(L + 15, T + ph - 35, "BIRU: MACRO-F1 (AUTO)", color=(31, 119, 180), scale=1)
-    c.text(L + 15, T + ph - 20, "HIJAU: AUTO-CLASSIFICATION RATE", color=(44, 160, 44), scale=1)
-    c.save_png(DOCS / "gambar_4_3_tmp.png")
-    (DOCS / "gambar_4_3_tmp.png").replace(DOCS / "gambar_4_2_kurva_threshold.png")
+        pa = xy(r.threshold, r.akurasi_auto)
+        pf = xy(r.threshold, r.f1_macro_auto)
+        pc = xy(r.threshold, r.auto_rate)
+        if prev_acc:
+            c.line(prev_acc[0], prev_acc[1], pa[0], pa[1], (217, 60, 55), thick=3)
+            c.line(prev_f1[0], prev_f1[1], pf[0], pf[1], (31, 119, 180), thick=3)
+            c.line(prev_cov[0], prev_cov[1], pc[0], pc[1], (44, 160, 44), thick=3)
+        prev_acc, prev_f1, prev_cov = pa, pf, pc
+
+    c.line(x_opt, T, x_opt, T + ph, (180, 40, 40), thick=2)
+    c.rect(x_opt - 4, y_acc_opt - 4, x_opt + 5, y_acc_opt + 5, (217, 60, 55))
+    c.rect(x_opt - 4, y_cov_opt - 4, x_opt + 5, y_cov_opt + 5, (44, 160, 44))
+    c.text(x_opt - 8, T + 135, "OPT = 0.72", color=(180, 30, 30), scale=1, align="right")
+    c.text(x_opt - 8, T + 148, "AKURASI: 99.6%", color=(180, 30, 30), scale=1, align="right")
+    c.text(x_opt - 8, T + 161, "MACRO-F1: 99.5%", color=(31, 119, 180), scale=1, align="right")
+    c.text(x_opt - 8, T + 174, "COVERAGE: 82.8%", color=(30, 130, 30), scale=1, align="right")
+
+    # Legend PNG di bagian bawah
+    ly = H - 18
+    c.rect(L, ly, L + 16, ly + 7, (217, 60, 55))
+    c.text(L + 22, ly, "MERAH: AKURASI (%)", color=(180, 40, 40), scale=1)
+    c.rect(L + 200, ly, L + 216, ly + 7, (31, 119, 180))
+    c.text(L + 222, ly, "BIRU: MACRO-F1 (%)", color=(31, 119, 180), scale=1)
+    c.rect(L + 410, ly, L + 426, ly + 7, (44, 160, 44))
+    c.text(L + 432, ly, "HIJAU: COVERAGE OTOMATIS (%)", color=(30, 130, 30), scale=1)
+    c.save_png(DOCS / "gambar_4_2_kurva_threshold.png")
 
 
 # ---------------------------------------------------------------------

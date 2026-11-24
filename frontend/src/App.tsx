@@ -51,7 +51,7 @@ interface Stats {
   coverage: number
 }
 
-const API_BASE = 'http://localhost:8000/api'
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api'
 const NLP_THRESHOLD = 0.72
 
 function formatCurrency(val: number) {

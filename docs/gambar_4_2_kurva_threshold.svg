@@ -1,33 +1,56 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='720' height='400' viewBox='0 0 720 400' style='font-family:Arial,sans-serif;background:#fff'>
-<text x='360' y='26' text-anchor='middle' font-size='15' font-weight='bold'>Kurva Optimasi Confidence Threshold (Macro-F1 vs Auto-Classification Rate)</text>
-<rect x='70' y='50' width='610' height='290' fill='none' stroke='#333'/>
-<line x1='70' y1='340' x2='680' y2='340' stroke='#e0e0e0' stroke-dasharray='3,3'/>
-<text x='62' y='344' text-anchor='end' font-size='11'>0%</text>
-<line x1='70' y1='282' x2='680' y2='282' stroke='#e0e0e0' stroke-dasharray='3,3'/>
-<text x='62' y='286' text-anchor='end' font-size='11'>20%</text>
-<line x1='70' y1='224' x2='680' y2='224' stroke='#e0e0e0' stroke-dasharray='3,3'/>
-<text x='62' y='228' text-anchor='end' font-size='11'>40%</text>
-<line x1='70' y1='166' x2='680' y2='166' stroke='#e0e0e0' stroke-dasharray='3,3'/>
-<text x='62' y='170' text-anchor='end' font-size='11'>60%</text>
-<line x1='70' y1='137' x2='680' y2='137' stroke='#e0e0e0' stroke-dasharray='3,3'/>
-<text x='62' y='141' text-anchor='end' font-size='11'>70%</text>
-<line x1='70' y1='107' x2='680' y2='107' stroke='#e0e0e0' stroke-dasharray='3,3'/>
-<text x='62' y='111' text-anchor='end' font-size='11'>80%</text>
-<line x1='70' y1='50' x2='680' y2='50' stroke='#e0e0e0' stroke-dasharray='3,3'/>
-<text x='62' y='54' text-anchor='end' font-size='11'>100%</text>
-<text x='70' y='360' text-anchor='middle' font-size='11'>0.50</text>
-<text x='146' y='360' text-anchor='middle' font-size='11'>0.55</text>
-<text x='222' y='360' text-anchor='middle' font-size='11'>0.60</text>
-<text x='298' y='360' text-anchor='middle' font-size='11'>0.65</text>
-<text x='374' y='360' text-anchor='middle' font-size='11'>0.70</text>
-<text x='405' y='360' text-anchor='middle' font-size='11'>0.72</text>
-<text x='451' y='360' text-anchor='middle' font-size='11'>0.75</text>
-<text x='527' y='360' text-anchor='middle' font-size='11'>0.80</text>
-<text x='603' y='360' text-anchor='middle' font-size='11'>0.85</text>
-<text x='680' y='360' text-anchor='middle' font-size='11'>0.90</text>
-<line x1='405' y1='50' x2='405' y2='340' stroke='#d9534f' stroke-width='2' stroke-dasharray='5,4'/>
-<polyline fill='none' stroke='#1f77b4' stroke-width='2.5' points='70,83 85,83 100,86 115,78 131,78 146,78 161,76 176,76 191,78 207,79 222,78 237,78 253,78 268,78 283,78 298,76 314,76 329,76 344,52 359,52 374,51 390,51 405,51 420,51 436,51 451,51 466,51 481,51 497,51 512,51 527,52 542,52 557,51 573,51 588,51 603,50 619,50 634,50 649,50 664,50 680,50'/>
-<polyline fill='none' stroke='#2ca02c' stroke-width='2.5' points='70,64 85,64 100,65 115,65 131,65 146,65 161,67 176,68 191,71 207,73 222,75 237,76 253,77 268,81 283,81 298,85 314,86 329,87 344,90 359,93 374,95 390,97 405,99 420,100 436,103 451,106 466,109 481,112 497,114 512,118 527,124 542,131 557,141 573,144 588,157 603,165 619,185 634,218 649,243 664,300 680,325'/>
-<circle cx='405' cy='51' r='5' fill='#d9534f'/>
-<text x='413' y='75' font-size='11' fill='#d9534f' font-weight='bold'>Optimal t* = 0.72 (F1=99.5%, Auto=82.8%)</text>
+<svg xmlns='http://www.w3.org/2000/svg' width='760' height='430' viewBox='0 0 760 430' style='font-family:Arial,sans-serif;background:#fff'>
+<text x='380' y='26' text-anchor='middle' font-size='14' font-weight='bold'>Grafik Garis Confidence Threshold terhadap Akurasi, Macro-F1, dan Coverage</text>
+<rect x='75' y='55' width='640' height='300' fill='#fcfcfc' stroke='#333'/>
+<line x1='75' y1='355' x2='715' y2='355' stroke='#e2e2e2' stroke-dasharray='3,3'/>
+<text x='67' y='359' text-anchor='end' font-size='10.5'>55%</text>
+<line x1='75' y1='321' x2='715' y2='321' stroke='#e2e2e2' stroke-dasharray='3,3'/>
+<text x='67' y='325' text-anchor='end' font-size='10.5'>60%</text>
+<line x1='75' y1='288' x2='715' y2='288' stroke='#e2e2e2' stroke-dasharray='3,3'/>
+<text x='67' y='292' text-anchor='end' font-size='10.5'>65%</text>
+<line x1='75' y1='255' x2='715' y2='255' stroke='#f0ad4e' stroke-dasharray='3,3'/>
+<text x='67' y='259' text-anchor='end' font-size='10.5'>70%</text>
+<line x1='75' y1='221' x2='715' y2='221' stroke='#e2e2e2' stroke-dasharray='3,3'/>
+<text x='67' y='225' text-anchor='end' font-size='10.5'>75%</text>
+<line x1='75' y1='188' x2='715' y2='188' stroke='#e2e2e2' stroke-dasharray='3,3'/>
+<text x='67' y='192' text-anchor='end' font-size='10.5'>80%</text>
+<line x1='75' y1='155' x2='715' y2='155' stroke='#e2e2e2' stroke-dasharray='3,3'/>
+<text x='67' y='159' text-anchor='end' font-size='10.5'>85%</text>
+<line x1='75' y1='121' x2='715' y2='121' stroke='#e2e2e2' stroke-dasharray='3,3'/>
+<text x='67' y='125' text-anchor='end' font-size='10.5'>90%</text>
+<line x1='75' y1='88' x2='715' y2='88' stroke='#e2e2e2' stroke-dasharray='3,3'/>
+<text x='67' y='92' text-anchor='end' font-size='10.5'>95%</text>
+<line x1='75' y1='55' x2='715' y2='55' stroke='#e2e2e2' stroke-dasharray='3,3'/>
+<text x='67' y='59' text-anchor='end' font-size='10.5'>100%</text>
+<line x1='75' y1='55' x2='75' y2='355' stroke='#f0f0f0'/>
+<text x='75' y='373' text-anchor='middle' font-size='10.5' font-weight='normal'>0.50</text>
+<line x1='146' y1='55' x2='146' y2='355' stroke='#f0f0f0'/>
+<text x='146' y='373' text-anchor='middle' font-size='10.5' font-weight='normal'>0.54</text>
+<line x1='217' y1='55' x2='217' y2='355' stroke='#f0f0f0'/>
+<text x='217' y='373' text-anchor='middle' font-size='10.5' font-weight='normal'>0.58</text>
+<line x1='288' y1='55' x2='288' y2='355' stroke='#f0f0f0'/>
+<text x='288' y='373' text-anchor='middle' font-size='10.5' font-weight='normal'>0.62</text>
+<line x1='359' y1='55' x2='359' y2='355' stroke='#f0f0f0'/>
+<text x='359' y='373' text-anchor='middle' font-size='10.5' font-weight='normal'>0.66</text>
+<line x1='430' y1='55' x2='430' y2='355' stroke='#f0f0f0'/>
+<text x='430' y='373' text-anchor='middle' font-size='10.5' font-weight='normal'>0.70</text>
+<line x1='466' y1='55' x2='466' y2='355' stroke='#f0f0f0'/>
+<text x='466' y='373' text-anchor='middle' font-size='10.5' font-weight='bold'>0.72</text>
+<line x1='537' y1='55' x2='537' y2='355' stroke='#f0f0f0'/>
+<text x='537' y='373' text-anchor='middle' font-size='10.5' font-weight='normal'>0.76</text>
+<line x1='608' y1='55' x2='608' y2='355' stroke='#f0f0f0'/>
+<text x='608' y='373' text-anchor='middle' font-size='10.5' font-weight='normal'>0.80</text>
+<line x1='679' y1='55' x2='679' y2='355' stroke='#f0f0f0'/>
+<text x='679' y='373' text-anchor='middle' font-size='10.5' font-weight='normal'>0.84</text>
+<text x='380' y='393' text-anchor='middle' font-size='11.5' font-weight='bold'>Nilai Ambang Confidence Score (Threshold)</text>
+<line x1='466' y1='55' x2='466' y2='355' stroke='#d9534f' stroke-width='2' stroke-dasharray='5,4'/>
+<polyline fill='none' stroke='#d9534f' stroke-width='2.8' points='75,73 92,73 110,73 128,73 146,73 163,73 181,71 199,71 217,71 234,71 252,70 270,68 288,68 306,67 323,65 341,63 359,61 377,61 395,60 412,60 430,59 448,59 466,57 483,57 501,57 519,57 537,58 555,58 572,58 590,58 608,58 626,58 643,56 661,56 679,56 697,55 715,55'/>
+<polyline fill='none' stroke='#1f77b4' stroke-width='2.5' points='75,131 92,131 110,138 128,119 146,119 163,119 181,115 199,115 217,121 234,121 252,120 270,119 288,119 306,119 323,119 341,116 359,115 377,115 395,60 412,60 430,58 448,58 466,58 483,58 501,58 519,58 537,59 555,59 572,59 590,59 608,59 626,60 643,57 661,57 679,57 697,55 715,55'/>
+<polyline fill='none' stroke='#2ca02c' stroke-width='2.5' points='75,87 92,87 110,89 128,90 146,90 163,90 181,95 199,98 217,103 234,109 252,113 270,115 288,118 306,126 323,127 341,137 359,139 377,142 395,148 412,154 430,160 448,164 466,169 483,172 501,178 519,185 537,192 555,199 572,203 590,211 608,227 626,241 643,266 661,271 679,301 697,320 715,355'/>
+<circle cx='466' cy='57' r='4.5' fill='#d9534f' stroke='#fff' stroke-width='1.2'/>
+<circle cx='466' cy='58' r='4.5' fill='#1f77b4' stroke='#fff' stroke-width='1.2'/>
+<circle cx='466' cy='169' r='4.5' fill='#2ca02c' stroke='#fff' stroke-width='1.2'/>
+<text x='458' y='77' text-anchor='end' font-size='11' fill='#b52b27' font-weight='bold'>Optimal t* = 0,72 (Akurasi = 99,6%, F1 = 99,5%, Coverage = 82,8%)</text>
+<rect x='75' y='407' width='16' height='4' fill='#d9534f'/><text x='97' y='412' font-size='10.5' font-weight='bold'>Akurasi Otomatis (%)</text>
+<rect x='250' y='407' width='16' height='4' fill='#1f77b4'/><text x='272' y='412' font-size='10.5' font-weight='bold'>Macro-F1 Otomatis (%)</text>
+<rect x='440' y='407' width='16' height='4' fill='#2ca02c'/><text x='462' y='412' font-size='10.5' font-weight='bold'>Cakupan Otomatis / Coverage (%)</text>
 </svg>
