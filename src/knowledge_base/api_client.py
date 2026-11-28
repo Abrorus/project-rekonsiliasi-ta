@@ -1,18 +1,16 @@
+"""
+ERP API Client — adapter layer antara KB Engine dan backend ERP.
+
+Mode operasi (otomatis berdasarkan .env):
+  - LIVE: Koneksi ke iDempiere sandbox (ERP_BASE_URL terisi) → query real
+  - MOCK: Fallback data statis untuk testing offline
+"""
+
 import os
-import re
 import logging
 from typing import Dict, List, Optional, Any
 
-# Konfigurasi Logging
-logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-
-try:
-    import requests
-    REQUESTS_AVAILABLE = True
-except ImportError:
-    REQUESTS_AVAILABLE = False
-    logger.warning("Package 'requests' belum terinstal. Mode live API akan nonaktif.")
 
 try:
     from knowledge_base.kategori_keuangan import KATEGORI
@@ -25,167 +23,135 @@ except ImportError:
         from kategori_keuangan import KATEGORI
         from rekanan_resolver import MASTER_CUSTOMERS, MASTER_VENDORS
 
-# ==============================================================================
-# ADAPTER REST API PERUSAHAAN (ERP & ACCOUNTING INTEGRATION LAYER)
-# ==============================================================================
+try:
+    from knowledge_base.erp_idempiere import (
+        get_idempiere_client, CHARGE_MAP, CHARGE_VARIANTS,
+        CHARGE_COA_MAP, BANK_ACCOUNT_MAP,
+    )
+except ImportError:
+    try:
+        from src.knowledge_base.erp_idempiere import (
+            get_idempiere_client, CHARGE_MAP, CHARGE_VARIANTS,
+            CHARGE_COA_MAP, BANK_ACCOUNT_MAP,
+        )
+    except ImportError:
+        try:
+            from erp_idempiere import (
+                get_idempiere_client, CHARGE_MAP, CHARGE_VARIANTS,
+                CHARGE_COA_MAP, BANK_ACCOUNT_MAP,
+            )
+        except ImportError:
+            get_idempiere_client = None
+            CHARGE_MAP = {}
+            CHARGE_VARIANTS = {}
+            CHARGE_COA_MAP = {}
+            BANK_ACCOUNT_MAP = {}
+
+# Mock invoice data untuk testing offline
+MOCK_INVOICES = [
+    {"invoice_no": "INV-2023-001", "partner_name": "CIOMAS ADISATWA", "partner_type": "VENDOR",
+     "amount": 580075045.0, "due_date": "2023-07-31", "status": "UNPAID", "kode_akun": "2.1.01.01"},
+    {"invoice_no": "INV-2023-002", "partner_name": "AMERTHA JAYA", "partner_type": "CUSTOMER",
+     "amount": 595075045.0, "due_date": "2023-07-30", "status": "UNPAID", "kode_akun": "1.1.04.01"},
+    {"invoice_no": "INV-2023-003", "partner_name": "BAREKA LINTAS INDO", "partner_type": "VENDOR",
+     "amount": 138500000.0, "due_date": "2023-07-28", "status": "UNPAID", "kode_akun": "2.1.01.01"},
+    {"invoice_no": "INV-2023-004", "partner_name": "PANCA BERSAUDARA", "partner_type": "CUSTOMER",
+     "amount": 50000000.0, "due_date": "2023-07-25", "status": "UNPAID", "kode_akun": "1.1.04.01"},
+    {"invoice_no": "INV-2023-005", "partner_name": "SENTOT PRABOWO", "partner_type": "VENDOR",
+     "amount": 15000000.0, "due_date": "2023-07-20", "status": "UNPAID", "kode_akun": "2.1.01.01"},
+]
+
 
 class PerusahaanAPIClient:
     """
-    Klien Adapter untuk berkomunikasi dengan REST API sistem ERP/Akuntansi perusahaan.
-    
-    Dilengkapi dengan 'Mock Mode' bawaan sehingga Modul Knowledge Base tetap dapat
-    diuji dan didemokan meskipun server API perusahaan belum rilis / offline.
+    Adapter ERP: otomatis pakai iDempiere live jika ERP_BASE_URL dikonfigurasi,
+    fallback ke mock data jika tidak.
     """
 
-    def __init__(
-        self,
-        base_url: Optional[str] = None,
-        api_key: Optional[str] = None,
-        use_mock: bool = True,
-        timeout: int = 5
-    ):
-        """
-        Inisialisasi klien API.
-        
-        - base_url: URL induk endpoint perusahaan (misal: 'https://api.perusahaan.com/v1')
-        - api_key: Token otentikasi Bearer / Header
-        - use_mock: Set True jika belum ada API live, set False jika ingin menembak server asli
-        - timeout: Batas waktu request dalam detik (default 5 detik)
-        """
-        self.base_url = base_url or os.getenv("PERUSAHAAN_API_URL", "https://api.avolut.com/v1")
-        self.api_key = api_key or os.getenv("PERUSAHAAN_API_KEY", "mock-token-xyz")
-        self.use_mock = use_mock
-        self.timeout = timeout
+    def __init__(self):
+        self._idempiere = None
+        self._live = False
 
-        if self.use_mock:
-            logger.info("PerusahaanAPIClient aktif dalam mode: SANDBOX / MOCK DATA.")
+        if get_idempiere_client:
+            self._idempiere = get_idempiere_client()
+            self._live = self._idempiere.is_configured
+
+        if self._live:
+            logger.info(f"ERP Client: LIVE mode ({self._idempiere.base_url})")
         else:
-            logger.info(f"PerusahaanAPIClient aktif dalam mode: LIVE API ({self.base_url}).")
+            logger.info("ERP Client: MOCK mode (ERP_BASE_URL tidak dikonfigurasi)")
 
-    def _get_headers(self) -> Dict[str, str]:
-        return {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        }
+    @property
+    def is_live(self) -> bool:
+        return self._live
+
+    @property
+    def charge_map(self) -> Dict[str, int]:
+        return CHARGE_MAP
+
+    @property
+    def bank_account_map(self) -> Dict[str, int]:
+        return BANK_ACCOUNT_MAP
 
     # --------------------------------------------------------------------------
-    # 1. CHART OF ACCOUNTS (CoA) PERUSAHAAN
+    # CHART OF ACCOUNTS
     # --------------------------------------------------------------------------
-    def get_chart_of_accounts(self) -> Dict[str, Dict[str, str]]:
-        """Mengambil struktur akun resmi dari buku besar perusahaan."""
-        if not self.use_mock and REQUESTS_AVAILABLE:
+    def get_chart_of_accounts(self) -> Dict:
+        if self._live:
             try:
-                url = f"{self.base_url}/chart-of-accounts"
-                resp = requests.get(url, headers=self._get_headers(), timeout=self.timeout)
-                if resp.status_code == 200:
-                    return resp.json().get("data", {})
-                logger.warning(f"Gagal mengambil CoA dari server (Status {resp.status_code}), fallback ke Mock.")
+                charges = self._idempiere.get_charges()
+                return {c.get("Name", ""): c for c in charges}
             except Exception as e:
-                logger.warning(f"Koneksi live API gagal ({e}), otomatis beralih ke Mock.")
-
-        # Fallback Mock: Menggunakan kamus kategori lokal
+                logger.warning(f"Gagal ambil CoA live ({e}), fallback mock")
         return KATEGORI
 
     # --------------------------------------------------------------------------
-    # 2. MASTER PARTNER (VENDOR & CUSTOMER)
+    # MASTER PARTNER
     # --------------------------------------------------------------------------
-    def get_partners(self) -> Dict[str, List[str]]:
-        """Mengambil daftar rekanan bisnis resmi perusahaan."""
-        if not self.use_mock and REQUESTS_AVAILABLE:
+    def get_partners(self, name_contains: Optional[str] = None) -> Dict[str, List]:
+        if self._live:
             try:
-                url = f"{self.base_url}/partners"
-                resp = requests.get(url, headers=self._get_headers(), timeout=self.timeout)
-                if resp.status_code == 200:
-                    return resp.json().get("data", {})
-                logger.warning(f"Gagal mengambil Partner dari server, fallback ke Mock.")
+                bps = self._idempiere.get_business_partners(name_contains=name_contains)
+                customers = [bp for bp in bps if bp.get("IsCustomer")]
+                vendors = [bp for bp in bps if bp.get("IsVendor")]
+                return {"customers": customers, "vendors": vendors}
             except Exception as e:
-                logger.warning(f"Koneksi live API gagal ({e}), otomatis beralih ke Mock.")
-
-        # Fallback Mock: Menggunakan daftar rekanan yang sudah teridentifikasi
+                logger.warning(f"Gagal ambil partners live ({e}), fallback mock")
         return {
             "customers": sorted(list(MASTER_CUSTOMERS)),
-            "vendors": sorted(list(MASTER_VENDORS))
+            "vendors": sorted(list(MASTER_VENDORS)),
         }
 
     # --------------------------------------------------------------------------
-    # 3. TAGIHAN / INVOICE MATCHING (REKONSILIASI FAKTUR)
+    # INVOICE MATCHING
     # --------------------------------------------------------------------------
-    def get_unpaid_invoices(self) -> List[Dict[str, Any]]:
-        """Mengambil daftar invoice yang belum lunas (outstanding)."""
-        if not self.use_mock and REQUESTS_AVAILABLE:
+    def get_unpaid_invoices(self, bp_name: Optional[str] = None) -> List[Dict]:
+        if self._live:
             try:
-                url = f"{self.base_url}/invoices?status=UNPAID"
-                resp = requests.get(url, headers=self._get_headers(), timeout=self.timeout)
-                if resp.status_code == 200:
-                    return resp.json().get("data", [])
-                logger.warning(f"Gagal mengambil Invoice dari server, fallback ke Mock.")
+                return self._idempiere.get_open_invoices(bp_name=bp_name)
             except Exception as e:
-                logger.warning(f"Koneksi live API gagal ({e}), otomatis beralih ke Mock.")
-
-        # Fallback Mock: Sampel invoice realistis berdasarkan riwayat BCA 2023 & CoA mitra
-        return [
-            {
-                "invoice_no": "INV-2023-001",
-                "partner_name": "CIOMAS ADISATWA",
-                "partner_type": "VENDOR",
-                "amount": 580075045.0,
-                "due_date": "2023-07-31",
-                "status": "UNPAID",
-                "kode_akun": "2.1.01.01"
-            },
-            {
-                "invoice_no": "INV-2023-002",
-                "partner_name": "AMERTHA JAYA",
-                "partner_type": "CUSTOMER",
-                "amount": 595075045.0,
-                "due_date": "2023-07-30",
-                "status": "UNPAID",
-                "kode_akun": "1.1.04.01"
-            },
-            {
-                "invoice_no": "INV-2023-003",
-                "partner_name": "BAREKA LINTAS INDO",
-                "partner_type": "VENDOR",
-                "amount": 138500000.0,
-                "due_date": "2023-07-28",
-                "status": "UNPAID",
-                "kode_akun": "2.1.01.01"
-            },
-            {
-                "invoice_no": "INV-2023-004",
-                "partner_name": "PANCA BERSAUDARA",
-                "partner_type": "CUSTOMER",
-                "amount": 50000000.0,
-                "due_date": "2023-07-25",
-                "status": "UNPAID",
-                "kode_akun": "1.1.04.01"
-            },
-            {
-                "invoice_no": "INV-2023-005",
-                "partner_name": "SENTOT PRABOWO",
-                "partner_type": "VENDOR",
-                "amount": 15000000.0,
-                "due_date": "2023-07-20",
-                "status": "UNPAID",
-                "kode_akun": "2.1.01.01"
-            }
-        ]
+                logger.warning(f"Gagal ambil invoices live ({e}), fallback mock")
+        return MOCK_INVOICES
 
     def match_invoice(
         self,
         keterangan: str,
         nominal: Optional[float] = None,
-        nama_rekanan: Optional[str] = None
+        nama_rekanan: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         """
-        Fungsi Matching: Mencocokkan transaksi bank dengan daftar invoice perusahaan.
-        
-        Kriteria Pencocokan:
-        1. Mencari nomor invoice langsung dari teks keterangan (misal 'INV-2023-001').
-        2. ATAU mencocokkan kombinasi Nama Rekanan + Kesesuaian Nominal Tagihan.
+        Mencocokkan transaksi bank dengan invoice ERP.
+        Live mode → query iDempiere langsung.
+        Mock mode → data statis.
         """
-        invoices = self.get_unpaid_invoices()
+        if self._live:
+            try:
+                return self._idempiere.match_invoice(keterangan, nominal, nama_rekanan)
+            except Exception as e:
+                logger.warning(f"Match invoice live gagal ({e}), fallback mock")
+
+        # Mock matching
+        invoices = MOCK_INVOICES
         k_upper = str(keterangan).upper()
 
         nom_float = None
@@ -195,10 +161,8 @@ class PerusahaanAPIClient:
             except (ValueError, TypeError):
                 nom_float = None
 
-        # Strategi 1: Exact Match Nomor Invoice di teks mutasi
         for inv in invoices:
-            inv_no = inv["invoice_no"].upper()
-            if inv_no in k_upper:
+            if inv["invoice_no"].upper() in k_upper:
                 return {
                     "matched": True,
                     "kriteria": "Nomor Invoice Teridentifikasi",
@@ -206,16 +170,15 @@ class PerusahaanAPIClient:
                     "partner_name": inv["partner_name"],
                     "kode_akun": inv["kode_akun"],
                     "status_rekonsiliasi": "RECONCILED",
-                    "selisih_nominal": abs(nom_float - float(inv["amount"])) if nom_float is not None else 0.0
+                    "selisih_nominal": abs(nom_float - float(inv["amount"])) if nom_float else 0.0,
                 }
 
-        # Strategi 2: Match berdasarkan Nama Partner + Nominal Persis
         if nom_float is not None and nama_rekanan:
             rek_upper = str(nama_rekanan).upper()
             for inv in invoices:
                 p_name = inv["partner_name"].upper()
                 if p_name in rek_upper or rek_upper in p_name:
-                    if abs(nom_float - float(inv["amount"])) < 1.0: # Selisih 0 rupiah
+                    if abs(nom_float - float(inv["amount"])) < 1.0:
                         return {
                             "matched": True,
                             "kriteria": "Nama Rekanan & Nominal Tepat",
@@ -223,38 +186,54 @@ class PerusahaanAPIClient:
                             "partner_name": inv["partner_name"],
                             "kode_akun": inv["kode_akun"],
                             "status_rekonsiliasi": "RECONCILED",
-                            "selisih_nominal": 0.0
+                            "selisih_nominal": 0.0,
                         }
 
         return None
 
+    # --------------------------------------------------------------------------
+    # POST PAYMENT (hanya live mode)
+    # --------------------------------------------------------------------------
+    def post_payment(self, **kwargs) -> Optional[Dict]:
+        if not self._live:
+            logger.warning("post_payment dipanggil dalam mock mode — tidak ada efek")
+            return None
+        return self._idempiere.post_payment(**kwargs)
 
-# Instance global default untuk akses mudah dari KB Engine
+    def bank_transfer(self, **kwargs) -> Optional[Dict]:
+        if not self._live:
+            logger.warning("bank_transfer dipanggil dalam mock mode — tidak ada efek")
+            return None
+        return self._idempiere.bank_transfer(**kwargs)
+
+    def void_payment(self, payment_id: int) -> Optional[Dict]:
+        if not self._live:
+            return None
+        return self._idempiere.void_payment(payment_id)
+
+
+# Singleton global
 erp_client = PerusahaanAPIClient()
 
 if __name__ == "__main__":
-    print("=== PENGUJIAN ADAPTER REST API PERUSAHAAN ===")
-    client = PerusahaanAPIClient(use_mock=True)
+    print("=== PENGUJIAN ERP API CLIENT ===")
+    print(f"Mode: {'LIVE' if erp_client.is_live else 'MOCK'}")
 
-    print("\n1. Mengambil Master Rekanan:")
-    partners = client.get_partners()
-    print(f"Total Customer Terdaftar : {len(partners['customers'])} (Contoh: {partners['customers'][:3]})")
-    print(f"Total Vendor Terdaftar   : {len(partners['vendors'])} (Contoh: {partners['vendors'][:3]})")
+    print(f"\nCharge Map ({len(CHARGE_MAP)} kategori):")
+    for label, cid in sorted(CHARGE_MAP.items()):
+        print(f"  {label:25s} -> C_Charge_ID {cid}")
 
-    print("\n2. Uji Pencocokan Invoice (Matching Engine):")
-    # Contoh mutasi BCA: "TRSF E-BANKING INV-2023-001 CIOMAS ADISATWA", nominal: 580075045.0
-    hasil_match = client.match_invoice(
+    print(f"\nBank Account Map:")
+    for bank, aid in BANK_ACCOUNT_MAP.items():
+        print(f"  {bank:10s} -> C_BankAccount_ID {aid}")
+
+    print("\nUji Invoice Matching:")
+    hasil = erp_client.match_invoice(
         keterangan="TRSF E-BANKING INV-2023-001 CIOMAS ADISATWA",
         nominal=580075045.0,
-        nama_rekanan="CIOMAS ADISATWA"
+        nama_rekanan="CIOMAS ADISATWA",
     )
-
-    if hasil_match:
-        print("-> HASIL MATCHING BERHASIL:")
-        print(f"   Nomor Faktur : {hasil_match['invoice_no']}")
-        print(f"   Rekanan      : {hasil_match['partner_name']}")
-        print(f"   Kode Akun    : {hasil_match['kode_akun']}")
-        print(f"   Status Rekon : {hasil_match['status_rekonsiliasi']}")
-        print(f"   Kriteria     : {hasil_match['kriteria']}")
+    if hasil:
+        print(f"  Match: {hasil['invoice_no']} - {hasil['partner_name']} ({hasil['kriteria']})")
     else:
-        print("-> Tidak ditemukan invoice yang cocok.")
+        print("  Tidak ditemukan")
