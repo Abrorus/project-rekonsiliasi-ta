@@ -13,24 +13,24 @@ from typing import Dict, List, Optional, Any
 logger = logging.getLogger(__name__)
 
 try:
-    from knowledge_base.kategori_keuangan import KATEGORI
-    from knowledge_base.rekanan_resolver import MASTER_CUSTOMERS, MASTER_VENDORS
+    from knowledge_base.mapping.kategori_keuangan import KATEGORI
+    from knowledge_base.mapping.rekanan_resolver import MASTER_CUSTOMERS, MASTER_VENDORS
 except ImportError:
     try:
-        from src.knowledge_base.kategori_keuangan import KATEGORI
-        from src.knowledge_base.rekanan_resolver import MASTER_CUSTOMERS, MASTER_VENDORS
+        from knowledge_base.kategori_keuangan import KATEGORI
+        from knowledge_base.rekanan_resolver import MASTER_CUSTOMERS, MASTER_VENDORS
     except ImportError:
         from kategori_keuangan import KATEGORI
         from rekanan_resolver import MASTER_CUSTOMERS, MASTER_VENDORS
 
 try:
-    from knowledge_base.erp_idempiere import (
+    from knowledge_base.erp.erp_idempiere import (
         get_idempiere_client, CHARGE_MAP, CHARGE_VARIANTS,
         CHARGE_COA_MAP, BANK_ACCOUNT_MAP,
     )
 except ImportError:
     try:
-        from src.knowledge_base.erp_idempiere import (
+        from knowledge_base.erp_idempiere import (
             get_idempiere_client, CHARGE_MAP, CHARGE_VARIANTS,
             CHARGE_COA_MAP, BANK_ACCOUNT_MAP,
         )
